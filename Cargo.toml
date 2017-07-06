@@ -1,0 +1,9 @@
+[package]
+name = "coerceo"
+version = "0.0.0"
+authors = ["Ryan Huang"]
+
+description = "A clone of a strategic board game."
+license = "AGPL-3.0"
+
+[dependencies]
