@@ -10,7 +10,15 @@ pub struct Model {
 
 impl Model {
     pub fn init() -> Model {
-        unimplemented!();
+        Model {
+            board: Board::new(),
+            turn: Turn::White,
+            white_pieces: 18,
+            white_hexes: 0,
+            black_pieces: 18,
+            black_hexes: 0,
+            selected_piece: None,
+        }
     }
 }
 
@@ -31,12 +39,52 @@ type Hex = [Field; 6];
 
 // There's no need to store the color of the piece on this field, since only white pieces can be on
 // white fields, and vice versa.
+#[derive(Clone, Copy)]
 pub enum Field {
     Piece,
     Empty,
 }
 
 impl Board {
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    /// Create a new board with the "Laurentius" starting position.
+    pub fn new() -> Board {
+        let board = Board {
+            board: [[Some([Field::Empty; 6]); 5]; 5],
+        };
+
+        let piece_locations = [
+
+            // (0, 0) is the only empty hex
+            (HexCoord::new(-2,  2), [0, 4]),
+            (HexCoord::new(-2,  1), [0, 3]),
+            (HexCoord::new(-2,  0), [3, 5]),
+            (HexCoord::new(-1,  2), [1, 4]),
+            (HexCoord::new(-1,  1), [0, 4]),
+            (HexCoord::new(-1,  0), [3, 5]),
+            (HexCoord::new(-1, -1), [2, 5]),
+            (HexCoord::new( 0,  2), [1, 5]),
+            (HexCoord::new( 0,  1), [1, 5]),
+            (HexCoord::new( 0, -1), [2, 4]),
+            (HexCoord::new( 0, -2), [2, 4]),
+            (HexCoord::new( 1,  1), [2, 5]),
+            (HexCoord::new( 1,  0), [0, 2]),
+            (HexCoord::new( 1, -1), [1, 3]),
+            (HexCoord::new( 1, -2), [1, 4]),
+            (HexCoord::new( 2,  0), [0, 2]),
+            (HexCoord::new( 2, -1), [0, 3]),
+            (HexCoord::new( 2, -2), [1, 3]),
+        ];
+
+        for &(coord, fields) in &piece_locations {
+            let mut hex = board.get_hex(&coord).unwrap();
+            hex[fields[0]] = Field::Piece;
+            hex[fields[1]] = Field::Piece;
+        }
+
+        board
+    }
+
     pub fn get_field(&self, coord: &FieldCoord) -> &Field {
         match *self.get_hex(&coord.to_hex()) {
             Some(ref hex) => &hex[coord.f as usize],
