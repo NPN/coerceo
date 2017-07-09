@@ -67,7 +67,19 @@ impl Board {
         &self.board[x as usize][y as usize]
     }
     pub fn get_hex_neighbors(&self, coord: &HexCoord) -> Vec<HexCoord> {
-        unimplemented!();
+        coord
+            .get_neighbors()
+            .iter()
+            .filter(|&&c| match c {
+                Some(_) => true,
+                None => false,
+            })
+            .map(|c| c.unwrap())
+            .filter(|c| match *self.get_hex(c) {
+                Some(_) => true,
+                None => false,
+            })
+            .collect()
     }
     /// Return fields that share an edge with the given hex and are outside of the given hex. If a
     /// hex is removed from the board, pieces occupying that hex's field neighbors might be
