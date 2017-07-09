@@ -38,7 +38,10 @@ pub enum Field {
 
 impl Board {
     pub fn get_field(&self, coord: &FieldCoord) -> &Field {
-        unimplemented!();
+        match *self.get_hex(&coord.to_hex()) {
+            Some(ref hex) => &hex[coord.f as usize],
+            None => panic!("Tried to get field on removed hex: {:?}", coord),
+        }
     }
     /// Return fields that share an edge with the given field. These fields are always the opposite
     /// color of the given field. If all of a piece's edge neighbors are occupied, that piece might
@@ -59,7 +62,9 @@ impl Board {
     }
 
     fn get_hex(&self, coord: &HexCoord) -> &Option<Hex> {
-        unimplemented!();
+        let x = coord.x + 2;
+        let y = coord.y + 2;
+        &self.board[x as usize][y as usize]
     }
     pub fn get_hex_neighbors(&self, coord: &HexCoord) -> Vec<HexCoord> {
         unimplemented!();
@@ -78,6 +83,7 @@ impl Board {
     }
 }
 
+#[derive(Debug)]
 pub struct FieldCoord {
     x: i32,
     y: i32,
