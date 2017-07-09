@@ -1,5 +1,7 @@
 extern crate sdl2;
 
+mod model;
+
 use sdl2::pixels::Color;
 
 const SCREEN_WIDTH: u32 = 800;
