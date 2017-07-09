@@ -80,7 +80,15 @@ impl Board {
     /// hex is removed from the board, pieces occupying that hex's field neighbors might be
     /// capturable.
     pub fn get_hex_field_neighbors(&self, coord: &HexCoord) -> Vec<FieldCoord> {
-        unimplemented!();
+        let mut neighbors = vec![];
+
+        for (i, neighbor) in coord.get_neighbors() {
+            if self.get_hex(&neighbor).is_some() {
+                let f = (i + 3) % 6;
+                neighbors.push(neighbor.to_field(f));
+            }
+        }
+        neighbors
     }
     pub fn is_hex_removable(&self, coord: &HexCoord) -> bool {
         unimplemented!();
