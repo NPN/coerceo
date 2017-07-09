@@ -84,6 +84,7 @@ pub struct FieldCoord {
     f: u32,
 }
 
+#[derive(Clone, Copy)]
 pub struct HexCoord {
     x: i32,
     y: i32,
@@ -91,19 +92,21 @@ pub struct HexCoord {
 
 impl FieldCoord {
     pub fn new(x: i32, y: i32, f: u32) -> FieldCoord {
-        unimplemented!();
+        assert!((x + y).abs() <= 2 && x.abs() <= 2 && y.abs() <= 2 && f < 6);
+        FieldCoord { x, y, f }
     }
     pub fn to_hex(&self) -> HexCoord {
-        unimplemented!();
+        HexCoord::new(self.x, self.y)
     }
 }
 
 impl HexCoord {
     pub fn new(x: i32, y: i32) -> HexCoord {
-        unimplemented!();
+        assert!((x + y).abs() <= 2 && x.abs() <= 2 && y.abs() <= 2);
+        HexCoord { x, y }
     }
     pub fn to_field(&self, f: u32) -> FieldCoord {
-        unimplemented!();
+        FieldCoord::new(self.x, self.y, f)
     }
     // We return an array of Options instead of a Vec so that get_hex_field_neighbors and
     // is_hex_removable know which neighbors are on which side of the hex. They need to know this
@@ -113,6 +116,27 @@ impl HexCoord {
     //   * is_hex_removable: a hex is removable if it is attached to the board by 3 or less
     //                       *adjacent* sides
     fn get_neighbors(&self) -> [Option<HexCoord>; 6] {
-        unimplemented!();
+        let mut neighbors = [None; 6];
+
+        if self.y < 2 && (self.x + self.y) != 2 {
+            neighbors[0] = Some(HexCoord::new(self.x, self.y + 1));
+        }
+        if (self.x + self.y) != 2 && self.x < 2 {
+            neighbors[1] = Some(HexCoord::new(self.x + 1, self.y));
+        }
+        if self.x < 2 && self.y > -2 {
+            neighbors[2] = Some(HexCoord::new(self.x + 1, self.y - 1));
+        }
+        if self.y > -2 && (self.x + self.y) > -2 {
+            neighbors[3] = Some(HexCoord::new(self.x, self.y - 1));
+        }
+        if (self.x + self.y) > -2 && self.x > -2 {
+            neighbors[4] = Some(HexCoord::new(self.x - 1, self.y));
+        }
+        if self.x > -2 && self.y < 2 {
+            neighbors[5] = Some(HexCoord::new(self.x - 1, self.y + 1));
+        }
+
+        neighbors
     }
 }
