@@ -70,14 +70,9 @@ impl Board {
         coord
             .get_neighbors()
             .iter()
-            .filter(|&&c| match c {
-                Some(_) => true,
-                None => false,
-            })
-            .map(|c| c.unwrap())
-            .filter(|c| match *self.get_hex(c) {
-                Some(_) => true,
-                None => false,
+            .filter_map(|&(_, c)| match *self.get_hex(&c) {
+                Some(_) => Some(c),
+                None => None,
             })
             .collect()
     }
@@ -126,33 +121,32 @@ impl HexCoord {
     pub fn to_field(&self, f: u32) -> FieldCoord {
         FieldCoord::new(self.x, self.y, f)
     }
-    // We return an array of Options instead of a Vec so that get_hex_field_neighbors and
-    // is_hex_removable know which neighbors are on which side of the hex. They need to know this
-    // for different reasons:
+    // We return a Vec of tuples so that get_hex_field_neighbors and is_hex_removable know which
+    // neighbors are on which side of the hex. They need to know this for different reasons:
     //   * get_hex_field_neighbors: the index of each neighboring field depends on which hex
     //                              neighbor that field neighbor is on
     //   * is_hex_removable: a hex is removable if it is attached to the board by 3 or less
     //                       *adjacent* sides
-    fn get_neighbors(&self) -> [Option<HexCoord>; 6] {
-        let mut neighbors = [None; 6];
+    fn get_neighbors(&self) -> Vec<(u32, HexCoord)> {
+        let mut neighbors = vec![];
 
         if self.y < 2 && (self.x + self.y) != 2 {
-            neighbors[0] = Some(HexCoord::new(self.x, self.y + 1));
+            neighbors.push((0, HexCoord::new(self.x, self.y + 1)));
         }
         if (self.x + self.y) != 2 && self.x < 2 {
-            neighbors[1] = Some(HexCoord::new(self.x + 1, self.y));
+            neighbors.push((1, HexCoord::new(self.x + 1, self.y)));
         }
         if self.x < 2 && self.y > -2 {
-            neighbors[2] = Some(HexCoord::new(self.x + 1, self.y - 1));
+            neighbors.push((2, HexCoord::new(self.x + 1, self.y - 1)));
         }
         if self.y > -2 && (self.x + self.y) > -2 {
-            neighbors[3] = Some(HexCoord::new(self.x, self.y - 1));
+            neighbors.push((3, HexCoord::new(self.x, self.y - 1)));
         }
         if (self.x + self.y) > -2 && self.x > -2 {
-            neighbors[4] = Some(HexCoord::new(self.x - 1, self.y));
+            neighbors.push((4, HexCoord::new(self.x - 1, self.y)));
         }
         if self.x > -2 && self.y < 2 {
-            neighbors[5] = Some(HexCoord::new(self.x - 1, self.y + 1));
+            neighbors.push((5, HexCoord::new(self.x - 1, self.y + 1)));
         }
 
         neighbors
