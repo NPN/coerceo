@@ -138,6 +138,8 @@ impl Board {
         }
         neighbors
     }
+    /// A hex is removable (and must be removed) if it is empty and is "attached to the board by 3
+    /// or less adjacent sides."
     pub fn is_hex_removable(&self, coord: &HexCoord) -> bool {
         unimplemented!();
     }
@@ -181,8 +183,8 @@ impl HexCoord {
     // neighbors are on which side of the hex. They need to know this for different reasons:
     //   * get_hex_field_neighbors: the index of each neighboring field depends on which hex
     //                              neighbor that field neighbor is on
-    //   * is_hex_removable: a hex is removable if it is attached to the board by 3 or less
-    //                       *adjacent* sides
+    //   * is_hex_removable: a hex is removable only if it is "attached to the board by 3 or less
+    //                       adjacent sides"
     fn get_neighbors(&self) -> Vec<(u32, HexCoord)> {
         let mut neighbors = vec![];
 
