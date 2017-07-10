@@ -166,7 +166,46 @@ impl Board {
     /// A hex is removable (and must be removed) if it is empty and is "attached to the board by 3
     /// or less adjacent sides."
     pub fn is_hex_removable(&self, coord: &HexCoord) -> bool {
-        unimplemented!();
+        match *self.get_hex(coord) {
+            Some(hex) => {
+                if hex.iter().any(|&f| match f {
+                    Field::Piece => true,
+                    Field::Empty => false,
+                }) {
+                    return false;
+                }
+            }
+            None => {
+                panic!(
+                    "Can't call Board::is_hex_removable on a removed hex: {:?}",
+                    coord
+                )
+            }
+        }
+
+        let neighbor_idxs: Vec<u32> = coord.get_neighbors().iter().map(|&(i, _)| i).collect();
+        let neighbor_idxs_slice = neighbor_idxs.as_slice();
+
+        match neighbor_idxs_slice.len() {
+            0 => panic!("A hex at {:?} is empty and has no neighbors", coord),
+            1 => true,
+            2 => {
+                let valid_idx_combos = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [0, 5]];
+                valid_idx_combos.iter().any(|c| c == neighbor_idxs_slice)
+            }
+            3 => {
+                let valid_idx_combos = [
+                    [0, 1, 2],
+                    [1, 2, 3],
+                    [2, 3, 4],
+                    [3, 4, 5],
+                    [0, 4, 5],
+                    [0, 1, 5],
+                ];
+                valid_idx_combos.iter().any(|c| c == neighbor_idxs_slice)
+            }
+            _ => false,
+        }
     }
     pub fn remove_hex(&mut self, coord: &HexCoord) {
         unimplemented!();
@@ -180,7 +219,7 @@ pub struct FieldCoord {
     f: u32,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct HexCoord {
     x: i32,
     y: i32,
