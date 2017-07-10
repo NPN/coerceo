@@ -97,7 +97,26 @@ impl Board {
     /// color of the given field. If all of a piece's edge neighbors are occupied, that piece might
     /// be capturable.
     pub fn get_field_edge_neighbors(&self, coord: &FieldCoord) -> Vec<FieldCoord> {
-        unimplemented!();
+        let mut neighbors = vec![
+            // There are always two edge neighbors on the same hex as the given field
+            FieldCoord {
+                f: (coord.f + 1) % 6,
+                ..*coord
+            },
+            FieldCoord {
+                f: (coord.f + 5) % 6,
+                ..*coord
+            },
+        ];
+
+        for (i, neighbor) in coord.to_hex().get_neighbors() {
+            if coord.f == i && self.get_hex(&neighbor).is_some() {
+                let f = (i + 3) % 6;
+                neighbors.push(neighbor.to_field(f));
+                break;
+            }
+        }
+        neighbors
     }
     /// Return fields that share a vertex with the given field and have the same color as the given
     /// field. Pieces can move to fields that are vertex neighbors of the field they are on.
