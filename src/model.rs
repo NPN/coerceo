@@ -121,7 +121,13 @@ impl Board {
     /// Return fields that share a vertex with the given field and have the same color as the given
     /// field. Pieces can move to fields that are vertex neighbors of the field they are on.
     pub fn get_field_vertex_neighbors(&self, coord: &FieldCoord) -> Vec<FieldCoord> {
-        unimplemented!();
+        // A field's vertex neighbors can be defined as the edge neighbors of its edge neighbors
+        let mut neighbors = vec![];
+        for neighbor in self.get_field_edge_neighbors(coord) {
+            neighbors.append(&mut self.get_field_edge_neighbors(&neighbor));
+        }
+        // A field is not its own neighbor
+        neighbors.into_iter().filter(|n| n != coord).collect()
     }
     pub fn move_piece(&mut self, from: &FieldCoord, to: &FieldCoord) {
         unimplemented!();
@@ -167,7 +173,7 @@ impl Board {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct FieldCoord {
     x: i32,
     y: i32,
