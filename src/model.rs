@@ -49,40 +49,42 @@ impl Board {
     #[cfg_attr(rustfmt, rustfmt_skip)]
     /// Create a new board with the "Laurentius" starting position.
     pub fn new() -> Board {
-        let board = Board {
-            board: [[Some([Field::Empty; 6]); 5]; 5],
-        };
+        let mut board = [[None; 5]; 5];
 
+        // (0, 0) is the only empty hex
+        board[2][2] = Some([Field::Empty; 6]);
+
+        // Conveniently, each hex (except for (0, 0)) has exactly two pieces on it in the starting
+        // position. The format here is (hex_x, hex_y, field1, field2).
         let piece_locations = [
-
-            // (0, 0) is the only empty hex
-            (HexCoord::new(-2,  2), [0, 4]),
-            (HexCoord::new(-2,  1), [0, 3]),
-            (HexCoord::new(-2,  0), [3, 5]),
-            (HexCoord::new(-1,  2), [1, 4]),
-            (HexCoord::new(-1,  1), [0, 4]),
-            (HexCoord::new(-1,  0), [3, 5]),
-            (HexCoord::new(-1, -1), [2, 5]),
-            (HexCoord::new( 0,  2), [1, 5]),
-            (HexCoord::new( 0,  1), [1, 5]),
-            (HexCoord::new( 0, -1), [2, 4]),
-            (HexCoord::new( 0, -2), [2, 4]),
-            (HexCoord::new( 1,  1), [2, 5]),
-            (HexCoord::new( 1,  0), [0, 2]),
-            (HexCoord::new( 1, -1), [1, 3]),
-            (HexCoord::new( 1, -2), [1, 4]),
-            (HexCoord::new( 2,  0), [0, 2]),
-            (HexCoord::new( 2, -1), [0, 3]),
-            (HexCoord::new( 2, -2), [1, 3]),
+            (-2,  2, 0, 4),
+            (-2,  1, 0, 3),
+            (-2,  0, 3, 5),
+            (-1,  2, 1, 4),
+            (-1,  1, 0, 4),
+            (-1,  0, 3, 5),
+            (-1, -1, 2, 5),
+            ( 0,  2, 1, 5),
+            ( 0,  1, 1, 5),
+            ( 0, -1, 2, 4),
+            ( 0, -2, 2, 4),
+            ( 1,  1, 2, 5),
+            ( 1,  0, 0, 2),
+            ( 1, -1, 1, 3),
+            ( 1, -2, 1, 4),
+            ( 2,  0, 0, 2),
+            ( 2, -1, 0, 3),
+            ( 2, -2, 1, 3),
         ];
 
-        for &(coord, fields) in &piece_locations {
-            let mut hex = board.get_hex(&coord).unwrap();
-            hex[fields[0]] = Field::Piece;
-            hex[fields[1]] = Field::Piece;
+        for &(x, y, f1, f2) in &piece_locations {
+            let mut hex = [Field::Empty; 6];
+            hex[f1] = Field::Piece;
+            hex[f2] = Field::Piece;
+            board[(x + 2) as usize][(y + 2) as usize] = Some(hex);
         }
 
-        board
+        Board { board }
     }
 
     pub fn get_field(&self, coord: &FieldCoord) -> &Field {
@@ -110,9 +112,7 @@ impl Board {
     }
 
     fn get_hex(&self, coord: &HexCoord) -> &Option<Hex> {
-        let x = coord.x + 2;
-        let y = coord.y + 2;
-        &self.board[x as usize][y as usize]
+        &self.board[(coord.x + 2) as usize][(coord.y + 2) as usize]
     }
     pub fn get_hex_neighbors(&self, coord: &HexCoord) -> Vec<HexCoord> {
         coord
