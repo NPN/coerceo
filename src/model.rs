@@ -39,7 +39,7 @@ type Hex = [Field; 6];
 
 // There's no need to store the color of the piece on this field, since only white pieces can be on
 // white fields, and vice versa.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Field {
     Piece,
     Empty,
@@ -94,6 +94,12 @@ impl Board {
             None => panic!("Tried to get field on removed hex: {:?}", coord),
         }
     }
+    fn set_field(&mut self, coord: &FieldCoord, field: Field) {
+        match *self.get_hex(&coord.to_hex()) {
+            Some(mut hex) => hex[coord.f as usize] = field,
+            None => panic!("Tried to set field on removed hex: {:?}", coord),
+        }
+    }
     /// Return fields that share an edge with the given field. These fields are always the opposite
     /// color of the given field. If all of a piece's edge neighbors are occupied, that piece might
     /// be capturable.
@@ -134,7 +140,13 @@ impl Board {
         unimplemented!();
     }
     pub fn remove_piece(&mut self, coord: &FieldCoord) {
-        unimplemented!();
+        assert_eq!(
+            self.get_field(coord),
+            &Field::Piece,
+            "There is no piece at {:?} to remove",
+            coord
+        );
+        self.set_field(coord, Field::Empty);
     }
 
     fn get_hex(&self, coord: &HexCoord) -> &Option<Hex> {
