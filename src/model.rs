@@ -49,13 +49,14 @@ impl Board {
     #[cfg_attr(rustfmt, rustfmt_skip)]
     /// Create a new board with the "Laurentius" starting position.
     pub fn new() -> Board {
-        let mut board = [[None; 5]; 5];
+        let mut board = Board {
+            board: [[None; 5]; 5]
+        };
 
         // (0, 0) is the only empty hex
-        board[2][2] = Some([Field::Empty; 6]);
+        board.set_hex(&HexCoord::new(0, 0), Some([Field::Empty; 6]));
 
-        // Conveniently, each hex (except for (0, 0)) has exactly two pieces on it in the starting
-        // position. The format here is (hex_x, hex_y, field1, field2).
+        // Conveniently, every other hex has exactly two pieces on it in the starting position.
         let piece_locations = [
             (-2,  2, 0, 4),
             (-2,  1, 0, 3),
@@ -81,10 +82,10 @@ impl Board {
             let mut hex = [Field::Empty; 6];
             hex[f1] = Field::Piece;
             hex[f2] = Field::Piece;
-            board[(x + 2) as usize][(y + 2) as usize] = Some(hex);
+            board.set_hex(&HexCoord::new(x, y), Some(hex));
         }
 
-        Board { board }
+        board
     }
 
     pub fn get_field(&self, coord: &FieldCoord) -> &Field {
