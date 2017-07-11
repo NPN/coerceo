@@ -27,6 +27,15 @@ pub enum Turn {
     Black,
 }
 
+impl Turn {
+    pub fn switch_turns(&mut self) {
+        *self = match *self {
+            Turn::White => Turn::Black,
+            Turn::Black => Turn::White,
+        }
+    }
+}
+
 pub struct Board {
     // The hex board uses an axial coordinate system with (0, 0) at the center. The x-axis slopes
     // up to the right, and the y-axis goes up and down. The board is stored as a dense 2D array,
