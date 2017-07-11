@@ -208,10 +208,7 @@ impl Board {
     pub fn is_hex_removable(&self, coord: &HexCoord) -> bool {
         match *self.get_hex(coord) {
             Some(hex) => {
-                if hex.iter().any(|&f| match f {
-                    Field::Piece => true,
-                    Field::Empty => false,
-                }) {
+                if hex.iter().any(|&f| f == Field::Piece) {
                     return false;
                 }
             }
