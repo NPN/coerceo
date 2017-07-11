@@ -137,7 +137,28 @@ impl Board {
         neighbors.into_iter().filter(|n| n != coord).collect()
     }
     pub fn move_piece(&mut self, from: &FieldCoord, to: &FieldCoord) {
-        unimplemented!();
+        assert_eq!(
+            self.get_field(from),
+            &Field::Piece,
+            "Cannot move non-existant piece at {:?}",
+            from
+        );
+        assert!(
+            self.get_field_vertex_neighbors(from).contains(to),
+            "Cannot move piece at {:?} to non-vertex neighbor {:?}",
+            from,
+            to
+        );
+        assert_eq!(
+            self.get_field(to),
+            &Field::Empty,
+            "Cannot move piece at {:?} to occupied field at {:?}",
+            from,
+            to
+        );
+
+        self.set_field(from, Field::Empty);
+        self.set_field(to, Field::Piece);
     }
     pub fn remove_piece(&mut self, coord: &FieldCoord) {
         assert_eq!(
