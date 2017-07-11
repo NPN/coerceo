@@ -115,14 +115,8 @@ impl Board {
     pub fn get_field_edge_neighbors(&self, coord: &FieldCoord) -> Vec<FieldCoord> {
         let mut neighbors = vec![
             // There are always two edge neighbors on the same hex as the given field
-            FieldCoord {
-                f: (coord.f + 1) % 6,
-                ..*coord
-            },
-            FieldCoord {
-                f: (coord.f + 5) % 6,
-                ..*coord
-            },
+            FieldCoord::new(coord.x, coord.y, (coord.f + 1) % 6),
+            FieldCoord::new(coord.x, coord.y, (coord.f + 5) % 6),
         ];
 
         for (i, neighbor) in coord.to_hex().get_neighbors() {
