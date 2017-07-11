@@ -91,13 +91,13 @@ impl Board {
     pub fn get_field(&self, coord: &FieldCoord) -> &Field {
         match *self.get_hex(&coord.to_hex()) {
             Some(ref hex) => &hex[coord.f as usize],
-            None => panic!("Tried to get field on removed hex: {:?}", coord),
+            None => panic!("Cannot get field on removed hex {:?}", coord),
         }
     }
     fn set_field(&mut self, coord: &FieldCoord, field: Field) {
         match *self.get_hex(&coord.to_hex()) {
             Some(mut hex) => hex[coord.f as usize] = field,
-            None => panic!("Tried to set field on removed hex: {:?}", coord),
+            None => panic!("Cannot set field on removed hex {:?}", coord),
         }
     }
     /// Return fields that share an edge with the given field. These fields are always the opposite
@@ -140,7 +140,7 @@ impl Board {
         assert_eq!(
             self.get_field(from),
             &Field::Piece,
-            "Cannot move non-existant piece at {:?}",
+            "There is no piece at {:?} to move",
             from
         );
         assert!(
@@ -152,7 +152,7 @@ impl Board {
         assert_eq!(
             self.get_field(to),
             &Field::Empty,
-            "Cannot move piece at {:?} to occupied field at {:?}",
+            "Cannot move piece at {:?} to occupied neighbor {:?}",
             from,
             to
         );
@@ -212,12 +212,7 @@ impl Board {
                     return false;
                 }
             }
-            None => {
-                panic!(
-                    "Can't call Board::is_hex_removable on a removed hex: {:?}",
-                    coord
-                )
-            }
+            None => panic!("The hex at {:?} has already been removed", coord),
         }
 
         let neighbor_idxs: Vec<u32> = coord.get_neighbors().iter().map(|&(i, _)| i).collect();
@@ -247,8 +242,10 @@ impl Board {
     pub fn remove_hex(&mut self, coord: &HexCoord) {
         assert!(
             self.is_hex_removable(coord),
-            "Tried to remove non-removable hex at {:?}",
-            coord
+            "Cannot remove the hex at {:?} which is {:?} and has {} neighbors",
+            coord,
+            self.get_hex(coord),
+            self.get_hex_neighbors(coord).len(),
         );
         self.set_hex(coord, None);
     }
