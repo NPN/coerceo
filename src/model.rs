@@ -139,6 +139,9 @@ impl Board {
     fn get_hex(&self, coord: &HexCoord) -> &Option<Hex> {
         &self.board[(coord.x + 2) as usize][(coord.y + 2) as usize]
     }
+    fn set_hex(&mut self, coord: &HexCoord, hex: Option<Hex>) {
+        self.board[(coord.x + 2) as usize][(coord.y + 2) as usize] = hex;
+    }
     pub fn get_hex_neighbors(&self, coord: &HexCoord) -> Vec<HexCoord> {
         coord
             .get_neighbors()
@@ -208,7 +211,12 @@ impl Board {
         }
     }
     pub fn remove_hex(&mut self, coord: &HexCoord) {
-        unimplemented!();
+        assert!(
+            self.is_hex_removable(coord),
+            "Tried to remove non-removable hex at {:?}",
+            coord
+        );
+        self.set_hex(coord, None);
     }
 }
 
