@@ -249,6 +249,22 @@ impl Board {
         );
         self.set_hex(coord, None);
     }
+    /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
+    ///
+    /// Return the coordinates of the hexes that have not been removed yet.
+    pub fn extant_hexes(&self) -> Vec<HexCoord> {
+        let mut coords = vec![];
+
+        for x in -2..3 {
+            for y in -2..3 {
+                let coord = HexCoord::new(x, y);
+                if (x + y).abs() <= 2 && self.get_hex(&coord).is_some() {
+                    coords.push(coord);
+                }
+            }
+        }
+        coords
+    }
 }
 
 #[derive(Debug, PartialEq)]
