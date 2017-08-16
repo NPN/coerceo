@@ -9,7 +9,7 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn init() -> Model {
+    pub fn new() -> Model {
         Model {
             board: Board::new(),
             turn: Turn::White,
