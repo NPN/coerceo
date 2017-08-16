@@ -207,11 +207,9 @@ impl Board {
     /// or less adjacent sides."
     pub fn is_hex_removable(&self, coord: &HexCoord) -> bool {
         match *self.get_hex(coord) {
-            Some(hex) => {
-                if hex.iter().any(|&f| f == Field::Piece) {
-                    return false;
-                }
-            }
+            Some(hex) => if hex.iter().any(|&f| f == Field::Piece) {
+                return false;
+            },
             None => panic!("The hex at {:?} has already been removed", coord),
         }
 
