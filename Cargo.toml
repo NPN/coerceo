@@ -6,7 +6,7 @@ authors = ["Ryan Huang"]
 description = "A clone of a strategic board game."
 license = "AGPL-3.0"
 
-[dependencies.sdl2]
-version = "0.30"
-default-features = false
-features = ["gfx"]
+[dependencies]
+glium = "0.17.1"
+imgui = "0.0.15"
+imgui-glium-renderer = "0.0.15"
