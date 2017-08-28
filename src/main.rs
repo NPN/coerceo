@@ -15,7 +15,29 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+extern crate glium;
+#[macro_use]
+extern crate imgui;
+extern crate imgui_glium_renderer;
+
 mod model;
+mod view;
+
+use imgui::Ui;
 
 fn main() {
+    view::run(
+        String::from("Coerceo"),
+        (800, 800),
+        [1.0, 1.0, 1.0, 1.0],
+        test_ui,
+    );
+}
+
+fn test_ui(ui: &Ui) -> bool {
+    ui.window(im_str!("Coerceo"))
+        .size((600.0, 600.0), imgui::ImGuiSetCond_FirstUseEver)
+        .build(|| { ui.text(im_str!("Welcome to Coerceo!")); });
+
+    true
 }
