@@ -19,11 +19,13 @@ extern crate glium;
 #[macro_use]
 extern crate imgui;
 extern crate imgui_glium_renderer;
+extern crate imgui_sys;
 
 mod model;
 mod view;
 
 use imgui::Ui;
+use imgui_sys::{ImVec2, ImVec4};
 
 fn main() {
     view::run(
@@ -34,10 +36,37 @@ fn main() {
     );
 }
 
-fn test_ui(ui: &Ui) -> bool {
+fn test_ui(ui: &Ui, size: (f32, f32)) -> bool {
+    unsafe {
+        imgui_sys::igPushStyleVar(imgui_sys::ImGuiStyleVar::WindowRounding, 0.0);
+    }
+
     ui.window(im_str!("Coerceo"))
-        .size((600.0, 600.0), imgui::ImGuiSetCond_FirstUseEver)
-        .build(|| { ui.text(im_str!("Welcome to Coerceo!")); });
+        .size(size, imgui::ImGuiSetCond_Always)
+        .position((0.0, 0.0), imgui::ImGuiSetCond_Once)
+        .title_bar(false)
+        .resizable(false)
+        .movable(false)
+        .collapsible(false)
+        .build(|| {
+            ui.text(im_str!("Welcome to Coerceo!"));
+
+            unsafe {
+                let draw_list = imgui_sys::igGetWindowDrawList();
+                imgui_sys::ImDrawList_AddTriangle(
+                    draw_list,
+                    ImVec2::new(100.0, 100.0),
+                    ImVec2::new(200.0, 100.0),
+                    ImVec2::new(100.0, 200.0),
+                    imgui_sys::igColorConvertFloat4ToU32(ImVec4::new(0.7, 0.2, 0.3, 1.0)),
+                    10.0,
+                );
+            }
+        });
+
+    unsafe {
+        imgui_sys::igPopStyleVar(1);
+    }
 
     true
 }

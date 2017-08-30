@@ -29,7 +29,7 @@ struct MouseState {
     wheel: f32,
 }
 
-pub fn run<F: FnMut(&Ui) -> bool>(
+pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
     title: String,
     dimensions: (u32, u32),
     clear_color: [f32; 4],
@@ -132,7 +132,7 @@ pub fn run<F: FnMut(&Ui) -> bool>(
         let size_pixels = gl_window.get_inner_size_pixels().unwrap();
 
         let ui = imgui.frame(size_points, size_pixels, delta_s);
-        if !run_ui(&ui) {
+        if !run_ui(&ui, (size_points.0 as f32, size_points.1 as f32)) {
             break;
         }
 
