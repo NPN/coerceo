@@ -299,9 +299,11 @@ impl Board {
 
         for x in -2..3 {
             for y in -2..3 {
-                let coord = HexCoord::new(x, y);
-                if (x + y).abs() <= 2 && self.get_hex(&coord).is_some() {
-                    coords.push(coord);
+                if HexCoord::is_valid_coord(x, y) {
+                    let coord = HexCoord::new(x, y);
+                    if self.get_hex(&coord).is_some() {
+                        coords.push(coord);
+                    }
                 }
             }
         }
@@ -324,21 +326,42 @@ pub struct HexCoord {
 
 impl FieldCoord {
     pub fn new(x: i32, y: i32, f: u32) -> FieldCoord {
-        assert!((x + y).abs() <= 2 && x.abs() <= 2 && y.abs() <= 2 && f < 6);
+        assert!(Self::is_valid_coord(x, y, f));
         FieldCoord { x, y, f }
+    }
+    pub fn x(&self) -> i32 {
+        self.x
+    }
+    pub fn y(&self) -> i32 {
+        self.y
+    }
+    pub fn f(&self) -> u32 {
+        self.f
     }
     pub fn to_hex(&self) -> HexCoord {
         HexCoord::new(self.x, self.y)
+    }
+    pub fn is_valid_coord(x: i32, y: i32, f: u32) -> bool {
+        (x + y).abs() <= 2 && x.abs() <= 2 && y.abs() <= 2 && f < 6
     }
 }
 
 impl HexCoord {
     pub fn new(x: i32, y: i32) -> HexCoord {
-        assert!((x + y).abs() <= 2 && x.abs() <= 2 && y.abs() <= 2);
+        assert!(Self::is_valid_coord(x, y));
         HexCoord { x, y }
+    }
+    pub fn x(&self) -> i32 {
+        self.x
+    }
+    pub fn y(&self) -> i32 {
+        self.y
     }
     pub fn to_field(&self, f: u32) -> FieldCoord {
         FieldCoord::new(self.x, self.y, f)
+    }
+    pub fn is_valid_coord(x: i32, y: i32) -> bool {
+        (x + y).abs() <= 2 && x.abs() <= 2 && y.abs() <= 2
     }
     // We return a Vec of tuples so that get_hex_field_neighbors and is_hex_removable know which
     // neighbors are on which side of the hex. They need to know this for different reasons:
