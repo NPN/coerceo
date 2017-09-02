@@ -97,10 +97,10 @@ impl Board {
             board: [[None; 5]; 5]
         };
 
-        // (0, 0) is the only empty hex
+        // (0, 0) is the only empty hex.
         board.set_hex(&HexCoord::new(0, 0), Some([Field::Empty; 6]));
 
-        // Conveniently, every other hex has exactly two pieces on it in the starting position.
+        // All other hexes have exactly two pieces on them in the starting position.
         let piece_locations = [
             (-2,  2, 0, 4),
             (-2,  1, 0, 3),
@@ -135,13 +135,21 @@ impl Board {
     pub fn get_field(&self, coord: &FieldCoord) -> &Field {
         match *self.get_hex(&coord.to_hex()) {
             Some(ref hex) => &hex[coord.f as usize],
-            None => panic!("Cannot get field on removed hex {:?}", coord),
+            None => panic!(
+                "Cannot get field {} on removed hex at {:?}",
+                coord.f,
+                coord.to_hex()
+            ),
         }
     }
     fn set_field(&mut self, coord: &FieldCoord, field: Field) {
         match *self.get_hex(&coord.to_hex()) {
             Some(mut hex) => hex[coord.f as usize] = field,
-            None => panic!("Cannot set field on removed hex {:?}", coord),
+            None => panic!(
+                "Cannot set field {} on removed hex at {:?}",
+                coord.f,
+                coord.to_hex()
+            ),
         }
     }
     /// Return fields that share an edge with the given field. These fields are always the opposite
@@ -161,6 +169,7 @@ impl Board {
                 break;
             }
         }
+
         neighbors
     }
     /// Return fields that share a vertex with the given field and have the same color as the given
@@ -183,7 +192,7 @@ impl Board {
         );
         assert!(
             self.get_field_vertex_neighbors(from).contains(to),
-            "Cannot move piece at {:?} to non-vertex neighbor {:?}",
+            "Cannot move piece at {:?} to non-(vertex neighbor) {:?}",
             from,
             to
         );
