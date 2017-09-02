@@ -22,8 +22,10 @@ use model::{FieldCoord, HexCoord, Model};
 const SQRT_3: f32 = 1.732_050_807_568_877_f32;
 
 pub fn board(model: &mut Model, size: &ImVec2) {
+    let mut mouse_pos = ImVec2::default();
     let mut cursor_pos = ImVec2::default();
     unsafe {
+        imgui_sys::igGetMousePos(&mut mouse_pos);
         imgui_sys::igGetCursorScreenPos(&mut cursor_pos);
     }
 
@@ -34,6 +36,10 @@ pub fn board(model: &mut Model, size: &ImVec2) {
     let origin = ImVec2::new(cursor_pos.x + size.x / 2.0, cursor_pos.y + size.y / 2.0);
     for hex in model.board.extant_hexes() {
         draw_hex(&hex, &origin, side_len);
+    }
+
+    if let Some(coord) = pixel_to_field(&mouse_pos, &origin, side_len) {
+        highlight_field(&coord, &origin, side_len);
     }
 
     unsafe {
@@ -57,6 +63,16 @@ fn draw_field(coord: &FieldCoord, origin: &ImVec2, size: f32) {
 
         let draw_list = imgui_sys::igGetWindowDrawList();
         imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, v3, color);
+    }
+}
+
+fn highlight_field(coord: &FieldCoord, origin: &ImVec2, size: f32) {
+    let (v1, v2, v3) = field_vertexes(coord, origin, size);
+    unsafe {
+        let highlight = imgui_sys::igColorConvertFloat4ToU32(ImVec4::new(1.0, 1.0, 0.0, 0.7));
+
+        let draw_list = imgui_sys::igGetWindowDrawList();
+        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, v3, highlight);
     }
 }
 
@@ -106,4 +122,103 @@ fn hex_to_pixel(coord: &HexCoord, origin: &ImVec2, size: f32) -> ImVec2 {
     let py = size * -SQRT_3 * (x / 2.0 + y);
 
     ImVec2::new(px + origin.x, py + origin.y)
+}
+
+// Algorithm based on http://www.redblobgames.com/grids/hexagons/#pixel-to-hex
+fn pixel_to_field(p: &ImVec2, origin: &ImVec2, size: f32) -> Option<FieldCoord> {
+    let x = p.x - origin.x;
+    let y = p.y - origin.y;
+
+    let q = x * (2.0 / 3.0) / size;
+    let r = (-x - SQRT_3 * y) / (size * 3.0);
+
+    if let Some(hex) = round_hex_coord(q, r) {
+        /*
+           To find the field, we subtract the converted hex coordinates (q, r) from the rounded hex
+           coordinates (hex) to get the fractional part of the coordinates. Here is a diagram of a
+           single hex, with the fractional coordinates of each of its vertexes in the hex coordinate
+           system:
+
+                (-1/3, 2/3) _______ (1/3, 1/3)
+                           /\     /\
+                          /  \   /  \
+                         /    \ /    \
+            (-2/3, 1/3) (----(0,0)----) (2/3, -1/3)
+                         \    / \    /
+                          \  /   \  /
+              (-1/3, -1/3) \/_____\/ (1/3, -2/3)
+
+           Suppose our converted coordinates were (q, r) = (1.333, 0.583). Our rounded coordinates
+           are hex = (1, 1), and so our fractional coordinates are (0.333, -0.417).
+
+           We now define three linear equations that will split this hexagon into its six fields:
+
+                            _______ y = x (/)
+                           /\     /\
+                          /  \   /  \
+                         /    \ /    \
+                        (------X------) y = -x/2 (-)
+                         \    / \    /
+                          \  /   \  /
+                           \/_____\/ y = -2x (\)
+
+           Using these three equations as linear inequalities, we can check any pair of fractional
+           coordinates and find which field it is in. (As a reminder, fields are numbered clockwise
+           starting from 0 at the top.)
+
+           For our example (0.333, -0.417), we see that:
+               y + x/2 >= 0, so our field is above (-), and is either 5, 0, or 1.
+               y +  2x >= 0, so our field is to the right of (\), and is either 0 or 1.
+               y -   x <  0, so our field is to the right of (/), and is 1.
+        */
+        let x_diff = q - hex.x() as f32;
+        let y_diff = r - hex.y() as f32;
+        let mut i = 0;
+
+        if y_diff + x_diff / 2.0 >= 0.0 {
+            i |= 0b100;
+        }
+        if y_diff + x_diff * 2.0 >= 0.0 {
+            i |= 0b010;
+        }
+        if y_diff - x_diff >= 0.0 {
+            i |= 0b001;
+        }
+
+        // Using a lookup table because nested ifs are too confusing
+        const INVALID: u32 = 6;
+        let field_lookup = [3, 4, 2, INVALID, INVALID, 5, 1, 0];
+
+        Some(hex.to_field(field_lookup[i]))
+    } else {
+        None
+    }
+}
+
+// Algorithm from http://www.redblobgames.com/grids/hexagons/#rounding
+fn round_hex_coord(x: f32, y: f32) -> Option<HexCoord> {
+    let z = -x - y;
+
+    let mut rx = x.round();
+    let mut ry = y.round();
+    let rz = z.round();
+
+    let x_diff = (rx - x).abs();
+    let y_diff = (ry - y).abs();
+    let z_diff = (rz - z).abs();
+
+    if x_diff > y_diff && x_diff > z_diff {
+        rx = -ry - rz;
+    } else if y_diff > z_diff {
+        ry = -rx - rz;
+    }
+
+    let rx = rx as i32;
+    let ry = ry as i32;
+
+    if HexCoord::is_valid_coord(rx, ry) {
+        Some(HexCoord::new(rx, ry))
+    } else {
+        None
+    }
 }
