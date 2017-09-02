@@ -16,6 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+pub mod board;
+
 use glium::glutin;
 use glium::{Display, Surface};
 use imgui::{ImGui, Ui};

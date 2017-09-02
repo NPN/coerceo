@@ -25,18 +25,22 @@ mod model;
 mod view;
 
 use imgui::Ui;
-use imgui_sys::{ImVec2, ImVec4};
+use imgui_sys::ImVec2;
+
+use model::Model;
 
 fn main() {
+    let mut model = Model::new();
+
     view::run(
         String::from("Coerceo"),
         (800, 800),
         [1.0, 1.0, 1.0, 1.0],
-        test_ui,
+        |ui, size| test_ui(ui, size, &mut model),
     );
 }
 
-fn test_ui(ui: &Ui, size: (f32, f32)) -> bool {
+fn test_ui(ui: &Ui, size: (f32, f32), model: &mut Model) -> bool {
     unsafe {
         imgui_sys::igPushStyleVar(imgui_sys::ImGuiStyleVar::WindowRounding, 0.0);
     }
@@ -51,17 +55,9 @@ fn test_ui(ui: &Ui, size: (f32, f32)) -> bool {
         .build(|| {
             ui.text(im_str!("Welcome to Coerceo!"));
 
-            unsafe {
-                let draw_list = imgui_sys::igGetWindowDrawList();
-                imgui_sys::ImDrawList_AddTriangle(
-                    draw_list,
-                    ImVec2::new(100.0, 100.0),
-                    ImVec2::new(200.0, 100.0),
-                    ImVec2::new(100.0, 200.0),
-                    imgui_sys::igColorConvertFloat4ToU32(ImVec4::new(0.7, 0.2, 0.3, 1.0)),
-                    10.0,
-                );
-            }
+            view::board::board(model, &ImVec2::new(600.0, 600.0));
+
+            ui.text(im_str!("Look at the board!"));
         });
 
     unsafe {
