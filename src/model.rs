@@ -54,9 +54,27 @@ impl Turn {
 }
 
 pub struct Board {
-    // The hex board uses an axial coordinate system with (0, 0) at the center. The x-axis slopes
-    // up to the right, and the y-axis goes up and down. The board is stored as a dense 2D array,
-    // as a ragged array won't work (since each row would have to be a different type).
+    /*
+                ____
+               /    \
+          ____/  +y  \____
+         /    \      /    \
+        /      \____/  +x  \
+        \      /    \      /
+         \____/      \____/
+         /    \      /    \
+        /  -x  \____/      \
+        \      /    \      /
+         \____/  -y  \____/
+              \      /
+               \____/
+
+        The hex board uses an axial coordinate system with (0, 0) at the center. The x-axis slopes
+        up to the right, and the y-axis goes up and down. The board is stored as a dense 2D array,
+        because a ragged array won't work (since each row would have to be a different type).
+
+        See http://www.redblobgames.com/grids/hexagons/#coordinates-axial for more info.
+    */
     board: [[Option<Hex>; 5]; 5],
 }
 
