@@ -44,6 +44,7 @@ pub enum Turn {
     Black,
 }
 
+/*
 impl Turn {
     pub fn switch_turns(&mut self) {
         *self = match *self {
@@ -52,6 +53,7 @@ impl Turn {
         }
     }
 }
+*/
 
 pub struct Board {
     /*
@@ -132,7 +134,8 @@ impl Board {
         board
     }
 
-    pub fn get_field(&self, coord: &FieldCoord) -> &Field {
+    /*
+    fn get_field(&self, coord: &FieldCoord) -> &Field {
         match *self.get_hex(&coord.to_hex()) {
             Some(ref hex) => &hex[coord.f as usize],
             None => panic!(
@@ -219,7 +222,7 @@ impl Board {
         );
         self.set_field(coord, Field::Empty);
     }
-
+    */
     fn get_hex(&self, coord: &HexCoord) -> &Option<Hex> {
         &self.board[(coord.x + 2) as usize][(coord.y + 2) as usize]
     }
@@ -229,6 +232,7 @@ impl Board {
     fn is_hex_extant(&self, coord: &HexCoord) -> bool {
         self.get_hex(coord).is_some()
     }
+    /*
     // We return a Vec of tuples so that get_hex_field_neighbors and is_hex_removable know which
     // neighbors are on which side of the hex. They need to know this for different reasons:
     //   * get_hex_field_neighbors: the index of each neighboring field depends on which hex
@@ -315,6 +319,7 @@ impl Board {
         );
         self.set_hex(coord, None);
     }
+    */
     /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
     ///
     /// Return the coordinates of the hexes that have not been removed yet.
