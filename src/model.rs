@@ -144,7 +144,10 @@ impl Board {
     }
     fn set_field(&mut self, coord: &FieldCoord, field: Field) {
         match *self.get_hex(&coord.to_hex()) {
-            Some(mut hex) => hex[coord.f as usize] = field,
+            Some(mut hex) => {
+                hex[coord.f as usize] = field;
+                self.set_hex(&coord.to_hex(), Some(hex));
+            }
             None => panic!(
                 "Cannot set field {} on removed hex at {:?}",
                 coord.f,
