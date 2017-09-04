@@ -22,9 +22,11 @@ use model::{FieldCoord, HexCoord, Model};
 const SQRT_3: f32 = 1.732_050_807_568_877_f32;
 
 pub fn board(model: &mut Model, size: &ImVec2) {
+    let mouse_click;
     let mut mouse_pos = ImVec2::default();
     let mut cursor_pos = ImVec2::default();
     unsafe {
+        mouse_click = imgui_sys::igIsMouseClicked(0, false);
         imgui_sys::igGetMousePos(&mut mouse_pos);
         imgui_sys::igGetCursorScreenPos(&mut cursor_pos);
     }
@@ -38,8 +40,34 @@ pub fn board(model: &mut Model, size: &ImVec2) {
         draw_hex(&hex, &origin, side_len);
     }
 
-    if let Some(coord) = pixel_to_field(&mouse_pos, &origin, side_len) {
-        highlight_field(&coord, &origin, side_len);
+    if mouse_click {
+        match pixel_to_field(&mouse_pos, &origin, side_len) {
+            Some(click) => if model.selected_piece.is_some() {
+                {
+                    let selected = model.selected_piece.as_ref().unwrap();
+                    if model.board.can_move_piece(selected, &click) {
+                        model.board.move_piece(selected, &click);
+                    }
+                }
+                model.selected_piece = None;
+            } else {
+                model.selected_piece = Some(click);
+            },
+            None => model.selected_piece = None,
+        }
+    }
+
+    if let Some(ref coord) = model.selected_piece {
+        highlight_field(coord, &origin, side_len);
+    }
+
+    for hex in model.board.extant_hexes() {
+        for f in 0..6 {
+            let coord = hex.to_field(f);
+            if model.board.is_piece_on_field(&coord) {
+                draw_piece(&coord, &origin, side_len);
+            }
+        }
     }
 
     unsafe {
@@ -73,6 +101,41 @@ fn highlight_field(coord: &FieldCoord, origin: &ImVec2, size: f32) {
 
         let draw_list = imgui_sys::igGetWindowDrawList();
         imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, v3, highlight);
+    }
+}
+
+fn draw_piece(coord: &FieldCoord, origin: &ImVec2, size: f32) {
+    let (v1, v2, v3) = field_vertexes(coord, origin, size);
+    let center_x = (v1.x + v2.x + v3.x) / 3.0;
+    let min_y = if v1.y < v2.y || v1.y < v3.y {
+        v1.y
+    } else if v2.y < v3.y {
+        v2.y
+    } else {
+        v3.y
+    };
+    let center_y = if coord.f() % 2 == 0 {
+        min_y + size / (2.0 * SQRT_3)
+    } else {
+        min_y + size / SQRT_3
+    };
+
+    let center = ImVec2::new(center_x, center_y);
+
+    const SCALE: f32 = 0.7;
+
+    let v1 = add_vec(&center, &mul_vec(&sub_vec(&v1, &center), SCALE));
+    let v2 = add_vec(&center, &mul_vec(&sub_vec(&v2, &center), SCALE));
+    let v3 = add_vec(&center, &mul_vec(&sub_vec(&v3, &center), SCALE));
+
+    unsafe {
+        let white = imgui_sys::igColorConvertFloat4ToU32(ImVec4::new(1.0, 0.0, 0.0, 1.0));
+        let black = imgui_sys::igColorConvertFloat4ToU32(ImVec4::new(0.0, 1.0, 0.0, 1.0));
+
+        let color = if coord.f() % 2 == 0 { white } else { black };
+
+        let draw_list = imgui_sys::igGetWindowDrawList();
+        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, v3, color);
     }
 }
 
@@ -221,4 +284,16 @@ fn round_hex_coord(x: f32, y: f32) -> Option<HexCoord> {
     } else {
         None
     }
+}
+
+fn add_vec(lhs: &ImVec2, rhs: &ImVec2) -> ImVec2 {
+    ImVec2::new(lhs.x + rhs.x, lhs.y + rhs.y)
+}
+
+fn sub_vec(lhs: &ImVec2, rhs: &ImVec2) -> ImVec2 {
+    ImVec2::new(lhs.x - rhs.x, lhs.y - rhs.y)
+}
+
+fn mul_vec(v: &ImVec2, c: f32) -> ImVec2 {
+    ImVec2::new(v.x * c, v.y * c)
 }

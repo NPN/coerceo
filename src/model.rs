@@ -134,7 +134,6 @@ impl Board {
         board
     }
 
-    /*
     fn get_field(&self, coord: &FieldCoord) -> &Field {
         match *self.get_hex(&coord.to_hex()) {
             Some(ref hex) => &hex[coord.f as usize],
@@ -157,6 +156,9 @@ impl Board {
                 coord.to_hex()
             ),
         }
+    }
+    pub fn is_piece_on_field(&self, coord: &FieldCoord) -> bool {
+        self.get_field(coord) == &Field::Piece
     }
     /// Return fields that share an edge with the given field. These fields are always the opposite
     /// color of the given field. If all of a piece's edge neighbors are occupied, that piece might
@@ -189,30 +191,29 @@ impl Board {
         // A field is not its own neighbor
         neighbors.into_iter().filter(|n| n != coord).collect()
     }
+    pub fn can_move_piece(&self, from: &FieldCoord, to: &FieldCoord) -> bool {
+        self.is_piece_on_field(from) && !self.is_piece_on_field(to) &&
+            self.get_field_vertex_neighbors(from).contains(to)
+    }
     pub fn move_piece(&mut self, from: &FieldCoord, to: &FieldCoord) {
-        assert_eq!(
-            self.get_field(from),
-            &Field::Piece,
-            "There is no piece at {:?} to move",
-            from
-        );
         assert!(
-            self.get_field_vertex_neighbors(from).contains(to),
-            "Cannot move piece at {:?} to non-(vertex neighbor) {:?}",
+            self.can_move_piece(from, to),
+            "Can't move {:?} at {:?} to {:?} at {:?}. These fields {} vertex neighbors.",
+            self.get_field(from),
             from,
-            to
-        );
-        assert_eq!(
             self.get_field(to),
-            &Field::Empty,
-            "Cannot move piece at {:?} to occupied neighbor {:?}",
-            from,
-            to
+            to,
+            if self.get_field_vertex_neighbors(from).contains(to) {
+                "ARE"
+            } else {
+                "ARE NOT"
+            },
         );
 
         self.set_field(from, Field::Empty);
         self.set_field(to, Field::Piece);
     }
+    /*
     pub fn remove_piece(&mut self, coord: &FieldCoord) {
         assert_eq!(
             self.get_field(coord),
@@ -232,7 +233,6 @@ impl Board {
     fn is_hex_extant(&self, coord: &HexCoord) -> bool {
         self.get_hex(coord).is_some()
     }
-    /*
     // We return a Vec of tuples so that get_hex_field_neighbors and is_hex_removable know which
     // neighbors are on which side of the hex. They need to know this for different reasons:
     //   * get_hex_field_neighbors: the index of each neighboring field depends on which hex
@@ -263,6 +263,7 @@ impl Board {
             })
             .collect()
     }
+    /*
     /// Return fields that share an edge with the given hex and are outside of the given hex. If a
     /// hex is removed from the board, pieces occupying that hex's field neighbors might be
     /// capturable.
