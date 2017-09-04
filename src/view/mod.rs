@@ -1,5 +1,4 @@
 /*
- * Copyright (C) 2015-2017 The imgui-rs Developers
  * Copyright (C) 2017 Ryan Huang
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,181 +15,288 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod board;
+mod imgui;
 
-use glium::glutin;
-use glium::{Display, Surface};
-use imgui::{ImGui, Ui};
-use imgui_glium_renderer::Renderer;
-use std::time::Instant;
+use imgui_sys::{self, ImVec2, ImVec4};
 
-#[derive(Copy, Clone, PartialEq, Debug, Default)]
-struct MouseState {
-    pos: (i32, i32),
-    pressed: (bool, bool, bool),
-    wheel: f32,
-}
+use model::{FieldCoord, HexCoord, Model};
+pub use view::imgui::run;
 
-pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
-    title: String,
-    dimensions: (u32, u32),
-    clear_color: [f32; 4],
-    mut run_ui: F,
-) {
-    let mut events_loop = glutin::EventsLoop::new();
-    let window = glutin::WindowBuilder::new()
-        .with_title(title)
-        .with_dimensions(dimensions.0, dimensions.1);
-    let context = glutin::ContextBuilder::new().with_vsync(true);
-    let display = Display::new(window, context, &events_loop).unwrap();
+const SQRT_3: f32 = 1.732_050_807_568_877_f32;
 
-    let mut imgui = ImGui::init();
-    let mut renderer = Renderer::init(&mut imgui, &display).expect("Failed to initialize renderer");
+pub fn board(model: &mut Model, size: &ImVec2) {
+    let mouse_click;
+    let mut mouse_pos = ImVec2::default();
+    let mut cursor_pos = ImVec2::default();
+    unsafe {
+        mouse_click = imgui_sys::igIsMouseClicked(0, false);
+        imgui_sys::igGetMousePos(&mut mouse_pos);
+        imgui_sys::igGetCursorScreenPos(&mut cursor_pos);
+    }
 
-    imgui.set_ini_filename(None);
+    // We want to fit the board into the size vector given us. Since the board is slightly taller
+    // than it is wide, we take the height as our constraining dimension, and calculate the side
+    // length of a triangle on the board from it.
+    let side_len = size.y / (5.0 * SQRT_3);
+    let origin = ImVec2::new(cursor_pos.x + size.x / 2.0, cursor_pos.y + size.y / 2.0);
+    for hex in model.board.extant_hexes() {
+        draw_hex(&hex, &origin, side_len);
+    }
 
-    configure_keys(&mut imgui);
-
-    let mut last_frame = Instant::now();
-    let mut mouse_state = MouseState::default();
-    let mut quit = false;
-
-    loop {
-        events_loop.poll_events(|event| {
-            use glium::glutin::WindowEvent::*;
-            use glium::glutin::ElementState::Pressed;
-            use glium::glutin::{Event, MouseButton, MouseScrollDelta, TouchPhase};
-
-            if let Event::WindowEvent { event, .. } = event {
-                match event {
-                    Closed => quit = true,
-                    KeyboardInput { input, .. } => {
-                        use glium::glutin::VirtualKeyCode as Key;
-
-                        let pressed = input.state == Pressed;
-                        match input.virtual_keycode {
-                            Some(Key::Tab) => imgui.set_key(0, pressed),
-                            Some(Key::Left) => imgui.set_key(1, pressed),
-                            Some(Key::Right) => imgui.set_key(2, pressed),
-                            Some(Key::Up) => imgui.set_key(3, pressed),
-                            Some(Key::Down) => imgui.set_key(4, pressed),
-                            Some(Key::PageUp) => imgui.set_key(5, pressed),
-                            Some(Key::PageDown) => imgui.set_key(6, pressed),
-                            Some(Key::Home) => imgui.set_key(7, pressed),
-                            Some(Key::End) => imgui.set_key(8, pressed),
-                            Some(Key::Delete) => imgui.set_key(9, pressed),
-                            Some(Key::Back) => imgui.set_key(10, pressed),
-                            Some(Key::Return) => imgui.set_key(11, pressed),
-                            Some(Key::Escape) => imgui.set_key(12, pressed),
-                            Some(Key::A) => imgui.set_key(13, pressed),
-                            Some(Key::C) => imgui.set_key(14, pressed),
-                            Some(Key::V) => imgui.set_key(15, pressed),
-                            Some(Key::X) => imgui.set_key(16, pressed),
-                            Some(Key::Y) => imgui.set_key(17, pressed),
-                            Some(Key::Z) => imgui.set_key(18, pressed),
-                            Some(Key::LControl) | Some(Key::RControl) => {
-                                imgui.set_key_ctrl(pressed)
-                            }
-                            Some(Key::LShift) | Some(Key::RShift) => imgui.set_key_shift(pressed),
-                            Some(Key::LAlt) | Some(Key::RAlt) => imgui.set_key_alt(pressed),
-                            Some(Key::LWin) | Some(Key::RWin) => imgui.set_key_super(pressed),
-                            _ => {}
-                        }
+    if mouse_click {
+        match pixel_to_field(&mouse_pos, &origin, side_len) {
+            Some(click) => if model.selected_piece.is_some() {
+                {
+                    let selected = model.selected_piece.as_ref().unwrap();
+                    if model.board.can_move_piece(selected, &click) {
+                        model.board.move_piece(selected, &click);
                     }
-                    MouseMoved {
-                        position: (x, y), ..
-                    } => mouse_state.pos = (x as i32, y as i32),
-                    MouseInput { state, button, .. } => match button {
-                        MouseButton::Left => mouse_state.pressed.0 = state == Pressed,
-                        MouseButton::Right => mouse_state.pressed.1 = state == Pressed,
-                        MouseButton::Middle => mouse_state.pressed.2 = state == Pressed,
-                        _ => {}
-                    },
-                    MouseWheel {
-                        delta: MouseScrollDelta::LineDelta(_, y),
-                        phase: TouchPhase::Moved,
-                        ..
-                    } |
-                    MouseWheel {
-                        delta: MouseScrollDelta::PixelDelta(_, y),
-                        phase: TouchPhase::Moved,
-                        ..
-                    } => mouse_state.wheel = y,
-                    ReceivedCharacter(c) => imgui.add_input_character(c),
-                    _ => (),
                 }
+                model.selected_piece = None;
+            } else {
+                model.selected_piece = Some(click);
+            },
+            None => model.selected_piece = None,
+        }
+    }
+
+    if let Some(ref coord) = model.selected_piece {
+        highlight_field(coord, &origin, side_len);
+    }
+
+    for hex in model.board.extant_hexes() {
+        for f in 0..6 {
+            let coord = hex.to_field(f);
+            if model.board.is_piece_on_field(&coord) {
+                draw_piece(&coord, &origin, side_len);
             }
-        });
-
-        let now = Instant::now();
-        let delta = now - last_frame;
-        let delta_s = delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1_000_000_000.0;
-        last_frame = now;
-
-        update_mouse(&mut imgui, &mut mouse_state);
-
-        let gl_window = display.gl_window();
-        let size_points = gl_window.get_inner_size_points().unwrap();
-        let size_pixels = gl_window.get_inner_size_pixels().unwrap();
-
-        let ui = imgui.frame(size_points, size_pixels, delta_s);
-        if !run_ui(&ui, (size_points.0 as f32, size_points.1 as f32)) {
-            break;
         }
+    }
 
-        let mut target = display.draw();
-        target.clear_color(
-            clear_color[0],
-            clear_color[1],
-            clear_color[2],
-            clear_color[3],
-        );
-        renderer.render(&mut target, ui).expect("Rendering failed");
-        target.finish().unwrap();
-
-        if quit {
-            break;
-        }
+    unsafe {
+        imgui_sys::igDummy(size);
     }
 }
 
-fn configure_keys(imgui: &mut ImGui) {
-    use imgui::ImGuiKey;
-
-    imgui.set_imgui_key(ImGuiKey::Tab, 0);
-    imgui.set_imgui_key(ImGuiKey::LeftArrow, 1);
-    imgui.set_imgui_key(ImGuiKey::RightArrow, 2);
-    imgui.set_imgui_key(ImGuiKey::UpArrow, 3);
-    imgui.set_imgui_key(ImGuiKey::DownArrow, 4);
-    imgui.set_imgui_key(ImGuiKey::PageUp, 5);
-    imgui.set_imgui_key(ImGuiKey::PageDown, 6);
-    imgui.set_imgui_key(ImGuiKey::Home, 7);
-    imgui.set_imgui_key(ImGuiKey::End, 8);
-    imgui.set_imgui_key(ImGuiKey::Delete, 9);
-    imgui.set_imgui_key(ImGuiKey::Backspace, 10);
-    imgui.set_imgui_key(ImGuiKey::Enter, 11);
-    imgui.set_imgui_key(ImGuiKey::Escape, 12);
-    imgui.set_imgui_key(ImGuiKey::A, 13);
-    imgui.set_imgui_key(ImGuiKey::C, 14);
-    imgui.set_imgui_key(ImGuiKey::V, 15);
-    imgui.set_imgui_key(ImGuiKey::X, 16);
-    imgui.set_imgui_key(ImGuiKey::Y, 17);
-    imgui.set_imgui_key(ImGuiKey::Z, 18);
+fn draw_hex(coord: &HexCoord, origin: &ImVec2, size: f32) {
+    for i in 0..6 {
+        draw_field(&coord.to_field(i), origin, size);
+    }
 }
 
-fn update_mouse(imgui: &mut ImGui, mouse_state: &mut MouseState) {
-    let scale = imgui.display_framebuffer_scale();
-    imgui.set_mouse_pos(
-        mouse_state.pos.0 as f32 / scale.0,
-        mouse_state.pos.1 as f32 / scale.1,
-    );
-    imgui.set_mouse_down(&[
-        mouse_state.pressed.0,
-        mouse_state.pressed.1,
-        mouse_state.pressed.2,
-        false,
-        false,
-    ]);
-    imgui.set_mouse_wheel(mouse_state.wheel / scale.1);
-    mouse_state.wheel = 0.0;
+fn draw_field(coord: &FieldCoord, origin: &ImVec2, size: f32) {
+    let (v1, v2, v3) = field_vertexes(coord, origin, size);
+    unsafe {
+        let white = imgui_sys::igColorConvertFloat4ToU32(ImVec4::new(1.0, 1.0, 1.0, 1.0));
+        let black = imgui_sys::igColorConvertFloat4ToU32(ImVec4::new(0.0, 0.0, 0.0, 1.0));
+
+        let color = if coord.f() % 2 == 0 { white } else { black };
+
+        let draw_list = imgui_sys::igGetWindowDrawList();
+        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, v3, color);
+    }
+}
+
+fn highlight_field(coord: &FieldCoord, origin: &ImVec2, size: f32) {
+    let (v1, v2, v3) = field_vertexes(coord, origin, size);
+    unsafe {
+        let highlight = imgui_sys::igColorConvertFloat4ToU32(ImVec4::new(1.0, 1.0, 0.0, 0.7));
+
+        let draw_list = imgui_sys::igGetWindowDrawList();
+        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, v3, highlight);
+    }
+}
+
+fn draw_piece(coord: &FieldCoord, origin: &ImVec2, size: f32) {
+    let (v1, v2, v3) = field_vertexes(coord, origin, size);
+    let center_x = (v1.x + v2.x + v3.x) / 3.0;
+    let min_y = if v1.y < v2.y || v1.y < v3.y {
+        v1.y
+    } else if v2.y < v3.y {
+        v2.y
+    } else {
+        v3.y
+    };
+    let center_y = if coord.f() % 2 == 0 {
+        min_y + size / (2.0 * SQRT_3)
+    } else {
+        min_y + size / SQRT_3
+    };
+
+    let center = ImVec2::new(center_x, center_y);
+
+    const SCALE: f32 = 0.7;
+
+    let v1 = add_vec(&center, &mul_vec(&sub_vec(&v1, &center), SCALE));
+    let v2 = add_vec(&center, &mul_vec(&sub_vec(&v2, &center), SCALE));
+    let v3 = add_vec(&center, &mul_vec(&sub_vec(&v3, &center), SCALE));
+
+    unsafe {
+        let white = imgui_sys::igColorConvertFloat4ToU32(ImVec4::new(1.0, 0.0, 0.0, 1.0));
+        let black = imgui_sys::igColorConvertFloat4ToU32(ImVec4::new(0.0, 1.0, 0.0, 1.0));
+
+        let color = if coord.f() % 2 == 0 { white } else { black };
+
+        let draw_list = imgui_sys::igGetWindowDrawList();
+        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, v3, color);
+    }
+}
+
+fn field_vertexes(coord: &FieldCoord, origin: &ImVec2, size: f32) -> (ImVec2, ImVec2, ImVec2) {
+    let center = hex_to_pixel(&coord.to_hex(), origin, size);
+    let height = size * SQRT_3 / 2.0;
+
+    let v1;
+    let v2;
+    match coord.f() {
+        0 => {
+            v1 = ImVec2::new(center.x - size / 2.0, center.y - height);
+            v2 = ImVec2::new(center.x + size / 2.0, center.y - height);
+        }
+        1 => {
+            v1 = ImVec2::new(center.x + size / 2.0, center.y - height);
+            v2 = ImVec2::new(center.x + size, center.y);
+        }
+        2 => {
+            v1 = ImVec2::new(center.x + size, center.y);
+            v2 = ImVec2::new(center.x + size / 2.0, center.y + height);
+        }
+        3 => {
+            v1 = ImVec2::new(center.x + size / 2.0, center.y + height);
+            v2 = ImVec2::new(center.x - size / 2.0, center.y + height);
+        }
+        4 => {
+            v1 = ImVec2::new(center.x - size / 2.0, center.y + height);
+            v2 = ImVec2::new(center.x - size, center.y);
+        }
+        5 => {
+            v1 = ImVec2::new(center.x - size, center.y);
+            v2 = ImVec2::new(center.x - size / 2.0, center.y - height);
+        }
+        _ => panic!("You made the impossible possible."),
+    };
+
+    (center, v1, v2)
+}
+
+// Algorithm based on http://www.redblobgames.com/grids/hexagons/#hex-to-pixel
+fn hex_to_pixel(coord: &HexCoord, origin: &ImVec2, size: f32) -> ImVec2 {
+    let x = coord.x() as f32;
+    let y = coord.y() as f32;
+
+    let px = size * (3.0 / 2.0) * x;
+    let py = size * -SQRT_3 * (x / 2.0 + y);
+
+    ImVec2::new(px + origin.x, py + origin.y)
+}
+
+// Algorithm based on http://www.redblobgames.com/grids/hexagons/#pixel-to-hex
+fn pixel_to_field(p: &ImVec2, origin: &ImVec2, size: f32) -> Option<FieldCoord> {
+    let x = p.x - origin.x;
+    let y = p.y - origin.y;
+
+    let q = x * (2.0 / 3.0) / size;
+    let r = (-x - SQRT_3 * y) / (size * 3.0);
+
+    if let Some(hex) = round_hex_coord(q, r) {
+        /*
+           To find the field, we subtract the converted hex coordinates (q, r) from the rounded hex
+           coordinates (hex) to get the fractional part of the coordinates. Here is a diagram of a
+           single hex, with the fractional coordinates of each of its vertexes in the hex coordinate
+           system:
+
+                (-1/3, 2/3) _______ (1/3, 1/3)
+                           /\     /\
+                          /  \   /  \
+                         /    \ /    \
+            (-2/3, 1/3) (----(0,0)----) (2/3, -1/3)
+                         \    / \    /
+                          \  /   \  /
+              (-1/3, -1/3) \/_____\/ (1/3, -2/3)
+
+           Suppose our converted coordinates were (q, r) = (1.333, 0.583). Our rounded coordinates
+           are hex = (1, 1), and so our fractional coordinates are (0.333, -0.417).
+
+           We now define three linear equations that will split this hexagon into its six fields:
+
+                            _______ y = x (/)
+                           /\     /\
+                          /  \   /  \
+                         /    \ /    \
+                        (------X------) y = -x/2 (-)
+                         \    / \    /
+                          \  /   \  /
+                           \/_____\/ y = -2x (\)
+
+           Using these three equations as linear inequalities, we can check any pair of fractional
+           coordinates and find which field it is in. (As a reminder, fields are numbered clockwise
+           starting from 0 at the top.)
+
+           For our example (0.333, -0.417), we see that:
+               y + x/2 >= 0, so our field is above (-), and is either 5, 0, or 1.
+               y +  2x >= 0, so our field is to the right of (\), and is either 0 or 1.
+               y -   x <  0, so our field is to the right of (/), and is 1.
+        */
+        let x_diff = q - hex.x() as f32;
+        let y_diff = r - hex.y() as f32;
+        let mut i = 0;
+
+        if y_diff + x_diff / 2.0 >= 0.0 {
+            i |= 0b100;
+        }
+        if y_diff + x_diff * 2.0 >= 0.0 {
+            i |= 0b010;
+        }
+        if y_diff - x_diff >= 0.0 {
+            i |= 0b001;
+        }
+
+        // Using a lookup table because nested ifs are too confusing
+        const INVALID: u32 = 6;
+        let field_lookup = [3, 4, 2, INVALID, INVALID, 5, 1, 0];
+
+        Some(hex.to_field(field_lookup[i]))
+    } else {
+        None
+    }
+}
+
+// Algorithm from http://www.redblobgames.com/grids/hexagons/#rounding
+fn round_hex_coord(x: f32, y: f32) -> Option<HexCoord> {
+    let z = -x - y;
+
+    let mut rx = x.round();
+    let mut ry = y.round();
+    let rz = z.round();
+
+    let x_diff = (rx - x).abs();
+    let y_diff = (ry - y).abs();
+    let z_diff = (rz - z).abs();
+
+    if x_diff > y_diff && x_diff > z_diff {
+        rx = -ry - rz;
+    } else if y_diff > z_diff {
+        ry = -rx - rz;
+    }
+
+    let rx = rx as i32;
+    let ry = ry as i32;
+
+    if HexCoord::is_valid_coord(rx, ry) {
+        Some(HexCoord::new(rx, ry))
+    } else {
+        None
+    }
+}
+
+fn add_vec(lhs: &ImVec2, rhs: &ImVec2) -> ImVec2 {
+    ImVec2::new(lhs.x + rhs.x, lhs.y + rhs.y)
+}
+
+fn sub_vec(lhs: &ImVec2, rhs: &ImVec2) -> ImVec2 {
+    ImVec2::new(lhs.x - rhs.x, lhs.y - rhs.y)
+}
+
+fn mul_vec(v: &ImVec2, c: f32) -> ImVec2 {
+    ImVec2::new(v.x * c, v.y * c)
 }

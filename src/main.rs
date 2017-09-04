@@ -55,7 +55,7 @@ fn test_ui(ui: &Ui, size: (f32, f32), model: &mut Model) -> bool {
         .build(|| {
             ui.text(im_str!("Welcome to Coerceo!"));
 
-            view::board::board(model, &ImVec2::new(600.0, 600.0));
+            view::board(model, &ImVec2::new(600.0, 600.0));
 
             ui.text(im_str!("Look at the board!"));
         });
