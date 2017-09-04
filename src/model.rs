@@ -223,6 +223,9 @@ impl Board {
     fn set_hex(&mut self, coord: &HexCoord, hex: Option<Hex>) {
         self.board[(coord.x + 2) as usize][(coord.y + 2) as usize] = hex;
     }
+    fn is_hex_extant(&self, coord: &HexCoord) -> bool {
+        self.get_hex(coord).is_some()
+    }
     // We return a Vec of tuples so that get_hex_field_neighbors and is_hex_removable know which
     // neighbors are on which side of the hex. They need to know this for different reasons:
     //   * get_hex_field_neighbors: the index of each neighboring field depends on which hex
@@ -245,9 +248,10 @@ impl Board {
             .filter(|&(_, &(x, y))| HexCoord::is_valid_coord(x, y))
             .filter_map(|(i, &(x, y))| {
                 let coord = HexCoord::new(x, y);
-                match *self.get_hex(&coord) {
-                    Some(_) => Some((i as u32, coord)),
-                    None => None,
+                if self.is_hex_extant(&coord) {
+                    Some((i as u32, coord))
+                } else {
+                    None
                 }
             })
             .collect()
@@ -318,7 +322,7 @@ impl Board {
             for y in -2..3 {
                 if HexCoord::is_valid_coord(x, y) {
                     let coord = HexCoord::new(x, y);
-                    if self.get_hex(&coord).is_some() {
+                    if self.is_hex_extant(&coord) {
                         coords.push(coord);
                     }
                 }
