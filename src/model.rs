@@ -170,12 +170,12 @@ impl Board {
             FieldCoord::new(coord.x, coord.y, (coord.f + 5) % 6),
         ];
 
-        for (i, neighbor) in self.get_hex_neighbors(&coord.to_hex()) {
-            if coord.f == i {
-                let f = (i + 3) % 6;
+        match self.get_hex_neighbor(&coord.to_hex(), coord.f) {
+            Some(neighbor) => {
+                let f = (coord.f + 3) % 6;
                 neighbors.push(neighbor.to_field(f));
-                break;
             }
+            None => {}
         }
 
         neighbors
@@ -233,6 +233,28 @@ impl Board {
     fn is_hex_extant(&self, coord: &HexCoord) -> bool {
         self.get_hex(coord).is_some()
     }
+    fn get_hex_neighbor(&self, coord: &HexCoord, direction: u32) -> Option<HexCoord> {
+        assert!(direction < 6);
+
+        let neighbors = [
+            (coord.x, coord.y + 1),
+            (coord.x + 1, coord.y),
+            (coord.x + 1, coord.y - 1),
+            (coord.x, coord.y - 1),
+            (coord.x - 1, coord.y),
+            (coord.x - 1, coord.y + 1),
+        ];
+
+        let (x, y) = neighbors[direction as usize];
+        if HexCoord::is_valid_coord(x, y) {
+            let coord = HexCoord::new(x, y);
+            if self.is_hex_extant(&coord) {
+                return Some(coord);
+            }
+        }
+        None
+    }
+    /*
     // We return a Vec of tuples so that get_hex_field_neighbors and is_hex_removable know which
     // neighbors are on which side of the hex. They need to know this for different reasons:
     //   * get_hex_field_neighbors: the index of each neighboring field depends on which hex
@@ -263,7 +285,6 @@ impl Board {
             })
             .collect()
     }
-    /*
     /// Return fields that share an edge with the given hex and are outside of the given hex. If a
     /// hex is removed from the board, pieces occupying that hex's field neighbors might be
     /// capturable.
