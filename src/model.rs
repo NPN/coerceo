@@ -39,12 +39,12 @@ impl Model {
     }
 }
 
+#[derive(PartialEq)]
 pub enum Turn {
     White,
     Black,
 }
 
-/*
 impl Turn {
     pub fn switch_turns(&mut self) {
         *self = match *self {
@@ -53,7 +53,6 @@ impl Turn {
         }
     }
 }
-*/
 
 pub struct Board {
     /*

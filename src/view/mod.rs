@@ -20,6 +20,7 @@ mod imgui;
 use imgui_sys::{self, ImVec2, ImVec4};
 
 use model::{FieldCoord, HexCoord, Model};
+use update::update;
 pub use view::imgui::run;
 
 const SQRT_3: f32 = 1.732_050_807_568_877_f32;
@@ -43,21 +44,13 @@ pub fn board(model: &mut Model, size: &ImVec2) {
         draw_hex(&hex, &origin, side_len);
     }
 
-    if mouse_click {
-        match pixel_to_field(&mouse_pos, &origin, side_len) {
-            Some(click) => if model.selected_piece.is_some() {
-                {
-                    let selected = model.selected_piece.as_ref().unwrap();
-                    if model.board.can_move_piece(selected, &click) {
-                        model.board.move_piece(selected, &click);
-                    }
-                }
-                model.selected_piece = None;
-            } else {
-                model.selected_piece = Some(click);
-            },
-            None => model.selected_piece = None,
-        }
+    let board_min = cursor_pos;
+    let board_max = add_vec(&cursor_pos, size);
+    if mouse_click && board_min.x <= mouse_pos.x && board_min.y <= mouse_pos.y &&
+        board_max.x >= mouse_pos.x && board_max.y >= mouse_pos.y
+    {
+        let click = pixel_to_field(&mouse_pos, &origin, side_len);
+        update(model, click);
     }
 
     if let Some(ref coord) = model.selected_piece {

@@ -22,12 +22,13 @@ extern crate imgui_glium_renderer;
 extern crate imgui_sys;
 
 mod model;
+mod update;
 mod view;
 
 use imgui::Ui;
 use imgui_sys::ImVec2;
 
-use model::Model;
+use model::{Model, Turn};
 
 fn main() {
     let mut model = Model::new();
@@ -57,7 +58,10 @@ fn test_ui(ui: &Ui, size: (f32, f32), model: &mut Model) -> bool {
 
             view::board(model, &ImVec2::new(600.0, 600.0));
 
-            ui.text(im_str!("Look at the board!"));
+            match model.turn {
+                Turn::White => ui.text(im_str!("It's white's turn.")),
+                Turn::Black => ui.text(im_str!("It's black's turn.")),
+            }
         });
 
     unsafe {
