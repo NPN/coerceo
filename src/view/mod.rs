@@ -25,6 +25,19 @@ pub use view::imgui::run;
 
 const SQRT_3: f32 = 1.732_050_807_568_877_f32;
 
+// #f3e4cf
+const FIELD_WHITE: [f32; 4] = [0.9529, 0.8941, 0.8118, 1.0];
+// #998578
+const FIELD_BLACK: [f32; 4] = [0.6, 0.5216, 0.4706, 1.0];
+// #ffffff
+const PIECE_WHITE: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
+// #000000
+const PIECE_OUTLINE: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
+// #757575
+const PIECE_BLACK: [f32; 4] = [0.4588, 0.4588, 0.4588, 1.0];
+// #f7b102
+const SELECT_HIGHLIGHT: [f32; 4] = [0.9686, 0.6941, 0.0078, 0.8];
+
 pub fn board(model: &mut Model, size: &ImVec2) {
     let mouse_click;
     let mut mouse_pos = ImVec2::default();
@@ -71,6 +84,10 @@ pub fn board(model: &mut Model, size: &ImVec2) {
     }
 }
 
+macro_rules! im_color {
+    ($v:expr) => (imgui_sys::igColorConvertFloat4ToU32(ImVec4::from($v)))
+}
+
 fn draw_hex(coord: &HexCoord, origin: &ImVec2, size: f32) {
     for i in 0..6 {
         draw_field(&coord.to_field(i), origin, size);
@@ -80,10 +97,11 @@ fn draw_hex(coord: &HexCoord, origin: &ImVec2, size: f32) {
 fn draw_field(coord: &FieldCoord, origin: &ImVec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     unsafe {
-        let white = imgui_sys::igColorConvertFloat4ToU32(ImVec4::new(1.0, 1.0, 1.0, 1.0));
-        let black = imgui_sys::igColorConvertFloat4ToU32(ImVec4::new(0.0, 0.0, 0.0, 1.0));
-
-        let color = if coord.is_white() { white } else { black };
+        let color = if coord.is_white() {
+            im_color!(FIELD_WHITE)
+        } else {
+            im_color!(FIELD_BLACK)
+        };
 
         let draw_list = imgui_sys::igGetWindowDrawList();
         imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, v3, color);
@@ -93,7 +111,7 @@ fn draw_field(coord: &FieldCoord, origin: &ImVec2, size: f32) {
 fn highlight_field(coord: &FieldCoord, origin: &ImVec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     unsafe {
-        let highlight = imgui_sys::igColorConvertFloat4ToU32(ImVec4::new(1.0, 1.0, 0.0, 0.7));
+        let highlight = im_color!(SELECT_HIGHLIGHT);
 
         let draw_list = imgui_sys::igGetWindowDrawList();
         imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, v3, highlight);
@@ -125,13 +143,15 @@ fn draw_piece(coord: &FieldCoord, origin: &ImVec2, size: f32) {
     let v3 = add_vec(&center, &mul_vec(&sub_vec(&v3, &center), SCALE));
 
     unsafe {
-        let white = imgui_sys::igColorConvertFloat4ToU32(ImVec4::new(1.0, 0.0, 0.0, 1.0));
-        let black = imgui_sys::igColorConvertFloat4ToU32(ImVec4::new(0.0, 1.0, 0.0, 1.0));
-
-        let color = if coord.is_white() { white } else { black };
+        let color = if coord.is_white() {
+            im_color!(PIECE_WHITE)
+        } else {
+            im_color!(PIECE_BLACK)
+        };
 
         let draw_list = imgui_sys::igGetWindowDrawList();
         imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, v3, color);
+        imgui_sys::ImDrawList_AddTriangle(draw_list, v1, v2, v3, im_color!(PIECE_OUTLINE), 2.5);
     }
 }
 
