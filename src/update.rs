@@ -24,13 +24,11 @@ pub fn update(model: &mut Model, click: Option<FieldCoord>) {
         {
             if model.board.is_piece_on_field(&click) {
                 model.selected_piece = Some(click);
-            } else if model.selected_piece.is_some() {
-                {
-                    let selected = model.selected_piece.as_ref().unwrap();
-                    if model.board.can_move_piece(selected, &click) {
-                        model.board.move_piece(selected, &click);
-                        model.turn.switch_turns();
-                    }
+            } else if let Some(selected) = model.selected_piece.take() {
+                if model.board.can_move_piece(&selected, &click) {
+                    model.board.move_piece(&selected, &click);
+                    model.last_move = Some((Some(selected), click));
+                    model.turn.switch_turns();
                 }
                 model.selected_piece = None;
             }

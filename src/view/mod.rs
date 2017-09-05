@@ -37,6 +37,8 @@ const PIECE_OUTLINE: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 const PIECE_BLACK: [f32; 4] = [0.4588, 0.4588, 0.4588, 1.0];
 // #f7b102
 const SELECT_HIGHLIGHT: [f32; 4] = [0.9686, 0.6941, 0.0078, 0.8];
+// #ffff00
+const LAST_MOVE_HIGHLIGHT: [f32; 4] = [1.0, 1.0, 0.0, 0.8];
 
 pub fn board(model: &mut Model, size: &ImVec2) {
     let mouse_click;
@@ -66,8 +68,15 @@ pub fn board(model: &mut Model, size: &ImVec2) {
         update(model, click);
     }
 
+    if let Some((ref from, ref to)) = model.last_move {
+        if let Some(ref from) = *from {
+            highlight_field(LAST_MOVE_HIGHLIGHT, from, &origin, side_len);
+        }
+        highlight_field(LAST_MOVE_HIGHLIGHT, to, &origin, side_len);
+    }
+
     if let Some(ref coord) = model.selected_piece {
-        highlight_field(coord, &origin, side_len);
+        highlight_field(SELECT_HIGHLIGHT, coord, &origin, side_len);
     }
 
     for hex in model.board.extant_hexes() {
@@ -108,10 +117,10 @@ fn draw_field(coord: &FieldCoord, origin: &ImVec2, size: f32) {
     }
 }
 
-fn highlight_field(coord: &FieldCoord, origin: &ImVec2, size: f32) {
+fn highlight_field(color: [f32; 4], coord: &FieldCoord, origin: &ImVec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     unsafe {
-        let highlight = im_color!(SELECT_HIGHLIGHT);
+        let highlight = im_color!(color);
 
         let draw_list = imgui_sys::igGetWindowDrawList();
         imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, v3, highlight);
