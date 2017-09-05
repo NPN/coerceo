@@ -19,8 +19,8 @@ use model::{FieldCoord, Model, Turn};
 
 pub fn update(model: &mut Model, click: Option<FieldCoord>) {
     match click {
-        Some(click) => if (model.turn == Turn::White && click.f() % 2 == 0) ||
-            (model.turn == Turn::Black && click.f() % 2 == 1)
+        Some(click) => if (model.turn == Turn::White && click.is_white()) ||
+            (model.turn == Turn::Black && click.is_black())
         {
             if model.board.is_piece_on_field(&click) {
                 model.selected_piece = Some(click);

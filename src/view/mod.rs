@@ -83,7 +83,7 @@ fn draw_field(coord: &FieldCoord, origin: &ImVec2, size: f32) {
         let white = imgui_sys::igColorConvertFloat4ToU32(ImVec4::new(1.0, 1.0, 1.0, 1.0));
         let black = imgui_sys::igColorConvertFloat4ToU32(ImVec4::new(0.0, 0.0, 0.0, 1.0));
 
-        let color = if coord.f() % 2 == 0 { white } else { black };
+        let color = if coord.is_white() { white } else { black };
 
         let draw_list = imgui_sys::igGetWindowDrawList();
         imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, v3, color);
@@ -128,7 +128,7 @@ fn draw_piece(coord: &FieldCoord, origin: &ImVec2, size: f32) {
         let white = imgui_sys::igColorConvertFloat4ToU32(ImVec4::new(1.0, 0.0, 0.0, 1.0));
         let black = imgui_sys::igColorConvertFloat4ToU32(ImVec4::new(0.0, 1.0, 0.0, 1.0));
 
-        let color = if coord.f() % 2 == 0 { white } else { black };
+        let color = if coord.is_white() { white } else { black };
 
         let draw_list = imgui_sys::igGetWindowDrawList();
         imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, v3, color);
