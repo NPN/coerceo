@@ -25,7 +25,8 @@ pub struct Model {
     pub selected_piece: Option<FieldCoord>,
     // If a piece moves off of a hex, and that hex gets removed, the last move will not have a
     // "from" field, only a "to" field
-    pub last_move: Option<(Option<FieldCoord>, FieldCoord)>
+    pub last_move: Option<(Option<FieldCoord>, FieldCoord)>,
+    pub available_moves: Option<Vec<FieldCoord>>,
 }
 
 impl Model {
@@ -39,6 +40,7 @@ impl Model {
             black_hexes: 0,
             selected_piece: None,
             last_move: None,
+            available_moves: None,
         }
     }
 }

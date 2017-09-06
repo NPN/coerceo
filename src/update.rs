@@ -23,6 +23,14 @@ pub fn update(model: &mut Model, click: Option<FieldCoord>) {
             (model.turn == Turn::Black && click.is_black())
         {
             if model.board.is_piece_on_field(&click) {
+                let available_moves = model
+                    .board
+                    .get_field_vertex_neighbors(&click)
+                    .into_iter()
+                    .filter(|c| !model.board.is_piece_on_field(c))
+                    .collect();
+
+                model.available_moves = Some(available_moves);
                 model.selected_piece = Some(click);
             } else if let Some(selected) = model.selected_piece.take() {
                 if model.board.can_move_piece(&selected, &click) {
@@ -30,11 +38,16 @@ pub fn update(model: &mut Model, click: Option<FieldCoord>) {
                     model.last_move = Some((Some(selected), click));
                     model.turn.switch_turns();
                 }
-                model.selected_piece = None;
+                clear_selection(model);
             }
         } else {
-            model.selected_piece = None;
+            clear_selection(model);
         },
-        None => model.selected_piece = None,
+        None => clear_selection(model),
     }
+}
+
+fn clear_selection(model: &mut Model) {
+    model.selected_piece = None;
+    model.available_moves = None;
 }

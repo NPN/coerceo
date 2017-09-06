@@ -79,6 +79,12 @@ pub fn board(model: &mut Model, size: &ImVec2) {
         highlight_field(SELECT_HIGHLIGHT, coord, &origin, side_len);
     }
 
+    if let Some(ref coords) = model.available_moves {
+        for coord in coords {
+            highlight_field_dot(SELECT_HIGHLIGHT, coord, &origin, side_len);
+        }
+    }
+
     for hex in model.board.extant_hexes() {
         for f in 0..6 {
             let coord = hex.to_field(f);
@@ -127,23 +133,25 @@ fn highlight_field(color: [f32; 4], coord: &FieldCoord, origin: &ImVec2, size: f
     }
 }
 
+fn highlight_field_dot(color: [f32; 4], coord: &FieldCoord, origin: &ImVec2, size: f32) {
+    let center = field_center(coord, origin, size);
+    unsafe {
+        let highlight = im_color!(color);
+
+        let draw_list = imgui_sys::igGetWindowDrawList();
+        imgui_sys::ImDrawList_AddCircleFilled(
+            draw_list,
+            center,
+            size / (4.0 * SQRT_3),
+            highlight,
+            15,
+        );
+    }
+}
+
 fn draw_piece(coord: &FieldCoord, origin: &ImVec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
-    let center_x = (v1.x + v2.x + v3.x) / 3.0;
-    let min_y = if v1.y < v2.y || v1.y < v3.y {
-        v1.y
-    } else if v2.y < v3.y {
-        v2.y
-    } else {
-        v3.y
-    };
-    let center_y = if coord.f() % 2 == 0 {
-        min_y + size / (2.0 * SQRT_3)
-    } else {
-        min_y + size / SQRT_3
-    };
-
-    let center = ImVec2::new(center_x, center_y);
+    let center = field_center(coord, origin, size);
 
     const SCALE: f32 = 0.7;
 
@@ -162,6 +170,25 @@ fn draw_piece(coord: &FieldCoord, origin: &ImVec2, size: f32) {
         imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, v3, color);
         imgui_sys::ImDrawList_AddTriangle(draw_list, v1, v2, v3, im_color!(PIECE_OUTLINE), 2.5);
     }
+}
+
+fn field_center(coord: &FieldCoord, origin: &ImVec2, size: f32) -> ImVec2 {
+    let (v1, v2, v3) = field_vertexes(coord, origin, size);
+    let center_x = (v1.x + v2.x + v3.x) / 3.0;
+    let min_y = if v1.y < v2.y || v1.y < v3.y {
+        v1.y
+    } else if v2.y < v3.y {
+        v2.y
+    } else {
+        v3.y
+    };
+    let center_y = if coord.f() % 2 == 0 {
+        min_y + size / (2.0 * SQRT_3)
+    } else {
+        min_y + size / SQRT_3
+    };
+
+    ImVec2::new(center_x, center_y)
 }
 
 fn field_vertexes(coord: &FieldCoord, origin: &ImVec2, size: f32) -> (ImVec2, ImVec2, ImVec2) {
