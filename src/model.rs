@@ -175,12 +175,8 @@ impl Board {
             FieldCoord::new(coord.x, coord.y, (coord.f + 5) % 6),
         ];
 
-        match self.get_hex_neighbor(&coord.to_hex(), coord.f) {
-            Some(neighbor) => {
-                let f = (coord.f + 3) % 6;
-                neighbors.push(neighbor.to_field(f));
-            }
-            None => {}
+        if let Some(neighbor) = self.get_hex_neighbor(&coord.to_hex(), coord.f) {
+            neighbors.push(neighbor.to_field((coord.f + 3) % 6));
         }
 
         neighbors
