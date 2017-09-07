@@ -28,7 +28,7 @@ mod view;
 use imgui::Ui;
 use imgui_sys::ImVec2;
 
-use model::{Model, Turn};
+use model::{Color, Model};
 
 fn main() {
     let mut model = Model::new();
@@ -59,8 +59,8 @@ fn test_ui(ui: &Ui, size: (f32, f32), model: &mut Model) -> bool {
             view::board(model, &ImVec2::new(600.0, 600.0));
 
             match model.turn {
-                Turn::White => ui.text(im_str!("It's white's turn.")),
-                Turn::Black => ui.text(im_str!("It's black's turn.")),
+                Color::White => ui.text(im_str!("It's white's turn.")),
+                Color::Black => ui.text(im_str!("It's black's turn.")),
             }
         });
 

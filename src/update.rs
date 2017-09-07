@@ -15,12 +15,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use model::{FieldCoord, Model, Turn};
+use model::{Color, FieldCoord, Model};
 
 pub fn update(model: &mut Model, click: Option<FieldCoord>) {
     match click {
-        Some(click) => if (model.turn == Turn::White && click.is_white()) ||
-            (model.turn == Turn::Black && click.is_black())
+        Some(click) => if (model.turn == Color::White && click.is_white()) ||
+            (model.turn == Color::Black && click.is_black())
         {
             if model.board.is_piece_on_field(&click) {
                 if model.selected_piece.as_ref() == Some(&click) {
@@ -40,7 +40,7 @@ pub fn update(model: &mut Model, click: Option<FieldCoord>) {
                 if model.board.can_move_piece(&selected, &click) {
                     model.board.move_piece(&selected, &click);
                     model.last_move = Some((Some(selected), click));
-                    model.turn.switch_turns();
+                    model.switch_turns();
                 }
                 clear_selection(model);
             }

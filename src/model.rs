@@ -17,7 +17,7 @@
 
 pub struct Model {
     pub board: Board,
-    pub turn: Turn,
+    pub turn: Color,
     pub white_pieces: u32,
     pub white_hexes: u32,
     pub black_pieces: u32,
@@ -33,7 +33,7 @@ impl Model {
     pub fn new() -> Model {
         Model {
             board: Board::new(),
-            turn: Turn::White,
+            turn: Color::White,
             white_pieces: 18,
             white_hexes: 0,
             black_pieces: 18,
@@ -43,21 +43,18 @@ impl Model {
             available_moves: None,
         }
     }
+    pub fn switch_turns(&mut self) {
+        self.turn = match self.turn {
+            Color::White => Color::Black,
+            Color::Black => Color::White,
+        }
+    }
 }
 
 #[derive(PartialEq)]
-pub enum Turn {
+pub enum Color {
     White,
     Black,
-}
-
-impl Turn {
-    pub fn switch_turns(&mut self) {
-        *self = match *self {
-            Turn::White => Turn::Black,
-            Turn::Black => Turn::White,
-        }
-    }
 }
 
 pub struct Board {
