@@ -23,15 +23,19 @@ pub fn update(model: &mut Model, click: Option<FieldCoord>) {
             (model.turn == Turn::Black && click.is_black())
         {
             if model.board.is_piece_on_field(&click) {
-                let available_moves = model
-                    .board
-                    .get_field_vertex_neighbors(&click)
-                    .into_iter()
-                    .filter(|c| !model.board.is_piece_on_field(c))
-                    .collect();
+                if model.selected_piece.as_ref() == Some(&click) {
+                    clear_selection(model);
+                } else {
+                    let available_moves = model
+                        .board
+                        .get_field_vertex_neighbors(&click)
+                        .into_iter()
+                        .filter(|c| !model.board.is_piece_on_field(c))
+                        .collect();
 
-                model.available_moves = Some(available_moves);
-                model.selected_piece = Some(click);
+                    model.available_moves = Some(available_moves);
+                    model.selected_piece = Some(click);
+                }
             } else if let Some(selected) = model.selected_piece.take() {
                 if model.board.can_move_piece(&selected, &click) {
                     model.board.move_piece(&selected, &click);
