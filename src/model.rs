@@ -302,6 +302,7 @@ impl Board {
         }
         neighbors
     }
+    */
     /// A hex is removable (and must be removed) if it is empty and is "attached to the board by 3
     /// or less adjacent sides."
     pub fn is_hex_removable(&self, coord: &HexCoord) -> bool {
@@ -312,15 +313,18 @@ impl Board {
             None => panic!("The hex at {:?} has already been removed", coord),
         }
 
-        let neighbor_idxs: Vec<u32> = self.get_hex_neighbors(coord).iter().map(|&(i, _)| i).collect();
-        let neighbor_idxs_slice = neighbor_idxs.as_slice();
+        let neighbor_indexes: Vec<u32> = vec![0, 1, 2, 3, 4, 5]
+            .into_iter()
+            .filter(|&f| self.get_hex_neighbor(coord, f).is_some())
+            .collect();
+        let neighbor_indexes = neighbor_indexes.as_slice();
 
-        match neighbor_idxs_slice.len() {
+        match neighbor_indexes.len() {
             0 => panic!("A hex at {:?} is empty and has no neighbors", coord),
             1 => true,
             2 => {
                 let valid_idx_combos = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [0, 5]];
-                valid_idx_combos.iter().any(|c| c == neighbor_idxs_slice)
+                valid_idx_combos.iter().any(|c| c == neighbor_indexes)
             }
             3 => {
                 let valid_idx_combos = [
@@ -331,11 +335,12 @@ impl Board {
                     [0, 4, 5],
                     [0, 1, 5],
                 ];
-                valid_idx_combos.iter().any(|c| c == neighbor_idxs_slice)
+                valid_idx_combos.iter().any(|c| c == neighbor_indexes)
             }
             _ => false,
         }
     }
+    /*
     pub fn remove_hex(&mut self, coord: &HexCoord) {
         assert!(
             self.is_hex_removable(coord),
