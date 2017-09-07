@@ -218,7 +218,6 @@ impl Board {
         self.set_field(from, Field::Empty);
         self.set_field(to, Field::Piece);
     }
-    /*
     pub fn remove_piece(&mut self, coord: &FieldCoord) {
         assert_eq!(
             self.get_field(coord),
@@ -228,7 +227,6 @@ impl Board {
         );
         self.set_field(coord, Field::Empty);
     }
-    */
     fn get_hex(&self, coord: &HexCoord) -> &Option<Hex> {
         &self.board[(coord.x + 2) as usize][(coord.y + 2) as usize]
     }
@@ -259,50 +257,19 @@ impl Board {
         }
         None
     }
-    /*
-    // We return a Vec of tuples so that get_hex_field_neighbors and is_hex_removable know which
-    // neighbors are on which side of the hex. They need to know this for different reasons:
-    //   * get_hex_field_neighbors: the index of each neighboring field depends on which hex
-    //                              neighbor that field neighbor is on
-    //   * is_hex_removable: a hex is removable only if it is "attached to the board by 3 or less
-    //                       adjacent sides"
-    fn get_hex_neighbors(&self, coord: &HexCoord) -> Vec<(u32, HexCoord)> {
-        let neighbors = [
-            (coord.x, coord.y + 1),
-            (coord.x + 1, coord.y),
-            (coord.x + 1, coord.y - 1),
-            (coord.x, coord.y - 1),
-            (coord.x - 1, coord.y),
-            (coord.x - 1, coord.y + 1),
-        ];
-
-        neighbors
-            .iter()
-            .enumerate()
-            .filter(|&(_, &(x, y))| HexCoord::is_valid_coord(x, y))
-            .filter_map(|(i, &(x, y))| {
-                let coord = HexCoord::new(x, y);
-                if self.is_hex_extant(&coord) {
-                    Some((i as u32, coord))
-                } else {
-                    None
-                }
-            })
-            .collect()
-    }
     /// Return fields that share an edge with the given hex and are outside of the given hex. If a
     /// hex is removed from the board, pieces occupying that hex's field neighbors might be
     /// capturable.
     pub fn get_hex_field_neighbors(&self, coord: &HexCoord) -> Vec<FieldCoord> {
         let mut neighbors = vec![];
 
-        for (i, neighbor) in self.get_hex_neighbors(coord) {
-            let f = (i + 3) % 6;
-            neighbors.push(neighbor.to_field(f));
+        for f in 0..6 {
+            if let Some(neighbor) = self.get_hex_neighbor(coord, f) {
+                neighbors.push(neighbor.to_field((f + 3) % 6));
+            }
         }
         neighbors
     }
-    */
     /// A hex is removable (and must be removed) if it is empty and is "attached to the board by 3
     /// or less adjacent sides."
     pub fn is_hex_removable(&self, coord: &HexCoord) -> bool {
@@ -340,18 +307,20 @@ impl Board {
             _ => false,
         }
     }
-    /*
     pub fn remove_hex(&mut self, coord: &HexCoord) {
         assert!(
             self.is_hex_removable(coord),
             "Cannot remove the hex at {:?} which is {:?} and has {} neighbors",
             coord,
             self.get_hex(coord),
-            self.get_hex_neighbors(coord).len(),
+            [0, 1, 2, 3, 4, 5]
+                .into_iter()
+                .filter(|&&f| self.get_hex_neighbor(coord, f).is_some())
+                .collect::<Vec<_>>()
+                .len(),
         );
         self.set_hex(coord, None);
     }
-    */
     /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
     ///
     /// Return the coordinates of the hexes that have not been removed yet.
