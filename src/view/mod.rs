@@ -19,7 +19,7 @@ mod imgui;
 
 use imgui_sys::{self, ImVec2, ImVec4};
 
-use model::{FieldCoord, HexCoord, Model};
+use model::{Color, FieldCoord, HexCoord, Model};
 use update::update;
 pub use view::imgui::run;
 
@@ -112,10 +112,9 @@ fn draw_hex(coord: &HexCoord, origin: &ImVec2, size: f32) {
 fn draw_field(coord: &FieldCoord, origin: &ImVec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     unsafe {
-        let color = if coord.is_white() {
-            im_color!(FIELD_WHITE)
-        } else {
-            im_color!(FIELD_BLACK)
+        let color = match coord.color() {
+            Color::White => im_color!(FIELD_WHITE),
+            Color::Black => im_color!(FIELD_BLACK),
         };
 
         let draw_list = imgui_sys::igGetWindowDrawList();
@@ -160,10 +159,9 @@ fn draw_piece(coord: &FieldCoord, origin: &ImVec2, size: f32) {
     let v3 = add_vec(&center, &mul_vec(&sub_vec(&v3, &center), SCALE));
 
     unsafe {
-        let color = if coord.is_white() {
-            im_color!(PIECE_WHITE)
-        } else {
-            im_color!(PIECE_BLACK)
+        let color = match coord.color() {
+            Color::White => im_color!(PIECE_WHITE),
+            Color::Black => im_color!(PIECE_BLACK),
         };
 
         let draw_list = imgui_sys::igGetWindowDrawList();

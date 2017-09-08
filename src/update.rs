@@ -15,13 +15,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use model::{Color, FieldCoord, Model};
+use model::{FieldCoord, Model};
 
 pub fn update(model: &mut Model, click: Option<FieldCoord>) {
     match click {
-        Some(click) => if (model.turn == Color::White && click.is_white()) ||
-            (model.turn == Color::Black && click.is_black())
-        {
+        Some(click) => if model.turn == click.color() {
             if model.board.is_piece_on_field(&click) {
                 if model.selected_piece.as_ref() == Some(&click) {
                     clear_selection(model);

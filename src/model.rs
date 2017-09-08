@@ -367,11 +367,12 @@ impl FieldCoord {
     pub fn is_valid_coord(x: i32, y: i32, f: u32) -> bool {
         (x + y).abs() <= 2 && x.abs() <= 2 && y.abs() <= 2 && f < 6
     }
-    pub fn is_white(&self) -> bool {
-        self.f % 2 == 1
-    }
-    pub fn is_black(&self) -> bool {
-        self.f % 2 == 0
+    pub fn color(&self) -> Color {
+        if self.f % 2 == 0 {
+            Color::Black
+        } else {
+            Color::White
+        }
     }
 }
 
