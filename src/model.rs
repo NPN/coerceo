@@ -172,8 +172,8 @@ impl Board {
             FieldCoord::new(coord.x, coord.y, (coord.f + 5) % 6),
         ];
 
-        if let Some(neighbor) = self.get_hex_neighbor(&coord.to_hex(), coord.f) {
-            neighbors.push(neighbor.to_field((coord.f + 3) % 6));
+        if let Some(hex) = self.get_hex_neighbor(&coord.to_hex(), coord.f) {
+            neighbors.push(hex.to_field((coord.f + 3) % 6));
         }
 
         neighbors
@@ -183,8 +183,8 @@ impl Board {
     pub fn get_field_vertex_neighbors(&self, coord: &FieldCoord) -> Vec<FieldCoord> {
         // A field's vertex neighbors can be defined as the edge neighbors of its edge neighbors
         let mut neighbors = vec![];
-        for neighbor in self.get_field_edge_neighbors(coord) {
-            neighbors.append(&mut self.get_field_edge_neighbors(&neighbor));
+        for field in self.get_field_edge_neighbors(coord) {
+            neighbors.append(&mut self.get_field_edge_neighbors(&field));
         }
         // A field is not its own neighbor
         neighbors.into_iter().filter(|n| n != coord).collect()
@@ -257,8 +257,8 @@ impl Board {
         let mut neighbors = vec![];
 
         for f in 0..6 {
-            if let Some(neighbor) = self.get_hex_neighbor(coord, f) {
-                neighbors.push(neighbor.to_field((f + 3) % 6));
+            if let Some(hex) = self.get_hex_neighbor(coord, f) {
+                neighbors.push(hex.to_field((f + 3) % 6));
             }
         }
         neighbors
