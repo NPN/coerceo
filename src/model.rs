@@ -226,8 +226,14 @@ impl Board {
     fn set_hex(&mut self, coord: &HexCoord, hex: Option<Hex>) {
         self.board[(coord.x + 2) as usize][(coord.y + 2) as usize] = hex;
     }
-    fn is_hex_extant(&self, coord: &HexCoord) -> bool {
-        self.get_hex(coord).is_some()
+    fn try_hex_coord(&self, x: i32, y: i32) -> Option<HexCoord> {
+        if HexCoord::is_valid_coord(x, y) {
+            let coord = HexCoord::new(x, y);
+            if self.get_hex(&coord).is_some() {
+                return Some(coord);
+            }
+        }
+        None
     }
     fn get_hex_neighbor(&self, coord: &HexCoord, direction: u32) -> Option<HexCoord> {
         assert!(direction < 6);
@@ -242,13 +248,7 @@ impl Board {
         ];
 
         let (x, y) = neighbors[direction as usize];
-        if HexCoord::is_valid_coord(x, y) {
-            let coord = HexCoord::new(x, y);
-            if self.is_hex_extant(&coord) {
-                return Some(coord);
-            }
-        }
-        None
+        self.try_hex_coord(x, y)
     }
     /// Return fields that share an edge with the given hex and are outside of the given hex. If a
     /// hex is removed from the board, pieces occupying that hex's field neighbors might be
@@ -322,11 +322,8 @@ impl Board {
 
         for x in -2..3 {
             for y in -2..3 {
-                if HexCoord::is_valid_coord(x, y) {
-                    let coord = HexCoord::new(x, y);
-                    if self.is_hex_extant(&coord) {
-                        coords.push(coord);
-                    }
+                if let Some(hex) = self.try_hex_coord(x, y) {
+                    coords.push(hex);
                 }
             }
         }
