@@ -15,11 +15,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use model::{FieldCoord, Model};
+use model::Model;
+use view::Event;
 
-pub fn update(model: &mut Model, click: Option<FieldCoord>) {
-    match click {
-        Some(click) => if model.turn == click.color() {
+pub fn update(model: &mut Model, event: Option<Event>) {
+    match event {
+        Some(Event::Click(click)) => if model.turn == click.color() {
             if model.board.is_piece_on_field(&click) {
                 if model.selected_piece.as_ref() == Some(&click) {
                     clear_selection(model);

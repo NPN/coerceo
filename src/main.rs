@@ -26,9 +26,8 @@ mod update;
 mod view;
 
 use imgui::Ui;
-use imgui_sys::ImVec2;
 
-use model::{Color, Model};
+use model::Model;
 
 fn main() {
     let mut model = Model::new();
@@ -37,36 +36,14 @@ fn main() {
         String::from("Coerceo"),
         (800, 800),
         [1.0, 1.0, 1.0, 1.0],
-        |ui, size| test_ui(ui, size, &mut model),
+        |ui, size| game_loop(ui, size, &mut model),
     );
 }
 
-fn test_ui(ui: &Ui, size: (f32, f32), model: &mut Model) -> bool {
-    unsafe {
-        imgui_sys::igPushStyleVar(imgui_sys::ImGuiStyleVar::WindowRounding, 0.0);
+fn game_loop(ui: &Ui, size: (f32, f32), model: &mut Model) -> bool {
+    let event = view::draw(ui, size, model);
+    if event.is_some() {
+        update::update(model, event);
     }
-
-    ui.window(im_str!("Coerceo"))
-        .size(size, imgui::ImGuiSetCond_Always)
-        .position((0.0, 0.0), imgui::ImGuiSetCond_Once)
-        .title_bar(false)
-        .resizable(false)
-        .movable(false)
-        .collapsible(false)
-        .build(|| {
-            ui.text(im_str!("Welcome to Coerceo!"));
-
-            view::board(model, &ImVec2::new(600.0, 600.0));
-
-            match model.turn {
-                Color::White => ui.text(im_str!("It's white's turn.")),
-                Color::Black => ui.text(im_str!("It's black's turn.")),
-            }
-        });
-
-    unsafe {
-        imgui_sys::igPopStyleVar(1);
-    }
-
     true
 }
