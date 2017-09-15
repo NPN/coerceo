@@ -41,7 +41,6 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
         .title_bar(false)
         .resizable(false)
         .movable(false)
-        .collapsible(false)
         .build(|| {
             ui.text(im_str!("Welcome to Coerceo!"));
 
