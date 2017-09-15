@@ -179,10 +179,9 @@ fn field_center(coord: &FieldCoord, origin: &ImVec2, size: f32) -> ImVec2 {
     } else {
         v3.y
     };
-    let center_y = if coord.f() % 2 == 0 {
-        min_y + size / (2.0 * SQRT_3)
-    } else {
-        min_y + size / SQRT_3
+    let center_y = match coord.color() {
+        Color::Black => min_y + size / (2.0 * SQRT_3),
+        Color::White => min_y + size / SQRT_3,
     };
 
     ImVec2::new(center_x, center_y)
