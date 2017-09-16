@@ -19,34 +19,31 @@ use model::Model;
 use view::Event;
 
 pub fn update(model: &mut Model, event: Option<Event>) {
-    match event {
-        Some(Event::Click(click)) => if model.turn == click.color() {
-            if model.board.is_piece_on_field(&click) {
-                if model.selected_piece.as_ref() == Some(&click) {
-                    clear_selection(model);
+    if let Some(event) = event {
+        use view::Event::*;
+        match event {
+            Click(field) => {
+                if model.turn == field.color() {
+                    if model.board.is_piece_on_field(&field) {
+                        if model.selected_piece.as_ref() == Some(&field) {
+                            clear_selection(model);
+                        } else {
+                            model.available_moves = Some(model.board.get_available_moves(&field));
+                            model.selected_piece = Some(field);
+                        }
+                    } else if let Some(selected) = model.selected_piece.take() {
+                        if model.board.can_move_piece(&selected, &field) {
+                            model.board.move_piece(&selected, &field);
+                            model.last_move = Some((Some(selected), field));
+                            model.switch_turns();
+                        }
+                        clear_selection(model);
+                    }
                 } else {
-                    let available_moves = model
-                        .board
-                        .get_field_vertex_neighbors(&click)
-                        .into_iter()
-                        .filter(|c| !model.board.is_piece_on_field(c))
-                        .collect();
-
-                    model.available_moves = Some(available_moves);
-                    model.selected_piece = Some(click);
+                    clear_selection(model);
                 }
-            } else if let Some(selected) = model.selected_piece.take() {
-                if model.board.can_move_piece(&selected, &click) {
-                    model.board.move_piece(&selected, &click);
-                    model.last_move = Some((Some(selected), click));
-                    model.switch_turns();
-                }
-                clear_selection(model);
             }
-        } else {
-            clear_selection(model);
-        },
-        None => clear_selection(model),
+        }
     }
 }
 

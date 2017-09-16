@@ -189,6 +189,16 @@ impl Board {
         // A field is not its own neighbor
         neighbors.into_iter().filter(|n| n != coord).collect()
     }
+    pub fn get_available_moves(&self, field: &FieldCoord) -> Vec<FieldCoord> {
+        if self.is_piece_on_field(field) {
+            self.get_field_vertex_neighbors(&field)
+                .into_iter()
+                .filter(|c| !self.is_piece_on_field(c))
+                .collect()
+        } else {
+            vec![]
+        }
+    }
     pub fn can_move_piece(&self, from: &FieldCoord, to: &FieldCoord) -> bool {
         self.is_piece_on_field(from) && !self.is_piece_on_field(to) &&
             self.get_field_vertex_neighbors(from).contains(to)
