@@ -191,7 +191,7 @@ impl Board {
     }
     pub fn get_available_moves(&self, field: &FieldCoord) -> Vec<FieldCoord> {
         if self.is_piece_on_field(field) {
-            self.get_field_vertex_neighbors(&field)
+            self.get_field_vertex_neighbors(field)
                 .into_iter()
                 .filter(|c| !self.is_piece_on_field(c))
                 .collect()
@@ -358,12 +358,6 @@ impl FieldCoord {
     pub fn new(x: i32, y: i32, f: u32) -> FieldCoord {
         assert!(Self::is_valid_coord(x, y, f));
         FieldCoord { x, y, f }
-    }
-    pub fn x(&self) -> i32 {
-        self.x
-    }
-    pub fn y(&self) -> i32 {
-        self.y
     }
     pub fn f(&self) -> u32 {
         self.f
