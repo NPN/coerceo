@@ -23,9 +23,7 @@ pub struct Model {
     pub black_pieces: u32,
     pub black_hexes: u32,
     pub selected_piece: Option<FieldCoord>,
-    // If a piece moves off of a hex, and that hex gets removed, the last move will not have a
-    // "from" field, only a "to" field
-    pub last_move: Option<(Option<FieldCoord>, FieldCoord)>,
+    pub last_move: Option<(FieldCoord, FieldCoord)>,
     pub available_moves: Option<Vec<FieldCoord>>,
 }
 
@@ -136,7 +134,7 @@ impl Board {
         board
     }
 
-    fn get_field(&self, coord: &FieldCoord) -> &Field {
+    pub fn get_field(&self, coord: &FieldCoord) -> &Field {
         match *self.get_hex(&coord.to_hex()) {
             Some(ref hex) => &hex[coord.f as usize],
             None => panic!(
@@ -230,7 +228,7 @@ impl Board {
         );
         self.set_field(coord, Field::Empty);
     }
-    fn get_hex(&self, coord: &HexCoord) -> &Option<Hex> {
+    pub fn get_hex(&self, coord: &HexCoord) -> &Option<Hex> {
         &self.board[(coord.x + 2) as usize][(coord.y + 2) as usize]
     }
     fn set_hex(&mut self, coord: &HexCoord, hex: Option<Hex>) {
@@ -245,7 +243,7 @@ impl Board {
         }
         None
     }
-    fn get_hex_neighbor(&self, coord: &HexCoord, direction: u32) -> Option<HexCoord> {
+    pub fn get_hex_neighbor(&self, coord: &HexCoord, direction: u32) -> Option<HexCoord> {
         assert!(direction < 6);
 
         let neighbors = [
@@ -280,7 +278,7 @@ impl Board {
             Some(hex) => if hex.iter().any(|&f| f == Field::Piece) {
                 return false;
             },
-            None => panic!("The hex at {:?} has already been removed", coord),
+            None => return false,
         }
 
         let neighbor_indexes: Vec<u32> = vec![0, 1, 2, 3, 4, 5]

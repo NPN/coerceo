@@ -57,7 +57,7 @@ pub fn board(model: &Model, size: &ImVec2) -> Option<Event> {
     }
 
     if let Some((ref from, ref to)) = model.last_move {
-        if let Some(ref from) = *from {
+        if model.board.get_hex(&from.to_hex()).is_some() {
             highlight_field(LAST_MOVE_HIGHLIGHT, from, &origin, side_len);
         }
         highlight_field(LAST_MOVE_HIGHLIGHT, to, &origin, side_len);
