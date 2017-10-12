@@ -327,11 +327,7 @@ fn round_hex_coord(x: f32, y: f32) -> Option<HexCoord> {
     let rx = rx as i32;
     let ry = ry as i32;
 
-    if HexCoord::is_valid_coord(rx, ry) {
-        Some(HexCoord::new(rx, ry))
-    } else {
-        None
-    }
+    HexCoord::try_new(rx, ry)
 }
 
 fn add_vec(lhs: &ImVec2, rhs: &ImVec2) -> ImVec2 {

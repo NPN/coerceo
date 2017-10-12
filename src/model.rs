@@ -233,9 +233,8 @@ impl Board {
     fn set_hex(&mut self, coord: &HexCoord, hex: Option<Hex>) {
         self.board[(coord.x + 2) as usize][(coord.y + 2) as usize] = hex;
     }
-    fn try_hex_coord(&self, x: i32, y: i32) -> Option<HexCoord> {
-        if HexCoord::is_valid_coord(x, y) {
-            let coord = HexCoord::new(x, y);
+    fn try_hex(&self, x: i32, y: i32) -> Option<HexCoord> {
+        if let Some(coord) = HexCoord::try_new(x, y) {
             if self.is_hex_extant(&coord) {
                 return Some(coord);
             }
@@ -255,7 +254,7 @@ impl Board {
         ];
 
         let (x, y) = neighbors[direction as usize];
-        self.try_hex_coord(x, y)
+        self.try_hex(x, y)
     }
     /// A hex is removable (and must be removed) if it is empty and is "attached to the board by 3
     /// or less adjacent sides."
@@ -322,7 +321,7 @@ impl Board {
 
         for x in -2..3 {
             for y in -2..3 {
-                if let Some(hex) = self.try_hex_coord(x, y) {
+                if let Some(hex) = self.try_hex(x, y) {
                     coords.push(hex);
                 }
             }
@@ -355,7 +354,7 @@ impl FieldCoord {
     pub fn to_hex(&self) -> HexCoord {
         HexCoord::new(self.x, self.y)
     }
-    pub fn is_valid_coord(x: i32, y: i32, f: u32) -> bool {
+    fn is_valid_coord(x: i32, y: i32, f: u32) -> bool {
         (x + y).abs() <= 2 && x.abs() <= 2 && y.abs() <= 2 && f < 6
     }
     pub fn color(&self) -> Color {
@@ -372,6 +371,13 @@ impl HexCoord {
         assert!(Self::is_valid_coord(x, y));
         HexCoord { x, y }
     }
+    pub fn try_new(x: i32, y: i32) -> Option<HexCoord> {
+        if Self::is_valid_coord(x, y) {
+            Some(HexCoord { x, y })
+        } else {
+            None
+        }
+    }
     pub fn x(&self) -> i32 {
         self.x
     }
@@ -381,7 +387,7 @@ impl HexCoord {
     pub fn to_field(&self, f: u32) -> FieldCoord {
         FieldCoord::new(self.x, self.y, f)
     }
-    pub fn is_valid_coord(x: i32, y: i32) -> bool {
+    fn is_valid_coord(x: i32, y: i32) -> bool {
         (x + y).abs() <= 2 && x.abs() <= 2 && y.abs() <= 2
     }
 }
