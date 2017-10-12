@@ -261,7 +261,7 @@ impl Board {
     /// or less adjacent sides."
     pub fn is_hex_removable(&self, coord: &HexCoord) -> bool {
         match *self.get_hex(coord) {
-            Some(hex) => if hex.iter().any(|&f| f == Field::Piece) {
+            Some(hex) => if hex != [Field::Empty; 6] {
                 return false;
             },
             None => return false,
