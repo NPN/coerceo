@@ -258,19 +258,6 @@ impl Board {
         let (x, y) = neighbors[direction as usize];
         self.try_hex_coord(x, y)
     }
-    /// Return fields that share an edge with the given hex and are outside of the given hex. If a
-    /// hex is removed from the board, pieces occupying that hex's field neighbors might be
-    /// capturable.
-    pub fn get_hex_field_neighbors(&self, coord: &HexCoord) -> Vec<FieldCoord> {
-        let mut neighbors = vec![];
-
-        for f in 0..6 {
-            if let Some(hex) = self.get_hex_neighbor(coord, f) {
-                neighbors.push(hex.to_field((f + 3) % 6));
-            }
-        }
-        neighbors
-    }
     /// A hex is removable (and must be removed) if it is empty and is "attached to the board by 3
     /// or less adjacent sides."
     pub fn is_hex_removable(&self, coord: &HexCoord) -> bool {
