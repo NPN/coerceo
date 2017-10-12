@@ -50,6 +50,9 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                 Color::White => ui.text(im_str!("It's white's turn.")),
                 Color::Black => ui.text(im_str!("It's black's turn.")),
             }
+
+            ui.text(im_str!("White has {} piece(s) left and {} captured hex(es).", model.white_pieces, model.white_hexes));
+            ui.text(im_str!("Black has {} piece(s) left and {} captured hex(es).", model.black_pieces, model.black_hexes));
         });
 
     unsafe {
