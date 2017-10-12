@@ -47,10 +47,13 @@ pub fn board(model: &Model, size: &ImVec2) -> Option<Event> {
         imgui_sys::igGetCursorScreenPos(&mut cursor_pos);
     }
 
-    // We want to fit the board into the size vector given us. Since the board is slightly taller
-    // than it is wide, we take the height as our constraining dimension, and calculate the side
-    // length of a triangle on the board from it.
-    let side_len = size.y / (5.0 * SQRT_3);
+    let side_len_x = size.x / 8.0;
+    let side_len_y = size.y / (5.0 * SQRT_3);
+    let side_len = if side_len_x > side_len_y {
+        side_len_y
+    } else {
+        side_len_x
+    };
     let origin = ImVec2::new(cursor_pos.x + size.x / 2.0, cursor_pos.y + size.y / 2.0);
     for hex in model.board.extant_hexes() {
         draw_hex(&hex, &origin, side_len);
@@ -157,6 +160,9 @@ fn draw_piece(coord: &FieldCoord, origin: &ImVec2, size: f32) {
     let v2 = add_vec(&center, &mul_vec(&sub_vec(&v2, &center), SCALE));
     let v3 = add_vec(&center, &mul_vec(&sub_vec(&v3, &center), SCALE));
 
+    // Linear equation derived by human testing and regression
+    let outline_size = 0.032 * size - 0.335;
+
     unsafe {
         let color = match coord.color() {
             Color::White => im_color!(PIECE_WHITE),
@@ -165,7 +171,14 @@ fn draw_piece(coord: &FieldCoord, origin: &ImVec2, size: f32) {
 
         let draw_list = imgui_sys::igGetWindowDrawList();
         imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, v3, color);
-        imgui_sys::ImDrawList_AddTriangle(draw_list, v1, v2, v3, im_color!(PIECE_OUTLINE), 2.5);
+        imgui_sys::ImDrawList_AddTriangle(
+            draw_list,
+            v1,
+            v2,
+            v3,
+            im_color!(PIECE_OUTLINE),
+            outline_size,
+        );
     }
 }
 

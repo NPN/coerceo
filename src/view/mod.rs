@@ -44,7 +44,7 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
         .build(|| {
             ui.text(im_str!("Welcome to Coerceo!"));
 
-            event = board(model, &ImVec2::new(600.0, 600.0));
+            event = board(model, &ImVec2::new(size.0 - 16.0, size.1 - 90.0));
 
             if model.white_pieces == 0 {
                 ui.text(im_str!("Black wins!"));
