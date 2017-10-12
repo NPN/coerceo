@@ -227,7 +227,7 @@ impl Board {
         );
         self.set_field(coord, Field::Empty);
     }
-    pub fn get_hex(&self, coord: &HexCoord) -> &Option<Hex> {
+    fn get_hex(&self, coord: &HexCoord) -> &Option<Hex> {
         &self.board[(coord.x + 2) as usize][(coord.y + 2) as usize]
     }
     fn set_hex(&mut self, coord: &HexCoord, hex: Option<Hex>) {
@@ -236,7 +236,7 @@ impl Board {
     fn try_hex_coord(&self, x: i32, y: i32) -> Option<HexCoord> {
         if HexCoord::is_valid_coord(x, y) {
             let coord = HexCoord::new(x, y);
-            if self.get_hex(&coord).is_some() {
+            if self.is_hex_extant(&coord) {
                 return Some(coord);
             }
         }
@@ -307,6 +307,12 @@ impl Board {
                 .len(),
         );
         self.set_hex(coord, None);
+    }
+    /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
+    ///
+    /// Return true if the passed hex has not been removed yet.
+    pub fn is_hex_extant(&self, coord: &HexCoord) -> bool {
+        self.get_hex(coord).is_some()
     }
     /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
     ///
