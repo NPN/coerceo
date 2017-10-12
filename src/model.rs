@@ -157,9 +157,6 @@ impl Board {
             ),
         }
     }
-    pub fn is_piece_on_field(&self, coord: &FieldCoord) -> bool {
-        self.get_field(coord) == &Field::Piece
-    }
     /// Return fields that share an edge with the given field. These fields are always the opposite
     /// color of the given field. If all of a piece's edge neighbors are occupied, that piece might
     /// be capturable.
@@ -186,6 +183,9 @@ impl Board {
         }
         // A field is not its own neighbor
         neighbors.into_iter().filter(|n| n != coord).collect()
+    }
+    pub fn is_piece_on_field(&self, coord: &FieldCoord) -> bool {
+        self.get_field(coord) == &Field::Piece
     }
     pub fn get_available_moves(&self, field: &FieldCoord) -> Vec<FieldCoord> {
         if self.is_piece_on_field(field) {
@@ -232,14 +232,6 @@ impl Board {
     }
     fn set_hex(&mut self, coord: &HexCoord, hex: Option<Hex>) {
         self.board[(coord.x + 2) as usize][(coord.y + 2) as usize] = hex;
-    }
-    fn try_hex(&self, x: i32, y: i32) -> Option<HexCoord> {
-        if let Some(coord) = HexCoord::try_new(x, y) {
-            if self.is_hex_extant(&coord) {
-                return Some(coord);
-            }
-        }
-        None
     }
     pub fn get_hex_neighbor(&self, coord: &HexCoord, direction: u32) -> Option<HexCoord> {
         assert!(direction < 6);
@@ -306,6 +298,14 @@ impl Board {
                 .len(),
         );
         self.set_hex(coord, None);
+    }
+    fn try_hex(&self, x: i32, y: i32) -> Option<HexCoord> {
+        if let Some(coord) = HexCoord::try_new(x, y) {
+            if self.is_hex_extant(&coord) {
+                return Some(coord);
+            }
+        }
+        None
     }
     /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
     ///
