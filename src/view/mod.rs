@@ -46,13 +46,27 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
 
             event = board(model, &ImVec2::new(600.0, 600.0));
 
-            match model.turn {
-                Color::White => ui.text(im_str!("It's white's turn.")),
-                Color::Black => ui.text(im_str!("It's black's turn.")),
-            }
+            if model.white_pieces == 0 {
+                ui.text(im_str!("Black wins!"));
+            } else if model.black_pieces == 0 {
+                ui.text(im_str!("White wins!"));
+            } else {
+                match model.turn {
+                    Color::White => ui.text(im_str!("It's white's turn.")),
+                    Color::Black => ui.text(im_str!("It's black's turn.")),
+                }
 
-            ui.text(im_str!("White has {} piece(s) left and {} captured hex(es).", model.white_pieces, model.white_hexes));
-            ui.text(im_str!("Black has {} piece(s) left and {} captured hex(es).", model.black_pieces, model.black_hexes));
+                ui.text(im_str!(
+                    "White has {} piece(s) left and {} captured hex(es).",
+                    model.white_pieces,
+                    model.white_hexes
+                ));
+                ui.text(im_str!(
+                    "Black has {} piece(s) left and {} captured hex(es).",
+                    model.black_pieces,
+                    model.black_hexes
+                ));
+            }
         });
 
     unsafe {
