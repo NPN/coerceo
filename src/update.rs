@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use model::{Color, Field, FieldCoord, HexCoord, Model};
+use model::{Color, FieldCoord, HexCoord, Model};
 use view::Event;
 
 pub fn update(model: &mut Model, event: Option<Event>) {
@@ -61,7 +61,7 @@ fn check_captures(model: &mut Model, from: &FieldCoord, to: &FieldCoord) {
                 .board
                 .get_field_edge_neighbors(&field)
                 .into_iter()
-                .all(|coord| model.board.get_field(&coord) == &Field::Piece)
+                .all(|coord| model.board.is_piece_on_field(&coord))
         {
             model.board.remove_piece(&field);
             match model.turn {

@@ -134,7 +134,7 @@ impl Board {
         board
     }
 
-    pub fn get_field(&self, coord: &FieldCoord) -> &Field {
+    fn get_field(&self, coord: &FieldCoord) -> &Field {
         match *self.get_hex(&coord.to_hex()) {
             Some(ref hex) => &hex[coord.f as usize],
             None => panic!(
@@ -220,9 +220,8 @@ impl Board {
         self.set_field(to, Field::Piece);
     }
     pub fn remove_piece(&mut self, coord: &FieldCoord) {
-        assert_eq!(
-            self.get_field(coord),
-            &Field::Piece,
+        assert!(
+            self.is_piece_on_field(coord),
             "There is no piece at {:?} to remove",
             coord
         );
