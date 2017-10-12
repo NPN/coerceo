@@ -198,8 +198,8 @@ impl Board {
         }
     }
     pub fn can_move_piece(&self, from: &FieldCoord, to: &FieldCoord) -> bool {
-        self.is_piece_on_field(from) && !self.is_piece_on_field(to) &&
-            self.get_field_vertex_neighbors(from).contains(to)
+        self.is_piece_on_field(from) && !self.is_piece_on_field(to)
+            && self.get_field_vertex_neighbors(from).contains(to)
     }
     pub fn move_piece(&mut self, from: &FieldCoord, to: &FieldCoord) {
         assert!(

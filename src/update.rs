@@ -56,8 +56,8 @@ fn check_captures(model: &mut Model, from: &FieldCoord, to: &FieldCoord) {
     fields_to_check.append(&mut model.board.get_field_edge_neighbors(to));
 
     for field in fields_to_check {
-        if field.color() != model.turn && model.board.is_piece_on_field(&field) &&
-            model
+        if field.color() != model.turn && model.board.is_piece_on_field(&field)
+            && model
                 .board
                 .get_field_edge_neighbors(&field)
                 .into_iter()

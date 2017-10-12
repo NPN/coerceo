@@ -92,8 +92,8 @@ pub fn board(model: &Model, size: &ImVec2) -> Option<Event> {
 
     let board_min = cursor_pos;
     let board_max = add_vec(&cursor_pos, size);
-    if mouse_click && board_min.x <= mouse_pos.x && board_min.y <= mouse_pos.y &&
-        board_max.x >= mouse_pos.x && board_max.y >= mouse_pos.y
+    if mouse_click && board_min.x <= mouse_pos.x && board_min.y <= mouse_pos.y
+        && board_max.x >= mouse_pos.x && board_max.y >= mouse_pos.y
     {
         pixel_to_field(&mouse_pos, &origin, side_len).map(Event::Click)
     } else {
