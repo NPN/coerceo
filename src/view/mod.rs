@@ -35,16 +35,24 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
     }
 
     let mut event = None;
+
+    ui.main_menu_bar(|| {
+        ui.menu(im_str!("Game"))
+            .build(|| if ui.menu_item(im_str!("New game")).build() {
+                println!("Menu item clicked");
+            });
+    });
+
     ui.window(im_str!("Coerceo"))
         .size(size, imgui::ImGuiSetCond_Always)
-        .position((0.0, 0.0), imgui::ImGuiSetCond_Once)
+        .position((0.0, 19.0), imgui::ImGuiSetCond_Once)
         .title_bar(false)
         .resizable(false)
         .movable(false)
         .build(|| {
             ui.text(im_str!("Welcome to Coerceo!"));
 
-            event = board(model, &ImVec2::new(size.0 - 16.0, size.1 - 90.0));
+            event = board(model, &ImVec2::new(size.0 - 16.0, size.1 - 100.0));
 
             if model.white_pieces == 0 {
                 ui.text(im_str!("Black wins!"));
