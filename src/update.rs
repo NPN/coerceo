@@ -42,6 +42,7 @@ pub fn update(model: &mut Model, event: Option<Event>) {
             } else {
                 clear_selection(model);
             },
+            NewGame => *model = Model::new(),
         }
     }
 }
