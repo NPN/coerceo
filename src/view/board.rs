@@ -47,13 +47,7 @@ pub fn board(model: &Model, size: &ImVec2) -> Option<Event> {
         imgui_sys::igGetCursorScreenPos(&mut cursor_pos);
     }
 
-    let side_len_x = size.x / 8.0;
-    let side_len_y = size.y / (5.0 * SQRT_3);
-    let side_len = if side_len_x > side_len_y {
-        side_len_y
-    } else {
-        side_len_x
-    };
+    let side_len = (size.x / 8.0).min(size.y / (5.0 * SQRT_3));
     let origin = ImVec2::new(cursor_pos.x + size.x / 2.0, cursor_pos.y + size.y / 2.0);
     for hex in model.board.extant_hexes() {
         draw_hex(&hex, &origin, side_len);
@@ -185,13 +179,7 @@ fn draw_piece(coord: &FieldCoord, origin: &ImVec2, size: f32) {
 fn field_center(coord: &FieldCoord, origin: &ImVec2, size: f32) -> ImVec2 {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     let center_x = (v1.x + v2.x + v3.x) / 3.0;
-    let min_y = if v1.y < v2.y || v1.y < v3.y {
-        v1.y
-    } else if v2.y < v3.y {
-        v2.y
-    } else {
-        v3.y
-    };
+    let min_y = (v1.y).min(v2.y).min(v3.y);
     let center_y = match coord.color() {
         Color::Black => min_y + size / (2.0 * SQRT_3),
         Color::White => min_y + size / SQRT_3,
