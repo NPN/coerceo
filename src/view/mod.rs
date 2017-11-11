@@ -18,7 +18,7 @@
 mod board;
 mod sys;
 
-use imgui::{self, ImVec2, Ui};
+use imgui::{ImGuiCond, ImVec2, Ui};
 use imgui_sys;
 
 use model::{Color, FieldCoord, Model};
@@ -45,13 +45,13 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
     });
 
     ui.window(im_str!("Coerceo"))
-        .size(size, imgui::ImGuiSetCond_Always)
-        .position((0.0, 19.0), imgui::ImGuiSetCond_Once)
+        .size(size, ImGuiCond::Always)
+        .position((0.0, 19.0), ImGuiCond::Once)
         .title_bar(false)
         .resizable(false)
         .movable(false)
         .build(|| {
-            ui.text(im_str!("Welcome to Coerceo!"));
+            ui.text("Welcome to Coerceo!");
 
             if event.is_none() {
                 event = board(model, &ImVec2::new(size.0 - 16.0, size.1 - 100.0));
@@ -60,24 +60,24 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
             }
 
             if model.white_pieces == 0 {
-                ui.text(im_str!("Black wins!"));
+                ui.text("Black wins!");
             } else if model.black_pieces == 0 {
-                ui.text(im_str!("White wins!"));
+                ui.text("White wins!");
             } else {
                 match model.turn {
-                    Color::White => ui.text(im_str!("It's white's turn.")),
-                    Color::Black => ui.text(im_str!("It's black's turn.")),
+                    Color::White => ui.text("It's white's turn."),
+                    Color::Black => ui.text("It's black's turn."),
                 }
 
-                ui.text(im_str!(
+                ui.text(format!(
                     "White has {} piece(s) left and {} captured hex(es).",
                     model.white_pieces,
-                    model.white_hexes
+                    model.white_hexes,
                 ));
-                ui.text(im_str!(
+                ui.text(format!(
                     "Black has {} piece(s) left and {} captured hex(es).",
                     model.black_pieces,
-                    model.black_hexes
+                    model.black_hexes,
                 ));
             }
         });
