@@ -38,10 +38,11 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
     let mut event = None;
 
     ui.main_menu_bar(|| {
-        ui.menu(im_str!("Game"))
-            .build(|| if ui.menu_item(im_str!("New game")).build() {
+        ui.menu(im_str!("Game")).build(|| {
+            if ui.menu_item(im_str!("New game")).build() {
                 event = Some(Event::NewGame);
-            });
+            }
+        });
     });
 
     ui.window(im_str!("Coerceo"))
