@@ -83,7 +83,6 @@ pub fn board(model: &Model, size: &ImVec2) -> Option<Event> {
         imgui_sys::igDummy(size);
     }
 
-
     let board_min = cursor_pos;
     let board_max = add_vec(&cursor_pos, size);
     if mouse_click && board_min.x <= mouse_pos.x && board_min.y <= mouse_pos.y

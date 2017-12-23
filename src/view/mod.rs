@@ -72,13 +72,11 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
 
                 ui.text(format!(
                     "White has {} piece(s) left and {} captured hex(es).",
-                    model.white_pieces,
-                    model.white_hexes,
+                    model.white_pieces, model.white_hexes,
                 ));
                 ui.text(format!(
                     "Black has {} piece(s) left and {} captured hex(es).",
-                    model.black_pieces,
-                    model.black_hexes,
+                    model.black_pieces, model.black_hexes,
                 ));
             }
         });

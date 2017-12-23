@@ -108,8 +108,8 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
                         delta: MouseScrollDelta::LineDelta(_, y),
                         phase: TouchPhase::Moved,
                         ..
-                    } |
-                    MouseWheel {
+                    }
+                    | MouseWheel {
                         delta: MouseScrollDelta::PixelDelta(_, y),
                         phase: TouchPhase::Moved,
                         ..
