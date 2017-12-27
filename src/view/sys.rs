@@ -95,7 +95,7 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
                             _ => {}
                         }
                     }
-                    MouseMoved {
+                    CursorMoved {
                         position: (x, y), ..
                     } => mouse_state.pos = (x as i32, y as i32),
                     MouseInput { state, button, .. } => match button {
@@ -128,8 +128,12 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
         update_mouse(&mut imgui, &mut mouse_state);
 
         let gl_window = display.gl_window();
-        let size_points = gl_window.get_inner_size_points().unwrap();
-        let size_pixels = gl_window.get_inner_size_pixels().unwrap();
+        let size_pixels = gl_window.get_inner_size().unwrap();
+        let hidpi = gl_window.hidpi_factor();
+        let size_points = (
+            (size_pixels.0 as f32 / hidpi) as u32,
+            (size_pixels.1 as f32 / hidpi) as u32,
+        );
 
         let ui = imgui.frame(size_points, size_pixels, delta_s);
         if !run_ui(&ui, (size_points.0 as f32, size_points.1 as f32)) {

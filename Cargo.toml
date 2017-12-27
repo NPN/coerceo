@@ -7,7 +7,7 @@ description = "A clone of a strategic board game."
 license = "AGPL-3.0"
 
 [dependencies]
-glium = "0.18"
-imgui = "0.0.17"
-imgui-glium-renderer = "0.0.17"
-imgui-sys = "0.0.17"
+glium = "0.19"
+imgui = "0.0.18"
+imgui-glium-renderer = "0.0.18"
+imgui-sys = "0.0.18"
