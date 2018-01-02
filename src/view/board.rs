@@ -53,23 +53,23 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
     let side_len = (size.x / 8.0).min(size.y / (5.0 * SQRT_3));
     let origin = cursor_pos + size / 2.0;
     for hex in model.board.extant_hexes() {
-        draw_hex(&hex, &origin, side_len);
+        draw_hex(&hex, origin, side_len);
     }
 
     if let Some((ref from, ref to)) = model.last_move {
         if model.board.is_hex_extant(&from.to_hex()) {
-            highlight_field(LAST_MOVE_HIGHLIGHT, from, &origin, side_len);
+            highlight_field(LAST_MOVE_HIGHLIGHT, from, origin, side_len);
         }
-        highlight_field(LAST_MOVE_HIGHLIGHT, to, &origin, side_len);
+        highlight_field(LAST_MOVE_HIGHLIGHT, to, origin, side_len);
     }
 
     if let Some(ref coord) = model.selected_piece {
-        highlight_field(SELECT_HIGHLIGHT, coord, &origin, side_len);
+        highlight_field(SELECT_HIGHLIGHT, coord, origin, side_len);
     }
 
     if let Some(ref coords) = model.available_moves {
         for coord in coords {
-            highlight_field_dot(SELECT_HIGHLIGHT, coord, &origin, side_len);
+            highlight_field_dot(SELECT_HIGHLIGHT, coord, origin, side_len);
         }
     }
 
@@ -77,7 +77,7 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
         for f in 0..6 {
             let coord = hex.to_field(f);
             if model.board.is_piece_on_field(&coord) {
-                draw_piece(&coord, &origin, side_len);
+                draw_piece(&coord, origin, side_len);
             }
         }
     }
@@ -89,7 +89,7 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
     let board_min = cursor_pos;
     let board_max = cursor_pos + size;
     if mouse_click && board_min.lte(mouse_pos) && board_max.gte(mouse_pos) {
-        pixel_to_field(&mouse_pos, &origin, side_len).map(Event::Click)
+        pixel_to_field(mouse_pos, origin, side_len).map(Event::Click)
     } else {
         None
     }
@@ -99,13 +99,13 @@ macro_rules! im_color {
     ($v:expr) => (imgui_sys::igColorConvertFloat4ToU32(ImVec4::from($v)))
 }
 
-fn draw_hex(coord: &HexCoord, origin: &Vec2, size: f32) {
+fn draw_hex(coord: &HexCoord, origin: Vec2, size: f32) {
     for i in 0..6 {
         draw_field(&coord.to_field(i), origin, size);
     }
 }
 
-fn draw_field(coord: &FieldCoord, origin: &Vec2, size: f32) {
+fn draw_field(coord: &FieldCoord, origin: Vec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     unsafe {
         let color = match coord.color() {
@@ -118,7 +118,7 @@ fn draw_field(coord: &FieldCoord, origin: &Vec2, size: f32) {
     }
 }
 
-fn highlight_field(color: [f32; 4], coord: &FieldCoord, origin: &Vec2, size: f32) {
+fn highlight_field(color: [f32; 4], coord: &FieldCoord, origin: Vec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     unsafe {
         let highlight = im_color!(color);
@@ -134,7 +134,7 @@ fn highlight_field(color: [f32; 4], coord: &FieldCoord, origin: &Vec2, size: f32
     }
 }
 
-fn highlight_field_dot(color: [f32; 4], coord: &FieldCoord, origin: &Vec2, size: f32) {
+fn highlight_field_dot(color: [f32; 4], coord: &FieldCoord, origin: Vec2, size: f32) {
     let center = field_center(coord, origin, size);
     unsafe {
         let highlight = im_color!(color);
@@ -150,7 +150,7 @@ fn highlight_field_dot(color: [f32; 4], coord: &FieldCoord, origin: &Vec2, size:
     }
 }
 
-fn draw_piece(coord: &FieldCoord, origin: &Vec2, size: f32) {
+fn draw_piece(coord: &FieldCoord, origin: Vec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     let center = field_center(coord, origin, size);
 
@@ -182,7 +182,7 @@ fn draw_piece(coord: &FieldCoord, origin: &Vec2, size: f32) {
     }
 }
 
-fn field_center(coord: &FieldCoord, origin: &Vec2, size: f32) -> Vec2 {
+fn field_center(coord: &FieldCoord, origin: Vec2, size: f32) -> Vec2 {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     let center_x = (v1.x + v2.x + v3.x) / 3.0;
     let min_y = (v1.y).min(v2.y).min(v3.y);
@@ -194,7 +194,7 @@ fn field_center(coord: &FieldCoord, origin: &Vec2, size: f32) -> Vec2 {
     Vec2::new(center_x, center_y)
 }
 
-fn field_vertexes(coord: &FieldCoord, origin: &Vec2, size: f32) -> (Vec2, Vec2, Vec2) {
+fn field_vertexes(coord: &FieldCoord, origin: Vec2, size: f32) -> (Vec2, Vec2, Vec2) {
     let center = hex_to_pixel(&coord.to_hex(), origin, size);
     let height = size * SQRT_3 / 2.0;
 
@@ -240,17 +240,17 @@ fn field_vertexes(coord: &FieldCoord, origin: &Vec2, size: f32) -> (Vec2, Vec2, 
 }
 
 // Algorithm based on http://www.redblobgames.com/grids/hexagons/#hex-to-pixel
-fn hex_to_pixel(coord: &HexCoord, origin: &Vec2, size: f32) -> Vec2 {
+fn hex_to_pixel(coord: &HexCoord, origin: Vec2, size: f32) -> Vec2 {
     let x = coord.x() as f32;
     let y = coord.y() as f32;
 
     let p = Vec2::new(size * (3.0 / 2.0) * x, size * -SQRT_3 * (x / 2.0 + y));
 
-    *origin + p
+    origin + p
 }
 
 // Algorithm based on http://www.redblobgames.com/grids/hexagons/#pixel-to-hex
-fn pixel_to_field(p: &Vec2, origin: &Vec2, size: f32) -> Option<FieldCoord> {
+fn pixel_to_field(p: Vec2, origin: Vec2, size: f32) -> Option<FieldCoord> {
     let x = p.x - origin.x;
     let y = p.y - origin.y;
 

@@ -30,10 +30,10 @@ impl Vec2 {
     pub fn new(x: f32, y: f32) -> Vec2 {
         Vec2 { x: x, y: y }
     }
-    pub fn lte(&self, rhs: Vec2) -> bool {
+    pub fn lte(self, rhs: Vec2) -> bool {
         self.x <= rhs.x && self.y <= rhs.y
     }
-    pub fn gte(&self, rhs: Vec2) -> bool {
+    pub fn gte(self, rhs: Vec2) -> bool {
         self.x >= rhs.x && self.y >= rhs.y
     }
 }
