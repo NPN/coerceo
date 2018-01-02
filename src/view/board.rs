@@ -251,11 +251,10 @@ fn hex_to_pixel(coord: &HexCoord, origin: Vec2, size: f32) -> Vec2 {
 
 // Algorithm based on http://www.redblobgames.com/grids/hexagons/#pixel-to-hex
 fn pixel_to_field(p: Vec2, origin: Vec2, size: f32) -> Option<FieldCoord> {
-    let x = p.x - origin.x;
-    let y = p.y - origin.y;
+    let v = p - origin;
 
-    let q = x * (2.0 / 3.0) / size;
-    let r = (-x - SQRT_3 * y) / (size * 3.0);
+    let q = v.x * (2.0 / 3.0) / size;
+    let r = (-v.x - SQRT_3 * v.y) / (size * 3.0);
 
     if let Some(hex) = round_hex_coord(q, r) {
         /*
