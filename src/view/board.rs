@@ -19,6 +19,7 @@ use imgui_sys::{self, ImVec2, ImVec4};
 
 use model::{Color, FieldCoord, HexCoord, Model};
 use view::Event;
+use vec2::Vec2;
 
 const SQRT_3: f32 = 1.732_050_807_568_877_f32;
 
@@ -37,7 +38,7 @@ const SELECT_HIGHLIGHT: [f32; 4] = [0.9686, 0.6941, 0.0078, 0.8];
 // #ffff00
 const LAST_MOVE_HIGHLIGHT: [f32; 4] = [1.0, 1.0, 0.0, 0.8];
 
-pub fn board(model: &Model, size: &ImVec2) -> Option<Event> {
+pub fn board(model: &Model, size: Vec2) -> Option<Event> {
     let mouse_click;
     let mut mouse_pos = ImVec2::default();
     let mut cursor_pos = ImVec2::default();
@@ -46,9 +47,11 @@ pub fn board(model: &Model, size: &ImVec2) -> Option<Event> {
         imgui_sys::igGetMousePos(&mut mouse_pos);
         imgui_sys::igGetCursorScreenPos(&mut cursor_pos);
     }
+    let cursor_pos = Vec2::from(cursor_pos);
+    let mouse_pos = Vec2::from(mouse_pos);
 
     let side_len = (size.x / 8.0).min(size.y / (5.0 * SQRT_3));
-    let origin = ImVec2::new(cursor_pos.x + size.x / 2.0, cursor_pos.y + size.y / 2.0);
+    let origin = cursor_pos + size / 2.0;
     for hex in model.board.extant_hexes() {
         draw_hex(&hex, &origin, side_len);
     }
@@ -80,14 +83,12 @@ pub fn board(model: &Model, size: &ImVec2) -> Option<Event> {
     }
 
     unsafe {
-        imgui_sys::igDummy(size);
+        imgui_sys::igDummy(&size.into());
     }
 
     let board_min = cursor_pos;
-    let board_max = add_vec(&cursor_pos, size);
-    if mouse_click && board_min.x <= mouse_pos.x && board_min.y <= mouse_pos.y
-        && board_max.x >= mouse_pos.x && board_max.y >= mouse_pos.y
-    {
+    let board_max = cursor_pos + size;
+    if mouse_click && board_min.lte(mouse_pos) && board_max.gte(mouse_pos) {
         pixel_to_field(&mouse_pos, &origin, side_len).map(Event::Click)
     } else {
         None
@@ -98,13 +99,13 @@ macro_rules! im_color {
     ($v:expr) => (imgui_sys::igColorConvertFloat4ToU32(ImVec4::from($v)))
 }
 
-fn draw_hex(coord: &HexCoord, origin: &ImVec2, size: f32) {
+fn draw_hex(coord: &HexCoord, origin: &Vec2, size: f32) {
     for i in 0..6 {
         draw_field(&coord.to_field(i), origin, size);
     }
 }
 
-fn draw_field(coord: &FieldCoord, origin: &ImVec2, size: f32) {
+fn draw_field(coord: &FieldCoord, origin: &Vec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     unsafe {
         let color = match coord.color() {
@@ -113,21 +114,27 @@ fn draw_field(coord: &FieldCoord, origin: &ImVec2, size: f32) {
         };
 
         let draw_list = imgui_sys::igGetWindowDrawList();
-        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, v3, color);
+        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1.into(), v2.into(), v3.into(), color);
     }
 }
 
-fn highlight_field(color: [f32; 4], coord: &FieldCoord, origin: &ImVec2, size: f32) {
+fn highlight_field(color: [f32; 4], coord: &FieldCoord, origin: &Vec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     unsafe {
         let highlight = im_color!(color);
 
         let draw_list = imgui_sys::igGetWindowDrawList();
-        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, v3, highlight);
+        imgui_sys::ImDrawList_AddTriangleFilled(
+            draw_list,
+            v1.into(),
+            v2.into(),
+            v3.into(),
+            highlight,
+        );
     }
 }
 
-fn highlight_field_dot(color: [f32; 4], coord: &FieldCoord, origin: &ImVec2, size: f32) {
+fn highlight_field_dot(color: [f32; 4], coord: &FieldCoord, origin: &Vec2, size: f32) {
     let center = field_center(coord, origin, size);
     unsafe {
         let highlight = im_color!(color);
@@ -135,7 +142,7 @@ fn highlight_field_dot(color: [f32; 4], coord: &FieldCoord, origin: &ImVec2, siz
         let draw_list = imgui_sys::igGetWindowDrawList();
         imgui_sys::ImDrawList_AddCircleFilled(
             draw_list,
-            center,
+            center.into(),
             size / (4.0 * SQRT_3),
             highlight,
             15,
@@ -143,15 +150,15 @@ fn highlight_field_dot(color: [f32; 4], coord: &FieldCoord, origin: &ImVec2, siz
     }
 }
 
-fn draw_piece(coord: &FieldCoord, origin: &ImVec2, size: f32) {
+fn draw_piece(coord: &FieldCoord, origin: &Vec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     let center = field_center(coord, origin, size);
 
     const SCALE: f32 = 0.7;
 
-    let v1 = add_vec(&center, &mul_vec(&sub_vec(&v1, &center), SCALE));
-    let v2 = add_vec(&center, &mul_vec(&sub_vec(&v2, &center), SCALE));
-    let v3 = add_vec(&center, &mul_vec(&sub_vec(&v3, &center), SCALE));
+    let v1 = center + (v1 - center) * SCALE;
+    let v2 = center + (v2 - center) * SCALE;
+    let v3 = center + (v3 - center) * SCALE;
 
     // Linear equation derived by human testing and regression
     let outline_size = 0.032 * size - 0.335;
@@ -163,19 +170,19 @@ fn draw_piece(coord: &FieldCoord, origin: &ImVec2, size: f32) {
         };
 
         let draw_list = imgui_sys::igGetWindowDrawList();
-        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, v3, color);
+        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1.into(), v2.into(), v3.into(), color);
         imgui_sys::ImDrawList_AddTriangle(
             draw_list,
-            v1,
-            v2,
-            v3,
+            v1.into(),
+            v2.into(),
+            v3.into(),
             im_color!(PIECE_OUTLINE),
             outline_size,
         );
     }
 }
 
-fn field_center(coord: &FieldCoord, origin: &ImVec2, size: f32) -> ImVec2 {
+fn field_center(coord: &FieldCoord, origin: &Vec2, size: f32) -> Vec2 {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     let center_x = (v1.x + v2.x + v3.x) / 3.0;
     let min_y = (v1.y).min(v2.y).min(v3.y);
@@ -184,39 +191,47 @@ fn field_center(coord: &FieldCoord, origin: &ImVec2, size: f32) -> ImVec2 {
         Color::White => min_y + size / SQRT_3,
     };
 
-    ImVec2::new(center_x, center_y)
+    Vec2::new(center_x, center_y)
 }
 
-fn field_vertexes(coord: &FieldCoord, origin: &ImVec2, size: f32) -> (ImVec2, ImVec2, ImVec2) {
+fn field_vertexes(coord: &FieldCoord, origin: &Vec2, size: f32) -> (Vec2, Vec2, Vec2) {
     let center = hex_to_pixel(&coord.to_hex(), origin, size);
     let height = size * SQRT_3 / 2.0;
+
+    let west = Vec2::new(-size, 0.0);
+    let east = Vec2::new(size, 0.0);
+
+    let northwest = Vec2::new(-size / 2.0, -height);
+    let southwest = Vec2::new(-size / 2.0, height);
+    let northeast = Vec2::new(size / 2.0, -height);
+    let southeast = Vec2::new(size / 2.0, height);
 
     let v1;
     let v2;
     match coord.f() {
         0 => {
-            v1 = ImVec2::new(center.x - size / 2.0, center.y - height);
-            v2 = ImVec2::new(center.x + size / 2.0, center.y - height);
+            v1 = center + northwest;
+            v2 = center + northeast;
         }
         1 => {
-            v1 = ImVec2::new(center.x + size / 2.0, center.y - height);
-            v2 = ImVec2::new(center.x + size, center.y);
+            v1 = center + northeast;
+            v2 = center + east;
         }
         2 => {
-            v1 = ImVec2::new(center.x + size, center.y);
-            v2 = ImVec2::new(center.x + size / 2.0, center.y + height);
+            v1 = center + east;
+            v2 = center + southeast;
         }
         3 => {
-            v1 = ImVec2::new(center.x + size / 2.0, center.y + height);
-            v2 = ImVec2::new(center.x - size / 2.0, center.y + height);
+            v1 = center + southeast;
+            v2 = center + southwest;
         }
         4 => {
-            v1 = ImVec2::new(center.x - size / 2.0, center.y + height);
-            v2 = ImVec2::new(center.x - size, center.y);
+            v1 = center + southwest;
+            v2 = center + west;
         }
         5 => {
-            v1 = ImVec2::new(center.x - size, center.y);
-            v2 = ImVec2::new(center.x - size / 2.0, center.y - height);
+            v1 = center + west;
+            v2 = center + northwest;
         }
         _ => panic!("You made the impossible possible."),
     };
@@ -225,18 +240,17 @@ fn field_vertexes(coord: &FieldCoord, origin: &ImVec2, size: f32) -> (ImVec2, Im
 }
 
 // Algorithm based on http://www.redblobgames.com/grids/hexagons/#hex-to-pixel
-fn hex_to_pixel(coord: &HexCoord, origin: &ImVec2, size: f32) -> ImVec2 {
+fn hex_to_pixel(coord: &HexCoord, origin: &Vec2, size: f32) -> Vec2 {
     let x = coord.x() as f32;
     let y = coord.y() as f32;
 
-    let px = size * (3.0 / 2.0) * x;
-    let py = size * -SQRT_3 * (x / 2.0 + y);
+    let p = Vec2::new(size * (3.0 / 2.0) * x, size * -SQRT_3 * (x / 2.0 + y));
 
-    ImVec2::new(px + origin.x, py + origin.y)
+    *origin + p
 }
 
 // Algorithm based on http://www.redblobgames.com/grids/hexagons/#pixel-to-hex
-fn pixel_to_field(p: &ImVec2, origin: &ImVec2, size: f32) -> Option<FieldCoord> {
+fn pixel_to_field(p: &Vec2, origin: &Vec2, size: f32) -> Option<FieldCoord> {
     let x = p.x - origin.x;
     let y = p.y - origin.y;
 
@@ -328,16 +342,4 @@ fn round_hex_coord(x: f32, y: f32) -> Option<HexCoord> {
     let ry = ry as i32;
 
     HexCoord::try_new(rx, ry)
-}
-
-fn add_vec(lhs: &ImVec2, rhs: &ImVec2) -> ImVec2 {
-    ImVec2::new(lhs.x + rhs.x, lhs.y + rhs.y)
-}
-
-fn sub_vec(lhs: &ImVec2, rhs: &ImVec2) -> ImVec2 {
-    ImVec2::new(lhs.x - rhs.x, lhs.y - rhs.y)
-}
-
-fn mul_vec(v: &ImVec2, c: f32) -> ImVec2 {
-    ImVec2::new(v.x * c, v.y * c)
 }

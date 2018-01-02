@@ -24,6 +24,7 @@ extern crate imgui_sys;
 mod model;
 mod update;
 mod view;
+mod vec2;
 
 use imgui::Ui;
 

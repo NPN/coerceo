@@ -18,10 +18,11 @@
 mod board;
 mod sys;
 
-use imgui::{ImGuiCond, ImVec2, Ui};
+use imgui::{ImGuiCond, Ui};
 use imgui_sys;
 
 use model::{Color, FieldCoord, Model};
+use vec2::Vec2;
 use self::board::board;
 pub use self::sys::run;
 
@@ -55,9 +56,9 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
             ui.text("Welcome to Coerceo!");
 
             if event.is_none() {
-                event = board(model, &ImVec2::new(size.0 - 16.0, size.1 - 100.0));
+                event = board(model, Vec2::new(size.0 - 16.0, size.1 - 100.0));
             } else {
-                board(model, &ImVec2::new(size.0 - 16.0, size.1 - 100.0));
+                board(model, Vec2::new(size.0 - 16.0, size.1 - 100.0));
             }
 
             if model.white_pieces == 0 {
