@@ -41,7 +41,7 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
     ui.main_menu_bar(|| {
         ui.menu(im_str!("Game")).build(|| {
             if ui.menu_item(im_str!("New game")).build() {
-                event = Some(Event::NewGame);
+                insert_if_empty(&mut event, Some(Event::NewGame));
             }
         });
     });
@@ -55,11 +55,10 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
         .build(|| {
             ui.text("Welcome to Coerceo!");
 
-            if event.is_none() {
-                event = board(model, Vec2::new(size.0 - 16.0, size.1 - 100.0));
-            } else {
-                board(model, Vec2::new(size.0 - 16.0, size.1 - 100.0));
-            }
+            insert_if_empty(
+                &mut event,
+                board(model, Vec2::new(size.0 - 16.0, size.1 - 100.0)),
+            );
 
             if model.white_pieces == 0 {
                 ui.text("Black wins!");
@@ -87,4 +86,10 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
     }
 
     event
+}
+
+fn insert_if_empty<T>(a: &mut Option<T>, b: Option<T>) {
+    if a.is_none() {
+        *a = b;
+    }
 }
