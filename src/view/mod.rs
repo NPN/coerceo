@@ -19,7 +19,7 @@ mod board;
 mod board_parts;
 mod sys;
 
-use imgui::{ImGuiCond, Ui};
+use imgui::{ImGuiCond, ImStr, ImVec2, Ui};
 use imgui_sys;
 
 use model::{Color, FieldCoord, Model};
@@ -29,6 +29,7 @@ pub use self::sys::run;
 
 pub enum Event {
     Click(FieldCoord),
+    Exchange,
     NewGame,
 }
 
@@ -58,7 +59,7 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
 
             insert_if_empty(
                 &mut event,
-                board(model, Vec2::new(size.0 - 16.0, size.1 - 100.0)),
+                board(model, Vec2::new(size.0 - 16.0, size.1 - 135.0)),
             );
 
             if model.white_pieces == 0 {
@@ -80,6 +81,15 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                     model.black_pieces, model.black_hexes,
                 ));
             }
+
+            if disableable_button(
+                ui,
+                im_str!("Exchange"),
+                Vec2::new(100.0, 20.0),
+                !model.can_exchange()
+            ) {
+                insert_if_empty(&mut event, Some(Event::Exchange));
+            }
         });
 
     unsafe {
@@ -92,5 +102,24 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
 fn insert_if_empty<T>(a: &mut Option<T>, b: Option<T>) {
     if a.is_none() {
         *a = b;
+    }
+}
+
+// Fake a disabled button by ignoring click events, since it's not actually implemented yet
+fn disableable_button<'p, S: Into<ImVec2>>(
+    ui: &Ui,
+    label: &'p ImStr,
+    size: S,
+    disabled: bool,
+) -> bool {
+    if disabled {
+        unsafe {
+            imgui_sys::igPushStyleVar(imgui_sys::ImGuiStyleVar::Alpha, 0.5);
+            ui.button(label, size);
+            imgui_sys::igPopStyleVar(1);
+        }
+        false
+    } else {
+        ui.button(label, size)
     }
 }

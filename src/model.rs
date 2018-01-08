@@ -23,8 +23,9 @@ pub struct Model {
     pub black_pieces: u32,
     pub black_hexes: u32,
     pub selected_piece: Option<FieldCoord>,
-    pub last_move: Option<(FieldCoord, FieldCoord)>,
+    pub last_move: Move,
     pub available_moves: Option<Vec<FieldCoord>>,
+    pub exchanging: bool,
 }
 
 impl Model {
@@ -37,8 +38,9 @@ impl Model {
             black_pieces: 18,
             black_hexes: 0,
             selected_piece: None,
-            last_move: None,
+            last_move: Move::None,
             available_moves: None,
+            exchanging: false,
         }
     }
     pub fn switch_turns(&mut self) {
@@ -47,12 +49,24 @@ impl Model {
             Color::Black => Color::White,
         }
     }
+    pub fn can_exchange(&self) -> bool {
+        2 <= match self.turn {
+            Color::Black => self.black_hexes,
+            Color::White => self.white_hexes,
+        }
+    }
 }
 
 #[derive(PartialEq)]
 pub enum Color {
     White,
     Black,
+}
+
+pub enum Move {
+    Exchange(FieldCoord),
+    Move(FieldCoord, FieldCoord),
+    None,
 }
 
 pub struct Board {

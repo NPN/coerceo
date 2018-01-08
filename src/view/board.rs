@@ -17,7 +17,7 @@
 
 use imgui_sys::{self, ImVec2};
 
-use model::Model;
+use model::{Model, Move};
 use view::board_parts::*;
 use view::Event;
 use vec2::Vec2;
@@ -28,6 +28,8 @@ const SQRT_3: f32 = 1.732_050_807_568_877_f32;
 const SELECT_HIGHLIGHT: [f32; 4] = [0.9686, 0.6941, 0.0078, 0.8];
 // #ffff00
 const LAST_MOVE_HIGHLIGHT: [f32; 4] = [1.0, 1.0, 0.0, 0.8];
+// #ff0000
+const EXCHANGE_HIGHLIGHT: [f32; 4] = [1.0, 0.0, 0.0, 0.8];
 
 pub fn board(model: &Model, size: Vec2) -> Option<Event> {
     let mouse_click;
@@ -47,11 +49,19 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
         draw_hex(&hex, origin, side_len);
     }
 
-    if let Some((ref from, ref to)) = model.last_move {
-        if model.board.is_hex_extant(&from.to_hex()) {
-            highlight_field(LAST_MOVE_HIGHLIGHT, from, origin, side_len);
+    match model.last_move {
+        Move::Exchange(ref exchanged) => {
+            if model.board.is_hex_extant(&exchanged.to_hex()) {
+                highlight_field(EXCHANGE_HIGHLIGHT, exchanged, origin, side_len);
+            }
         }
-        highlight_field(LAST_MOVE_HIGHLIGHT, to, origin, side_len);
+        Move::Move(ref from, ref to) => {
+            if model.board.is_hex_extant(&from.to_hex()) {
+                highlight_field(LAST_MOVE_HIGHLIGHT, from, origin, side_len);
+            }
+            highlight_field(LAST_MOVE_HIGHLIGHT, to, origin, side_len);
+        }
+        Move::None => {}
     }
 
     if let Some(ref coord) = model.selected_piece {
@@ -61,6 +71,16 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
     if let Some(ref coords) = model.available_moves {
         for coord in coords {
             highlight_field_dot(SELECT_HIGHLIGHT, coord, origin, side_len);
+        }
+    }
+
+    let hover_field = pixel_to_field(mouse_pos, origin, side_len);
+    if let Some(ref coord) = hover_field {
+        if model.exchanging && coord.color() != model.turn
+            && model.board.is_hex_extant(&coord.to_hex())
+            && model.board.is_piece_on_field(coord)
+        {
+            highlight_field(EXCHANGE_HIGHLIGHT, coord, origin, side_len);
         }
     }
 
@@ -77,10 +97,8 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
         imgui_sys::igDummy(&size.into());
     }
 
-    let board_min = cursor_pos;
-    let board_max = cursor_pos + size;
-    if mouse_click && board_min.lte(mouse_pos) && board_max.gte(mouse_pos) {
-        pixel_to_field(mouse_pos, origin, side_len).map(Event::Click)
+    if mouse_click {
+        hover_field.map(Event::Click)
     } else {
         None
     }

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use model::{Color, FieldCoord, HexCoord, Model};
+use model::{Color, FieldCoord, HexCoord, Model, Move};
 use view::Event;
 
 pub fn update(model: &mut Model, event: Option<Event>) {
@@ -33,15 +33,51 @@ pub fn update(model: &mut Model, event: Option<Event>) {
                 } else if let Some(selected) = model.selected_piece.take() {
                     if model.board.can_move_piece(&selected, &field) {
                         model.board.move_piece(&selected, &field);
-                        check_captures(model, &selected, &field);
-                        model.last_move = Some((selected, field));
+
+                        let (capture_count, mut fields_to_check) =
+                            check_hexes(model, &selected.to_hex());
+                        fields_to_check.append(&mut model.board.get_field_edge_neighbors(&field));
+                        check_captures(model, &fields_to_check);
+
+                        match model.turn {
+                            Color::White => model.white_hexes += capture_count,
+                            Color::Black => model.black_hexes += capture_count,
+                        }
+
+                        model.last_move = Move::Move(selected, field);
                         model.switch_turns();
                     }
                     clear_selection(model);
                 }
+            } else if model.exchanging && model.board.is_piece_on_field(&field) {
+                model.exchanging = false;
+                model.board.remove_piece(&field);
+                match model.turn {
+                    Color::White => {
+                        model.white_hexes -= 2;
+                        model.black_pieces -= 1;
+                    },
+                    Color::Black => {
+                        model.black_hexes -= 2;
+                        model.white_pieces -= 1;
+                    },
+                }
+
+                // Players don't collect hexes removed due to an exchange
+                let (_, fields_to_check) = check_hexes(model, &field.to_hex());
+                check_captures(model, &fields_to_check);
+
+                model.last_move = Move::Exchange(field);
+                model.switch_turns();
             } else {
                 clear_selection(model);
             },
+            Exchange => {
+                if model.can_exchange() {
+                    model.exchanging = !model.exchanging;
+                    clear_selection(model);
+                }
+            }
             NewGame => *model = Model::new(),
         }
     }
@@ -52,19 +88,16 @@ fn clear_selection(model: &mut Model) {
     model.available_moves = None;
 }
 
-fn check_captures(model: &mut Model, from: &FieldCoord, to: &FieldCoord) {
-    let mut fields_to_check = check_hexes(model, &from.to_hex());
-    fields_to_check.append(&mut model.board.get_field_edge_neighbors(to));
-
+fn check_captures(model: &mut Model, fields_to_check: &[FieldCoord]) {
     for field in fields_to_check {
-        if field.color() != model.turn && model.board.is_piece_on_field(&field)
+        if field.color() != model.turn && model.board.is_piece_on_field(field)
             && model
                 .board
-                .get_field_edge_neighbors(&field)
+                .get_field_edge_neighbors(field)
                 .into_iter()
                 .all(|coord| model.board.is_piece_on_field(&coord))
         {
-            model.board.remove_piece(&field);
+            model.board.remove_piece(field);
             match model.turn {
                 Color::White => model.black_pieces -= 1,
                 Color::Black => model.white_pieces -= 1,
@@ -73,27 +106,26 @@ fn check_captures(model: &mut Model, from: &FieldCoord, to: &FieldCoord) {
     }
 }
 
-fn check_hexes(model: &mut Model, coord: &HexCoord) -> Vec<FieldCoord> {
+fn check_hexes(model: &mut Model, coord: &HexCoord) -> (u32, Vec<FieldCoord>) {
     if model.board.is_hex_removable(coord) {
         remove_hex(model, coord)
     } else {
-        vec![]
+        (0, vec![])
     }
 }
 
-fn remove_hex(model: &mut Model, coord: &HexCoord) -> Vec<FieldCoord> {
+fn remove_hex(model: &mut Model, coord: &HexCoord) -> (u32, Vec<FieldCoord>) {
+    let mut remove_count = 1;
     model.board.remove_hex(coord);
-    match model.turn {
-        Color::White => model.white_hexes += 1,
-        Color::Black => model.black_hexes += 1,
-    }
 
     let mut fields = vec![];
 
     for i in 0..6 {
         if let Some(neighbor) = model.board.get_hex_neighbor(coord, i) {
             if model.board.is_hex_removable(&neighbor) {
-                fields.append(&mut remove_hex(model, &neighbor));
+                let (removed, mut new_fields) = remove_hex(model, &neighbor);
+                remove_count += removed;
+                fields.append(&mut new_fields);
             } else {
                 let field = neighbor.to_field((i + 3) % 6);
                 if field.color() != model.turn {
@@ -102,5 +134,5 @@ fn remove_hex(model: &mut Model, coord: &HexCoord) -> Vec<FieldCoord> {
             }
         }
     }
-    fields
+    (remove_count, fields)
 }
