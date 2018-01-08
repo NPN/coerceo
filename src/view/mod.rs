@@ -16,6 +16,7 @@
  */
 
 mod board;
+mod board_parts;
 mod sys;
 
 use imgui::{ImGuiCond, Ui};
