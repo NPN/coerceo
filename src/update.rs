@@ -22,21 +22,21 @@ pub fn update(model: &mut Model, event: Option<Event>) {
     if let Some(event) = event {
         use view::Event::*;
         match event {
-            Click(field) => if model.turn == field.color() {
-                if model.board.is_piece_on_field(&field) {
-                    if model.selected_piece.as_ref() == Some(&field) {
+            Click(clicked) => if model.turn == clicked.color() {
+                if model.board.is_piece_on_field(&clicked) {
+                    if model.selected_piece.as_ref() == Some(&clicked) {
                         clear_selection(model);
                     } else {
-                        model.available_moves = Some(model.board.get_available_moves(&field));
-                        model.selected_piece = Some(field);
+                        model.available_moves = Some(model.board.get_available_moves(&clicked));
+                        model.selected_piece = Some(clicked);
                     }
                 } else if let Some(selected) = model.selected_piece.take() {
-                    if model.board.can_move_piece(&selected, &field) {
-                        model.board.move_piece(&selected, &field);
+                    if model.board.can_move_piece(&selected, &clicked) {
+                        model.board.move_piece(&selected, &clicked);
 
                         let (capture_count, mut fields_to_check) =
                             check_hexes(model, &selected.to_hex());
-                        fields_to_check.append(&mut model.board.get_field_edge_neighbors(&field));
+                        fields_to_check.append(&mut model.board.get_field_edge_neighbors(&clicked));
                         check_captures(model, &fields_to_check);
 
                         match model.turn {
@@ -44,14 +44,14 @@ pub fn update(model: &mut Model, event: Option<Event>) {
                             Color::Black => model.black_hexes += capture_count,
                         }
 
-                        model.last_move = Move::Move(selected, field);
+                        model.last_move = Move::Move(selected, clicked);
                         model.switch_turns();
                     }
                     clear_selection(model);
                 }
-            } else if model.exchanging && model.board.is_piece_on_field(&field) {
+            } else if model.exchanging && model.board.is_piece_on_field(&clicked) {
                 model.exchanging = false;
-                model.board.remove_piece(&field);
+                model.board.remove_piece(&clicked);
                 match model.turn {
                     Color::White => {
                         model.white_hexes -= 2;
@@ -64,10 +64,10 @@ pub fn update(model: &mut Model, event: Option<Event>) {
                 }
 
                 // Players don't collect hexes removed due to an exchange
-                let (_, fields_to_check) = check_hexes(model, &field.to_hex());
+                let (_, fields_to_check) = check_hexes(model, &clicked.to_hex());
                 check_captures(model, &fields_to_check);
 
-                model.last_move = Move::Exchange(field);
+                model.last_move = Move::Exchange(clicked);
                 model.switch_turns();
             } else {
                 clear_selection(model);
