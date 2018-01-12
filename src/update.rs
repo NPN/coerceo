@@ -21,10 +21,16 @@ use view::Event;
 pub fn update(model: &mut Model, event: Option<Event>) {
     if let Some(event) = event {
         use view::Event::*;
+
+        if event == NewGame {
+            *model = Model::new();
+            return;
+        } else if model.game_result != GameResult::InProgress {
+            return;
+        }
+
         match event {
-            Click(clicked) => if model.game_result != GameResult::InProgress {
-                return;
-            } else if model.turn == clicked.color() {
+            Click(clicked) => if model.turn == clicked.color() {
                 if model.board.is_piece_on_field(&clicked) {
                     if model.selected_piece.as_ref() == Some(&clicked) {
                         clear_selection(model);
@@ -82,13 +88,13 @@ pub fn update(model: &mut Model, event: Option<Event>) {
                     clear_selection(model);
                 }
             }
-            NewGame => *model = Model::new(),
             Resign => {
                 model.game_result = match model.turn {
                     Color::Black => GameResult::WhiteWin,
                     Color::White => GameResult::BlackWin,
                 }
             }
+            _ => {}
         }
     }
 }

@@ -27,6 +27,7 @@ use vec2::Vec2;
 use self::board::board;
 pub use self::sys::run;
 
+#[derive(PartialEq)]
 pub enum Event {
     Click(FieldCoord),
     Exchange,
