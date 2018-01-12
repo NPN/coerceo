@@ -31,6 +31,7 @@ pub enum Event {
     Click(FieldCoord),
     Exchange,
     NewGame,
+    Resign,
 }
 
 pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
@@ -62,28 +63,35 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                 board(model, Vec2::new(size.0 - 16.0, size.1 - 135.0)),
             );
 
-            if model.white_pieces == 0 {
-                ui.text("Black wins!");
-            } else if model.black_pieces == 0 {
-                ui.text("White wins!");
-            } else {
-                match model.turn {
-                    Color::White => ui.text("It's white's turn."),
-                    Color::Black => ui.text("It's black's turn."),
+            use model::GameResult::*;
+            match model.game_result {
+                BlackWin => ui.text("Black wins!"),
+                WhiteWin => ui.text("White wins!"),
+                InProgress => {
+                    match model.turn {
+                        Color::White => ui.text("It's white's turn."),
+                        Color::Black => ui.text("It's black's turn."),
+                    }
+
+                    ui.text(format!(
+                        "White has {} piece(s) left and {} captured hex(es).",
+                        model.white_pieces, model.white_hexes,
+                    ));
+                    ui.text(format!(
+                        "Black has {} piece(s) left and {} captured hex(es).",
+                        model.black_pieces, model.black_hexes,
+                    ));
+
+                    if ui.button(im_str!("Resign"), Vec2::new(100.0, 20.0)) {
+                        insert_if_empty(&mut event, Some(Event::Resign));
+                    }
+                    ui.same_line(0.0);
+                    if model.can_exchange()
+                        && ui.button(im_str!("Exchange"), Vec2::new(100.0, 20.0))
+                    {
+                        insert_if_empty(&mut event, Some(Event::Exchange));
+                    }
                 }
-
-                ui.text(format!(
-                    "White has {} piece(s) left and {} captured hex(es).",
-                    model.white_pieces, model.white_hexes,
-                ));
-                ui.text(format!(
-                    "Black has {} piece(s) left and {} captured hex(es).",
-                    model.black_pieces, model.black_hexes,
-                ));
-            }
-
-            if model.can_exchange() && ui.button(im_str!("Exchange"), Vec2::new(100.0, 20.0)) {
-                insert_if_empty(&mut event, Some(Event::Exchange));
             }
         });
 

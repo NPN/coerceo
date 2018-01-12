@@ -30,6 +30,7 @@ pub struct Model {
     pub last_move: Move,
     pub available_moves: Option<Vec<FieldCoord>>,
     pub exchanging: bool,
+    pub game_result: GameResult,
 }
 
 impl Model {
@@ -45,6 +46,7 @@ impl Model {
             last_move: Move::None,
             available_moves: None,
             exchanging: false,
+            game_result: GameResult::InProgress,
         }
     }
     pub fn switch_turns(&mut self) {
@@ -71,6 +73,13 @@ pub enum Move {
     Exchange(FieldCoord),
     Move(FieldCoord, FieldCoord),
     None,
+}
+
+#[derive(PartialEq)]
+pub enum GameResult {
+    InProgress,
+    WhiteWin,
+    BlackWin,
 }
 
 #[derive(Debug, PartialEq)]

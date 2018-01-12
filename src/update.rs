@@ -15,14 +15,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use model::{Color, FieldCoord, HexCoord, Model, Move};
+use model::{Color, FieldCoord, GameResult, HexCoord, Model, Move};
 use view::Event;
 
 pub fn update(model: &mut Model, event: Option<Event>) {
     if let Some(event) = event {
         use view::Event::*;
         match event {
-            Click(clicked) => if model.turn == clicked.color() {
+            Click(clicked) => if model.game_result != GameResult::InProgress {
+                return;
+            } else if model.turn == clicked.color() {
                 if model.board.is_piece_on_field(&clicked) {
                     if model.selected_piece.as_ref() == Some(&clicked) {
                         clear_selection(model);
@@ -48,6 +50,7 @@ pub fn update(model: &mut Model, event: Option<Event>) {
                         model.switch_turns();
                     }
                     clear_selection(model);
+                    check_win(model);
                 }
             } else if model.exchanging && model.board.is_piece_on_field(&clicked) {
                 model.exchanging = false;
@@ -56,11 +59,11 @@ pub fn update(model: &mut Model, event: Option<Event>) {
                     Color::White => {
                         model.white_hexes -= 2;
                         model.black_pieces -= 1;
-                    },
+                    }
                     Color::Black => {
                         model.black_hexes -= 2;
                         model.white_pieces -= 1;
-                    },
+                    }
                 }
 
                 // Players don't collect hexes removed due to an exchange
@@ -69,6 +72,7 @@ pub fn update(model: &mut Model, event: Option<Event>) {
 
                 model.last_move = Move::Exchange(clicked);
                 model.switch_turns();
+                check_win(model);
             } else {
                 clear_selection(model);
             },
@@ -79,6 +83,12 @@ pub fn update(model: &mut Model, event: Option<Event>) {
                 }
             }
             NewGame => *model = Model::new(),
+            Resign => {
+                model.game_result = match model.turn {
+                    Color::Black => GameResult::WhiteWin,
+                    Color::White => GameResult::BlackWin,
+                }
+            }
         }
     }
 }
@@ -86,6 +96,14 @@ pub fn update(model: &mut Model, event: Option<Event>) {
 fn clear_selection(model: &mut Model) {
     model.selected_piece = None;
     model.available_moves = None;
+}
+
+fn check_win(model: &mut Model) {
+    if model.white_pieces == 0 {
+        model.game_result = GameResult::BlackWin;
+    } else if model.black_pieces == 0 {
+        model.game_result = GameResult::WhiteWin;
+    }
 }
 
 fn check_captures(model: &mut Model, fields_to_check: &[FieldCoord]) {
