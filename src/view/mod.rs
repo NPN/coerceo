@@ -86,10 +86,15 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                         insert_if_empty(&mut event, Event::Resign);
                     }
                     ui.same_line(0.0);
-                    if model.can_exchange()
-                        && ui.button(im_str!("Exchange"), Vec2::new(100.0, 20.0))
-                    {
-                        insert_if_empty(&mut event, Event::Exchange);
+                    if model.can_exchange() {
+                        let label = if model.exchanging {
+                            im_str!("Stop Exchanging")
+                        } else {
+                            im_str!("Exchange")
+                        };
+                        if ui.button(label, Vec2::new(120.0, 20.0)) {
+                            insert_if_empty(&mut event, Event::Exchange);
+                        }
                     }
                 }
             }
