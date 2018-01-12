@@ -44,7 +44,7 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
     ui.main_menu_bar(|| {
         ui.menu(im_str!("Game")).build(|| {
             if ui.menu_item(im_str!("New game")).build() {
-                insert_if_empty(&mut event, Some(Event::NewGame));
+                insert_if_empty(&mut event, Event::NewGame);
             }
         });
     });
@@ -58,10 +58,9 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
         .build(|| {
             ui.text("Welcome to Coerceo!");
 
-            insert_if_empty(
-                &mut event,
-                board(model, Vec2::new(size.0 - 16.0, size.1 - 135.0)),
-            );
+            if let Some(click) = board(model, Vec2::new(size.0 - 16.0, size.1 - 135.0)) {
+                insert_if_empty(&mut event, click);
+            }
 
             use model::GameResult::*;
             match model.game_result {
@@ -83,13 +82,13 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                     ));
 
                     if ui.button(im_str!("Resign"), Vec2::new(100.0, 20.0)) {
-                        insert_if_empty(&mut event, Some(Event::Resign));
+                        insert_if_empty(&mut event, Event::Resign);
                     }
                     ui.same_line(0.0);
                     if model.can_exchange()
                         && ui.button(im_str!("Exchange"), Vec2::new(100.0, 20.0))
                     {
-                        insert_if_empty(&mut event, Some(Event::Exchange));
+                        insert_if_empty(&mut event, Event::Exchange);
                     }
                 }
             }
@@ -102,8 +101,8 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
     event
 }
 
-fn insert_if_empty<T>(a: &mut Option<T>, b: Option<T>) {
+fn insert_if_empty<T>(a: &mut Option<T>, b: T) {
     if a.is_none() {
-        *a = b;
+        *a = Some(b);
     }
 }
