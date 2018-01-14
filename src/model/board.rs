@@ -228,30 +228,23 @@ impl Board {
             None => return false,
         }
 
-        let neighbor_indexes: Vec<u32> = vec![0, 1, 2, 3, 4, 5]
-            .into_iter()
-            .filter(|&f| self.get_hex_neighbor(coord, f).is_some())
-            .collect();
-        let neighbor_indexes = neighbor_indexes.as_slice();
+        let has_neighbor = |f| self.get_hex_neighbor(coord, f).is_some();
+        let is_adjacent = |f| has_neighbor((f + 1) % 6) || has_neighbor((f + 5) % 6);
 
-        match neighbor_indexes.len() {
+        let mut neighbor_count = 0;
+        for f in 0..6 {
+            if has_neighbor(f) {
+                if is_adjacent(f) {
+                    neighbor_count += 1;
+                } else {
+                    return false;
+                }
+            }
+        }
+
+        match neighbor_count {
             0 => panic!("A hex at {:?} is empty and has no neighbors", coord),
-            1 => true,
-            2 => {
-                let valid_idx_combos = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [0, 5]];
-                valid_idx_combos.iter().any(|c| c == neighbor_indexes)
-            }
-            3 => {
-                let valid_idx_combos = [
-                    [0, 1, 2],
-                    [1, 2, 3],
-                    [2, 3, 4],
-                    [3, 4, 5],
-                    [0, 4, 5],
-                    [0, 1, 5],
-                ];
-                valid_idx_combos.iter().any(|c| c == neighbor_indexes)
-            }
+            1 | 2 | 3 => true,
             _ => false,
         }
     }
