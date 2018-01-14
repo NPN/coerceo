@@ -122,8 +122,7 @@ fn check_hexes(model: &mut Model, coord: &HexCoord) -> (u32, Vec<FieldCoord>) {
     let mut remove_count = 0;
     let mut fields = vec![];
 
-    if model.board.is_hex_removable(coord) {
-        model.board.remove_hex(coord);
+    if model.board.remove_hex(coord) {
         remove_count += 1;
         for f in 0..6 {
             if let Some(neighbor) = model.board.get_hex_neighbor(coord, f) {

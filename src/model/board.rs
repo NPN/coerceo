@@ -235,7 +235,7 @@ impl Board {
     }
     /// A hex is removable (and must be removed) if it is empty and is "attached to the board by 3
     /// or less adjacent sides."
-    pub fn is_hex_removable(&self, coord: &HexCoord) -> bool {
+    fn is_hex_removable(&self, coord: &HexCoord) -> bool {
         match *self.get_hex(coord) {
             Some(hex) => if hex != [Field::Empty; 6] {
                 return false;
@@ -263,19 +263,13 @@ impl Board {
             _ => false,
         }
     }
-    pub fn remove_hex(&mut self, coord: &HexCoord) {
-        assert!(
-            self.is_hex_removable(coord),
-            "Cannot remove the hex at {:?} which is {:?} and has {} neighbors",
-            coord,
-            self.get_hex(coord),
-            [0, 1, 2, 3, 4, 5]
-                .into_iter()
-                .filter(|&&f| self.get_hex_neighbor(coord, f).is_some())
-                .collect::<Vec<_>>()
-                .len(),
-        );
-        self.set_hex(coord, None);
+    pub fn remove_hex(&mut self, coord: &HexCoord) -> bool {
+        let removable = self.is_hex_removable(coord);
+
+        if removable {
+            self.set_hex(coord, None);
+        }
+        removable
     }
     fn try_hex(&self, coord: (i32, i32)) -> Option<HexCoord> {
         if let Some(coord) = HexCoord::try_new(coord.0, coord.1) {
