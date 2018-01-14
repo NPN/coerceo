@@ -126,15 +126,15 @@ impl Board {
     /// Return the coordinates of the hexes that have not been removed yet.
     pub fn extant_hexes(&self) -> Vec<HexCoord> {
         let mut coords = vec![];
-
         for x in -2..3 {
             for y in -2..3 {
-                if let Some(hex) = self.try_hex(x, y) {
-                    coords.push(hex);
-                }
+                coords.push((x, y));
             }
         }
         coords
+            .iter()
+            .filter_map(|&coord| self.try_hex(coord))
+            .collect()
     }
     pub fn black_pieces(&self) -> u32 {
         self.black_pieces
@@ -243,8 +243,7 @@ impl Board {
             (coord.x - 1, coord.y + 1),
         ];
 
-        let (x, y) = neighbors[direction as usize];
-        self.try_hex(x, y)
+        self.try_hex(neighbors[direction as usize])
     }
     /// A hex is removable (and must be removed) if it is empty and is "attached to the board by 3
     /// or less adjacent sides."
@@ -290,8 +289,8 @@ impl Board {
         );
         self.set_hex(coord, None);
     }
-    fn try_hex(&self, x: i32, y: i32) -> Option<HexCoord> {
-        if let Some(coord) = HexCoord::try_new(x, y) {
+    fn try_hex(&self, coord: (i32, i32)) -> Option<HexCoord> {
+        if let Some(coord) = HexCoord::try_new(coord.0, coord.1) {
             if self.get_hex(&coord).is_some() {
                 return Some(coord);
             }
