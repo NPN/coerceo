@@ -57,6 +57,7 @@ pub enum Field {
     Empty,
 }
 
+// Public methods
 impl Board {
     #[cfg_attr(rustfmt, rustfmt_skip)]
     /// Create a new board with the "Laurentius" starting position.
@@ -123,6 +124,16 @@ impl Board {
         }
         movable
     }
+    pub fn get_available_moves(&self, field: &FieldCoord) -> Vec<FieldCoord> {
+        if self.is_piece_on_field(field) {
+            self.get_field_vertex_neighbors(field)
+                .into_iter()
+                .filter(|c| !self.is_piece_on_field(c))
+                .collect()
+        } else {
+            vec![]
+        }
+    }
     pub fn can_exchange(&self, player: &Color) -> bool {
         2 <= match *player {
             Color::Black => self.black_hexes,
@@ -145,6 +156,9 @@ impl Board {
             self.check_captures(&fields_to_check, &exchanger);
         }
         exchangable
+    }
+    pub fn is_piece_on_field(&self, coord: &FieldCoord) -> bool {
+        self.get_field(coord) == &Field::Piece
     }
     /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
     ///
@@ -226,19 +240,6 @@ impl Board {
         }
         // A field is not its own neighbor
         neighbors.into_iter().filter(|n| n != coord).collect()
-    }
-    pub fn is_piece_on_field(&self, coord: &FieldCoord) -> bool {
-        self.get_field(coord) == &Field::Piece
-    }
-    pub fn get_available_moves(&self, field: &FieldCoord) -> Vec<FieldCoord> {
-        if self.is_piece_on_field(field) {
-            self.get_field_vertex_neighbors(field)
-                .into_iter()
-                .filter(|c| !self.is_piece_on_field(c))
-                .collect()
-        } else {
-            vec![]
-        }
     }
     fn remove_piece(&mut self, coord: &FieldCoord) {
         assert!(
