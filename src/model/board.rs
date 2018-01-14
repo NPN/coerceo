@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use model::{FieldCoord, HexCoord};
+use model::{Color, FieldCoord, HexCoord};
 
 pub struct Board {
     /*
@@ -40,6 +40,8 @@ pub struct Board {
         See http://www.redblobgames.com/grids/hexagons/#coordinates-axial for more info.
     */
     board: [[Option<Hex>; 5]; 5],
+    white_pieces: u32,
+    black_pieces: u32,
 }
 
 // Fields are numbered clockwise from the top. Even indicies are black, odd indicies are white.
@@ -58,7 +60,9 @@ impl Board {
     /// Create a new board with the "Laurentius" starting position.
     pub fn new() -> Board {
         let mut board = Board {
-            board: [[None; 5]; 5]
+            board: [[None; 5]; 5],
+            white_pieces: 18,
+            black_pieces: 18,
         };
 
         // (0, 0) is the only empty hex.
@@ -188,6 +192,10 @@ impl Board {
             coord
         );
         self.set_field(coord, Field::Empty);
+        match coord.color() {
+            Color::Black => self.black_pieces -= 1,
+            Color::White => self.white_pieces -= 1,
+        }
     }
     fn get_hex(&self, coord: &HexCoord) -> &Option<Hex> {
         &self.board[(coord.x + 2) as usize][(coord.y + 2) as usize]
@@ -289,5 +297,11 @@ impl Board {
             }
         }
         coords
+    }
+    pub fn black_pieces(&self) -> u32 {
+        self.black_pieces
+    }
+    pub fn white_pieces(&self) -> u32 {
+        self.white_pieces
     }
 }

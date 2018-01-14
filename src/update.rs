@@ -62,14 +62,8 @@ pub fn update(model: &mut Model, event: Option<Event>) {
                 model.exchanging = false;
                 model.board.remove_piece(&clicked);
                 match model.turn {
-                    Color::White => {
-                        model.white_hexes -= 2;
-                        model.black_pieces -= 1;
-                    }
-                    Color::Black => {
-                        model.black_hexes -= 2;
-                        model.white_pieces -= 1;
-                    }
+                    Color::White => model.white_hexes -= 2,
+                    Color::Black => model.black_hexes -= 2,
                 }
 
                 // Players don't collect hexes removed due to an exchange
@@ -105,9 +99,9 @@ fn clear_selection(model: &mut Model) {
 }
 
 fn check_win(model: &mut Model) {
-    if model.white_pieces == 0 {
+    if model.board.white_pieces() == 0 {
         model.game_result = GameResult::BlackWin;
-    } else if model.black_pieces == 0 {
+    } else if model.board.black_pieces() == 0 {
         model.game_result = GameResult::WhiteWin;
     }
 }
@@ -122,10 +116,6 @@ fn check_captures(model: &mut Model, fields_to_check: &[FieldCoord]) {
                 .all(|coord| model.board.is_piece_on_field(&coord))
         {
             model.board.remove_piece(field);
-            match model.turn {
-                Color::White => model.black_pieces -= 1,
-                Color::Black => model.white_pieces -= 1,
-            }
         }
     }
 }

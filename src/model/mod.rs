@@ -22,9 +22,7 @@ pub use self::board::Board;
 pub struct Model {
     pub board: Board,
     pub turn: Color,
-    pub white_pieces: u32,
     pub white_hexes: u32,
-    pub black_pieces: u32,
     pub black_hexes: u32,
     pub selected_piece: Option<FieldCoord>,
     pub last_move: Move,
@@ -38,9 +36,7 @@ impl Model {
         Model {
             board: Board::new(),
             turn: Color::White,
-            white_pieces: 18,
             white_hexes: 0,
-            black_pieces: 18,
             black_hexes: 0,
             selected_piece: None,
             last_move: Move::None,
