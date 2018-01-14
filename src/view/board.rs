@@ -45,18 +45,22 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
 
     let side_len = (size.x / 8.0).min(size.y / (5.0 * SQRT_3));
     let origin = cursor_pos + size / 2.0;
-    for hex in model.board.extant_hexes() {
-        draw_hex(&hex, origin, side_len);
+
+    let extant_hexes = model.board.extant_hexes();
+    let is_hex_extant = |hex| extant_hexes.contains(&hex);
+
+    for hex in &extant_hexes {
+        draw_hex(hex, origin, side_len);
     }
 
     match model.last_move {
         Move::Exchange(ref exchanged) => {
-            if model.board.is_hex_extant(&exchanged.to_hex()) {
+            if is_hex_extant(exchanged.to_hex()) {
                 highlight_field(EXCHANGE_HIGHLIGHT, exchanged, origin, side_len);
             }
         }
         Move::Move(ref from, ref to) => {
-            if model.board.is_hex_extant(&from.to_hex()) {
+            if is_hex_extant(from.to_hex()) {
                 highlight_field(LAST_MOVE_HIGHLIGHT, from, origin, side_len);
             }
             highlight_field(LAST_MOVE_HIGHLIGHT, to, origin, side_len);
@@ -76,15 +80,14 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
 
     let hover_field = pixel_to_field(mouse_pos, origin, side_len);
     if let Some(ref coord) = hover_field {
-        if model.exchanging && coord.color() != model.turn
-            && model.board.is_hex_extant(&coord.to_hex())
+        if model.exchanging && coord.color() != model.turn && is_hex_extant(coord.to_hex())
             && model.board.is_piece_on_field(coord)
         {
             highlight_field(EXCHANGE_HIGHLIGHT, coord, origin, side_len);
         }
     }
 
-    for hex in model.board.extant_hexes() {
+    for hex in &extant_hexes {
         for f in 0..6 {
             let coord = hex.to_field(f);
             if model.board.is_piece_on_field(&coord) {

@@ -123,12 +123,6 @@ impl Board {
     }
     /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
     ///
-    /// Return true if the passed hex has not been removed yet.
-    pub fn is_hex_extant(&self, coord: &HexCoord) -> bool {
-        self.get_hex(coord).is_some()
-    }
-    /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
-    ///
     /// Return the coordinates of the hexes that have not been removed yet.
     pub fn extant_hexes(&self) -> Vec<HexCoord> {
         let mut coords = vec![];
@@ -298,7 +292,7 @@ impl Board {
     }
     fn try_hex(&self, x: i32, y: i32) -> Option<HexCoord> {
         if let Some(coord) = HexCoord::try_new(x, y) {
-            if self.is_hex_extant(&coord) {
+            if self.get_hex(&coord).is_some() {
                 return Some(coord);
             }
         }
