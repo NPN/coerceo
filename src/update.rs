@@ -22,59 +22,54 @@ pub fn update(model: &mut Model, event: Option<Event>) {
     if let Some(event) = event {
         use view::Event::*;
 
-        if event == NewGame {
-            *model = Model::new();
-            return;
-        } else if model.game_result != GameResult::InProgress {
-            return;
-        }
-
         match event {
             Click(clicked) => if model.turn == clicked.color() {
                 if model.board.is_piece_on_field(&clicked) {
                     if model.selected_piece.as_ref() == Some(&clicked) {
-                        clear_selection(model);
+                        model.clear_selection();
                     } else {
                         model.available_moves = Some(model.board.get_available_moves(&clicked));
                         model.selected_piece = Some(clicked);
                     }
                 } else if let Some(selected) = model.selected_piece.take() {
-                    if model.board.move_piece(&selected, &clicked) {
+                    if model.board.can_move_piece(&selected, &clicked) {
+                        model.commit_move();
+                        model.board.move_piece(&selected, &clicked);
                         model.last_move = Move::Move(selected, clicked);
                         model.switch_turns();
                     }
-                    clear_selection(model);
+                    model.clear_selection();
                     check_win(model);
                 }
-            } else if model.exchanging && model.board.exchange_piece(&clicked) {
+            } else if model.exchanging && model.board.is_piece_on_field(&clicked) {
+                model.commit_move();
+                model.board.exchange_piece(&clicked);
                 model.exchanging = false;
 
                 model.last_move = Move::Exchange(clicked);
                 model.switch_turns();
                 check_win(model);
             } else {
-                clear_selection(model);
+                model.clear_selection();
             },
+            NewGame => *model = Model::new(),
             Exchange => {
                 if model.board.can_exchange(&model.turn) {
                     model.exchanging = !model.exchanging;
-                    clear_selection(model);
+                    model.clear_selection();
                 }
             }
             Resign => {
+                model.commit_move();
                 model.game_result = match model.turn {
                     Color::Black => GameResult::WhiteWin,
                     Color::White => GameResult::BlackWin,
                 }
             }
-            _ => {}
+            Undo => model.undo_move(),
+            Redo => model.redo_move(),
         }
     }
-}
-
-fn clear_selection(model: &mut Model) {
-    model.selected_piece = None;
-    model.available_moves = None;
 }
 
 fn check_win(model: &mut Model) {

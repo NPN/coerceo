@@ -21,12 +21,14 @@ pub use self::board::Board;
 
 pub struct Model {
     pub board: Board,
-    pub turn: Color,
-    pub selected_piece: Option<FieldCoord>,
     pub last_move: Move,
+    pub turn: Color,
+    pub game_result: GameResult,
+    pub selected_piece: Option<FieldCoord>,
     pub available_moves: Option<Vec<FieldCoord>>,
     pub exchanging: bool,
-    pub game_result: GameResult,
+    undo_stack: Vec<(Board, Move, Color, GameResult)>,
+    redo_stack: Vec<(Board, Move, Color, GameResult)>,
 }
 
 impl Model {
@@ -39,14 +41,59 @@ impl Model {
             available_moves: None,
             exchanging: false,
             game_result: GameResult::InProgress,
+            undo_stack: vec![],
+            redo_stack: vec![],
         }
     }
     pub fn switch_turns(&mut self) {
         self.turn = self.turn.switch();
     }
+    pub fn can_undo(&self) -> bool {
+        !self.undo_stack.is_empty()
+    }
+    pub fn can_redo(&self) -> bool {
+        !self.redo_stack.is_empty()
+    }
+    pub fn commit_move(&mut self) {
+        self.undo_stack
+            .push((self.board, self.last_move, self.turn, self.game_result));
+        self.redo_stack.clear();
+    }
+    pub fn undo_move(&mut self) {
+        if let Some((board, last_move, turn, game_result)) = self.undo_stack.pop() {
+            self.redo_stack
+                .push((self.board, self.last_move, self.turn, self.game_result));
+
+            self.board = board;
+            self.last_move = last_move;
+            self.turn = turn;
+            self.game_result = game_result;
+
+            self.clear_selection();
+            self.exchanging = false;
+        }
+    }
+    pub fn redo_move(&mut self) {
+        if let Some((board, last_move, turn, game_result)) = self.redo_stack.pop() {
+            self.undo_stack
+                .push((self.board, self.last_move, self.turn, self.game_result));
+
+            self.board = board;
+            self.last_move = last_move;
+            self.turn = turn;
+            self.game_result = game_result;
+
+            self.clear_selection();
+            self.exchanging = false;
+        }
+    }
+    pub fn clear_selection(&mut self) {
+        self.selected_piece = None;
+        self.available_moves = None;
+    }
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum Color {
     White,
     Black,
@@ -61,20 +108,21 @@ impl Color {
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum Move {
     Exchange(FieldCoord),
     Move(FieldCoord, FieldCoord),
     None,
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum GameResult {
     InProgress,
     WhiteWin,
     BlackWin,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct FieldCoord {
     x: i32,
     y: i32,

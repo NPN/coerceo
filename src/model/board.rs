@@ -17,6 +17,7 @@
 
 use model::{Color, FieldCoord, HexCoord};
 
+#[derive(Clone, Copy)]
 pub struct Board {
     /*
                 ____
@@ -104,25 +105,25 @@ impl Board {
 
         board
     }
-    pub fn move_piece(&mut self, from: &FieldCoord, to: &FieldCoord) -> bool {
-        let movable = self.is_piece_on_field(from) && !self.is_piece_on_field(to)
-            && self.get_field_vertex_neighbors(from).contains(to);
+    pub fn can_move_piece(&mut self, from: &FieldCoord, to: &FieldCoord) -> bool {
+        self.is_piece_on_field(from) && !self.is_piece_on_field(to)
+            && self.get_field_vertex_neighbors(from).contains(to)
+    }
+    pub fn move_piece(&mut self, from: &FieldCoord, to: &FieldCoord) {
+        assert!(self.can_move_piece(from, to));
 
-        if movable {
-            self.set_field(from, Field::Empty);
-            self.set_field(to, Field::Piece);
+        self.set_field(from, Field::Empty);
+        self.set_field(to, Field::Piece);
 
-            let mover = from.color();
-            let (capture_count, mut fields_to_check) = self.check_hexes(&from.to_hex());
-            fields_to_check.append(&mut self.get_field_edge_neighbors(to));
-            self.check_captures(&fields_to_check, &mover);
+        let mover = from.color();
+        let (capture_count, mut fields_to_check) = self.check_hexes(&from.to_hex());
+        fields_to_check.append(&mut self.get_field_edge_neighbors(to));
+        self.check_captures(&fields_to_check, &mover);
 
-            match mover {
-                Color::White => self.white_hexes += capture_count,
-                Color::Black => self.black_hexes += capture_count,
-            }
+        match mover {
+            Color::White => self.white_hexes += capture_count,
+            Color::Black => self.black_hexes += capture_count,
         }
-        movable
     }
     pub fn get_available_moves(&self, field: &FieldCoord) -> Vec<FieldCoord> {
         if self.is_piece_on_field(field) {
@@ -140,22 +141,19 @@ impl Board {
             Color::White => self.white_hexes,
         }
     }
-    pub fn exchange_piece(&mut self, coord: &FieldCoord) -> bool {
+    pub fn exchange_piece(&mut self, coord: &FieldCoord) {
         let exchanger = coord.color().switch();
-        let exchangable = self.can_exchange(&exchanger) && self.is_piece_on_field(coord);
+        assert!(self.can_exchange(&exchanger));
 
-        if exchangable {
-            self.remove_piece(coord);
-            match exchanger {
-                Color::White => self.white_hexes -= 2,
-                Color::Black => self.black_hexes -= 2,
-            }
-
-            // Players don't collect hexes removed due to an exchange
-            let (_, fields_to_check) = self.check_hexes(&coord.to_hex());
-            self.check_captures(&fields_to_check, &exchanger);
+        self.remove_piece(coord);
+        match exchanger {
+            Color::White => self.white_hexes -= 2,
+            Color::Black => self.black_hexes -= 2,
         }
-        exchangable
+
+        // Players don't collect hexes removed due to an exchange
+        let (_, fields_to_check) = self.check_hexes(&coord.to_hex());
+        self.check_captures(&fields_to_check, &exchanger);
     }
     pub fn is_piece_on_field(&self, coord: &FieldCoord) -> bool {
         self.get_field(coord) == &Field::Piece

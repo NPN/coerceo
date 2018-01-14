@@ -33,6 +33,8 @@ pub enum Event {
     Exchange,
     NewGame,
     Resign,
+    Undo,
+    Redo,
 }
 
 pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
@@ -59,15 +61,27 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
         .build(|| {
             ui.text("Welcome to Coerceo!");
 
-            if let Some(click) = board(model, Vec2::new(size.0 - 16.0, size.1 - 135.0)) {
-                insert_if_empty(&mut event, click);
-            }
+            let click = board(model, Vec2::new(size.0 - 16.0, size.1 - 155.0));
 
             use model::GameResult::*;
             match model.game_result {
-                BlackWin => ui.text("Black wins!"),
-                WhiteWin => ui.text("White wins!"),
+                BlackWin => {
+                    ui.text("Black wins!");
+                    if model.can_undo() && ui.button(im_str!("Undo"), Vec2::new(100.0, 20.0)) {
+                        insert_if_empty(&mut event, Event::Undo);
+                    }
+                }
+                WhiteWin => {
+                    ui.text("White wins!");
+                    if model.can_undo() && ui.button(im_str!("Undo"), Vec2::new(100.0, 20.0)) {
+                        insert_if_empty(&mut event, Event::Undo);
+                    }
+                }
                 InProgress => {
+                    if let Some(click) = click {
+                        insert_if_empty(&mut event, click);
+                    }
+
                     match model.turn {
                         Color::White => ui.text("It's white's turn."),
                         Color::Black => ui.text("It's black's turn."),
@@ -83,6 +97,18 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                         model.board.black_pieces(),
                         model.board.black_hexes(),
                     ));
+
+                    if model.can_undo() && ui.button(im_str!("Undo"), Vec2::new(100.0, 20.0)) {
+                        insert_if_empty(&mut event, Event::Undo);
+                    }
+                    if model.can_redo() {
+                        if model.can_undo() {
+                            ui.same_line(0.0);
+                        }
+                        if ui.button(im_str!("Redo"), Vec2::new(100.0, 20.0)) {
+                            insert_if_empty(&mut event, Event::Redo);
+                        }
+                    }
 
                     if ui.button(im_str!("Resign"), Vec2::new(100.0, 20.0)) {
                         insert_if_empty(&mut event, Event::Resign);
