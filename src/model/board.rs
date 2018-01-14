@@ -40,8 +40,10 @@ pub struct Board {
         See http://www.redblobgames.com/grids/hexagons/#coordinates-axial for more info.
     */
     board: [[Option<Hex>; 5]; 5],
-    white_pieces: u32,
     black_pieces: u32,
+    black_hexes: u32,
+    white_pieces: u32,
+    white_hexes: u32,
 }
 
 // Fields are numbered clockwise from the top. Even indicies are black, odd indicies are white.
@@ -61,8 +63,10 @@ impl Board {
     pub fn new() -> Board {
         let mut board = Board {
             board: [[None; 5]; 5],
-            white_pieces: 18,
             black_pieces: 18,
+            black_hexes: 0,
+            white_pieces: 18,
+            white_hexes: 0,
         };
 
         // (0, 0) is the only empty hex.
@@ -106,8 +110,41 @@ impl Board {
         if movable {
             self.set_field(from, Field::Empty);
             self.set_field(to, Field::Piece);
+
+            let mover = from.color();
+            let (capture_count, mut fields_to_check) = self.check_hexes(&from.to_hex());
+            fields_to_check.append(&mut self.get_field_edge_neighbors(to));
+            self.check_captures(&fields_to_check, &mover);
+
+            match mover {
+                Color::White => self.white_hexes += capture_count,
+                Color::Black => self.black_hexes += capture_count,
+            }
         }
         movable
+    }
+    pub fn can_exchange(&self, player: &Color) -> bool {
+        2 <= match *player {
+            Color::Black => self.black_hexes,
+            Color::White => self.white_hexes,
+        }
+    }
+    pub fn exchange_piece(&mut self, coord: &FieldCoord) -> bool {
+        let exchanger = coord.color().switch();
+        let exchangable = self.can_exchange(&exchanger) && self.is_piece_on_field(coord);
+
+        if exchangable {
+            self.remove_piece(coord);
+            match exchanger {
+                Color::White => self.white_hexes -= 2,
+                Color::Black => self.black_hexes -= 2,
+            }
+
+            // Players don't collect hexes removed due to an exchange
+            let (_, fields_to_check) = self.check_hexes(&coord.to_hex());
+            self.check_captures(&fields_to_check, &exchanger);
+        }
+        exchangable
     }
     /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
     ///
@@ -127,8 +164,14 @@ impl Board {
     pub fn black_pieces(&self) -> u32 {
         self.black_pieces
     }
+    pub fn black_hexes(&self) -> u32 {
+        self.black_hexes
+    }
     pub fn white_pieces(&self) -> u32 {
         self.white_pieces
+    }
+    pub fn white_hexes(&self) -> u32 {
+        self.white_hexes
     }
 }
 
@@ -160,7 +203,7 @@ impl Board {
     /// Return fields that share an edge with the given field. These fields are always the opposite
     /// color of the given field. If all of a piece's edge neighbors are occupied, that piece might
     /// be capturable.
-    pub fn get_field_edge_neighbors(&self, coord: &FieldCoord) -> Vec<FieldCoord> {
+    fn get_field_edge_neighbors(&self, coord: &FieldCoord) -> Vec<FieldCoord> {
         let mut neighbors = vec![
             // There are always two edge neighbors on the same hex as the given field
             FieldCoord::new(coord.x, coord.y, (coord.f + 1) % 6),
@@ -175,7 +218,7 @@ impl Board {
     }
     /// Return fields that share a vertex with the given field and have the same color as the given
     /// field. Pieces can move to fields that are vertex neighbors of the field they are on.
-    pub fn get_field_vertex_neighbors(&self, coord: &FieldCoord) -> Vec<FieldCoord> {
+    fn get_field_vertex_neighbors(&self, coord: &FieldCoord) -> Vec<FieldCoord> {
         // A field's vertex neighbors can be defined as the edge neighbors of its edge neighbors
         let mut neighbors = vec![];
         for field in self.get_field_edge_neighbors(coord) {
@@ -197,7 +240,7 @@ impl Board {
             vec![]
         }
     }
-    pub fn remove_piece(&mut self, coord: &FieldCoord) {
+    fn remove_piece(&mut self, coord: &FieldCoord) {
         assert!(
             self.is_piece_on_field(coord),
             "There is no piece at {:?} to remove",
@@ -207,6 +250,17 @@ impl Board {
         match coord.color() {
             Color::Black => self.black_pieces -= 1,
             Color::White => self.white_pieces -= 1,
+        }
+    }
+    fn check_captures(&mut self, fields_to_check: &[FieldCoord], capturer: &Color) {
+        for field in fields_to_check {
+            if field.color() != *capturer && self.is_piece_on_field(field)
+                && self.get_field_edge_neighbors(field)
+                    .iter()
+                    .all(|coord| self.is_piece_on_field(coord))
+            {
+                self.remove_piece(field);
+            }
         }
     }
 }
@@ -219,7 +273,7 @@ impl Board {
     fn set_hex(&mut self, coord: &HexCoord, hex: Option<Hex>) {
         self.board[(coord.x + 2) as usize][(coord.y + 2) as usize] = hex;
     }
-    pub fn get_hex_neighbor(&self, coord: &HexCoord, direction: u32) -> Option<HexCoord> {
+    fn get_hex_neighbor(&self, coord: &HexCoord, direction: u32) -> Option<HexCoord> {
         assert!(direction < 6);
 
         let neighbors = [
@@ -263,7 +317,7 @@ impl Board {
             _ => false,
         }
     }
-    pub fn remove_hex(&mut self, coord: &HexCoord) -> bool {
+    fn remove_hex(&mut self, coord: &HexCoord) -> bool {
         let removable = self.is_hex_removable(coord);
 
         if removable {
@@ -278,5 +332,25 @@ impl Board {
             }
         }
         None
+    }
+    fn check_hexes(&mut self, coord: &HexCoord) -> (u32, Vec<FieldCoord>) {
+        let mut remove_count = 0;
+        let mut fields = vec![];
+
+        if self.remove_hex(coord) {
+            remove_count += 1;
+            for f in 0..6 {
+                if let Some(neighbor) = self.get_hex_neighbor(coord, f) {
+                    let (new_remove_count, mut new_fields) = self.check_hexes(&neighbor);
+                    if new_remove_count == 0 {
+                        fields.push(neighbor.to_field((f + 3) % 6));
+                    } else {
+                        remove_count += new_remove_count;
+                        fields.append(&mut new_fields);
+                    }
+                }
+            }
+        }
+        (remove_count, fields)
     }
 }

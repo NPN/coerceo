@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use model::{Color, FieldCoord, GameResult, HexCoord, Model, Move};
+use model::{Color, GameResult, Model, Move};
 use view::Event;
 
 pub fn update(model: &mut Model, event: Option<Event>) {
@@ -40,33 +40,14 @@ pub fn update(model: &mut Model, event: Option<Event>) {
                     }
                 } else if let Some(selected) = model.selected_piece.take() {
                     if model.board.move_piece(&selected, &clicked) {
-                        let (capture_count, mut fields_to_check) =
-                            check_hexes(model, &selected.to_hex());
-                        fields_to_check.append(&mut model.board.get_field_edge_neighbors(&clicked));
-                        check_captures(model, &fields_to_check);
-
-                        match model.turn {
-                            Color::White => model.white_hexes += capture_count,
-                            Color::Black => model.black_hexes += capture_count,
-                        }
-
                         model.last_move = Move::Move(selected, clicked);
                         model.switch_turns();
                     }
                     clear_selection(model);
                     check_win(model);
                 }
-            } else if model.exchanging && model.board.is_piece_on_field(&clicked) {
+            } else if model.exchanging && model.board.exchange_piece(&clicked) {
                 model.exchanging = false;
-                model.board.remove_piece(&clicked);
-                match model.turn {
-                    Color::White => model.white_hexes -= 2,
-                    Color::Black => model.black_hexes -= 2,
-                }
-
-                // Players don't collect hexes removed due to an exchange
-                let (_, fields_to_check) = check_hexes(model, &clicked.to_hex());
-                check_captures(model, &fields_to_check);
 
                 model.last_move = Move::Exchange(clicked);
                 model.switch_turns();
@@ -75,7 +56,7 @@ pub fn update(model: &mut Model, event: Option<Event>) {
                 clear_selection(model);
             },
             Exchange => {
-                if model.can_exchange() {
+                if model.board.can_exchange(&model.turn) {
                     model.exchanging = !model.exchanging;
                     clear_selection(model);
                 }
@@ -102,42 +83,4 @@ fn check_win(model: &mut Model) {
     } else if model.board.black_pieces() == 0 {
         model.game_result = GameResult::WhiteWin;
     }
-}
-
-fn check_captures(model: &mut Model, fields_to_check: &[FieldCoord]) {
-    for field in fields_to_check {
-        if field.color() != model.turn && model.board.is_piece_on_field(field)
-            && model
-                .board
-                .get_field_edge_neighbors(field)
-                .into_iter()
-                .all(|coord| model.board.is_piece_on_field(&coord))
-        {
-            model.board.remove_piece(field);
-        }
-    }
-}
-
-fn check_hexes(model: &mut Model, coord: &HexCoord) -> (u32, Vec<FieldCoord>) {
-    let mut remove_count = 0;
-    let mut fields = vec![];
-
-    if model.board.remove_hex(coord) {
-        remove_count += 1;
-        for f in 0..6 {
-            if let Some(neighbor) = model.board.get_hex_neighbor(coord, f) {
-                let (removed, mut new_fields) = check_hexes(model, &neighbor);
-                if remove_count == 0 {
-                    let field = neighbor.to_field((f + 3) % 6);
-                    if field.color() != model.turn {
-                        fields.push(field);
-                    }
-                } else {
-                    remove_count += removed;
-                    fields.append(&mut new_fields);
-                }
-            }
-        }
-    }
-    (remove_count, fields)
 }

@@ -22,8 +22,6 @@ pub use self::board::Board;
 pub struct Model {
     pub board: Board,
     pub turn: Color,
-    pub white_hexes: u32,
-    pub black_hexes: u32,
     pub selected_piece: Option<FieldCoord>,
     pub last_move: Move,
     pub available_moves: Option<Vec<FieldCoord>>,
@@ -36,8 +34,6 @@ impl Model {
         Model {
             board: Board::new(),
             turn: Color::White,
-            white_hexes: 0,
-            black_hexes: 0,
             selected_piece: None,
             last_move: Move::None,
             available_moves: None,
@@ -46,16 +42,7 @@ impl Model {
         }
     }
     pub fn switch_turns(&mut self) {
-        self.turn = match self.turn {
-            Color::White => Color::Black,
-            Color::Black => Color::White,
-        }
-    }
-    pub fn can_exchange(&self) -> bool {
-        2 <= match self.turn {
-            Color::Black => self.black_hexes,
-            Color::White => self.white_hexes,
-        }
+        self.turn = self.turn.switch();
     }
 }
 
@@ -63,6 +50,15 @@ impl Model {
 pub enum Color {
     White,
     Black,
+}
+
+impl Color {
+    pub fn switch(&self) -> Color {
+        match *self {
+            Color::White => Color::Black,
+            Color::Black => Color::White,
+        }
+    }
 }
 
 pub enum Move {

@@ -76,19 +76,19 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                     ui.text(format!(
                         "White has {} piece(s) left and {} captured hex(es).",
                         model.board.white_pieces(),
-                        model.white_hexes,
+                        model.board.white_hexes(),
                     ));
                     ui.text(format!(
                         "Black has {} piece(s) left and {} captured hex(es).",
                         model.board.black_pieces(),
-                        model.black_hexes,
+                        model.board.black_hexes(),
                     ));
 
                     if ui.button(im_str!("Resign"), Vec2::new(100.0, 20.0)) {
                         insert_if_empty(&mut event, Event::Resign);
                     }
                     ui.same_line(0.0);
-                    if model.can_exchange() {
+                    if model.board.can_exchange(&model.turn) {
                         let label = if model.exchanging {
                             im_str!("Stop Exchanging")
                         } else {
