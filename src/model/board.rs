@@ -99,7 +99,59 @@ impl Board {
 
         board
     }
+    pub fn move_piece(&mut self, from: &FieldCoord, to: &FieldCoord) {
+        assert!(
+            self.can_move_piece(from, to),
+            "Can't move {:?} at {:?} to {:?} at {:?}. These fields {} vertex neighbors.",
+            self.get_field(from),
+            from,
+            self.get_field(to),
+            to,
+            if self.get_field_vertex_neighbors(from).contains(to) {
+                "ARE"
+            } else {
+                "ARE NOT"
+            },
+        );
 
+        self.set_field(from, Field::Empty);
+        self.set_field(to, Field::Piece);
+    }
+    pub fn can_move_piece(&self, from: &FieldCoord, to: &FieldCoord) -> bool {
+        self.is_piece_on_field(from) && !self.is_piece_on_field(to)
+            && self.get_field_vertex_neighbors(from).contains(to)
+    }
+    /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
+    ///
+    /// Return true if the passed hex has not been removed yet.
+    pub fn is_hex_extant(&self, coord: &HexCoord) -> bool {
+        self.get_hex(coord).is_some()
+    }
+    /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
+    ///
+    /// Return the coordinates of the hexes that have not been removed yet.
+    pub fn extant_hexes(&self) -> Vec<HexCoord> {
+        let mut coords = vec![];
+
+        for x in -2..3 {
+            for y in -2..3 {
+                if let Some(hex) = self.try_hex(x, y) {
+                    coords.push(hex);
+                }
+            }
+        }
+        coords
+    }
+    pub fn black_pieces(&self) -> u32 {
+        self.black_pieces
+    }
+    pub fn white_pieces(&self) -> u32 {
+        self.white_pieces
+    }
+}
+
+// Field and piece methods
+impl Board {
     fn get_field(&self, coord: &FieldCoord) -> &Field {
         match *self.get_hex(&coord.to_hex()) {
             Some(ref hex) => &hex[coord.f as usize],
@@ -163,28 +215,6 @@ impl Board {
             vec![]
         }
     }
-    pub fn can_move_piece(&self, from: &FieldCoord, to: &FieldCoord) -> bool {
-        self.is_piece_on_field(from) && !self.is_piece_on_field(to)
-            && self.get_field_vertex_neighbors(from).contains(to)
-    }
-    pub fn move_piece(&mut self, from: &FieldCoord, to: &FieldCoord) {
-        assert!(
-            self.can_move_piece(from, to),
-            "Can't move {:?} at {:?} to {:?} at {:?}. These fields {} vertex neighbors.",
-            self.get_field(from),
-            from,
-            self.get_field(to),
-            to,
-            if self.get_field_vertex_neighbors(from).contains(to) {
-                "ARE"
-            } else {
-                "ARE NOT"
-            },
-        );
-
-        self.set_field(from, Field::Empty);
-        self.set_field(to, Field::Piece);
-    }
     pub fn remove_piece(&mut self, coord: &FieldCoord) {
         assert!(
             self.is_piece_on_field(coord),
@@ -197,6 +227,10 @@ impl Board {
             Color::White => self.white_pieces -= 1,
         }
     }
+}
+
+// Hex methods
+impl Board {
     fn get_hex(&self, coord: &HexCoord) -> &Option<Hex> {
         &self.board[(coord.x + 2) as usize][(coord.y + 2) as usize]
     }
@@ -269,32 +303,5 @@ impl Board {
             }
         }
         None
-    }
-    /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
-    ///
-    /// Return true if the passed hex has not been removed yet.
-    pub fn is_hex_extant(&self, coord: &HexCoord) -> bool {
-        self.get_hex(coord).is_some()
-    }
-    /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
-    ///
-    /// Return the coordinates of the hexes that have not been removed yet.
-    pub fn extant_hexes(&self) -> Vec<HexCoord> {
-        let mut coords = vec![];
-
-        for x in -2..3 {
-            for y in -2..3 {
-                if let Some(hex) = self.try_hex(x, y) {
-                    coords.push(hex);
-                }
-            }
-        }
-        coords
-    }
-    pub fn black_pieces(&self) -> u32 {
-        self.black_pieces
-    }
-    pub fn white_pieces(&self) -> u32 {
-        self.white_pieces
     }
 }
