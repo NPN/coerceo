@@ -119,29 +119,23 @@ fn check_captures(model: &mut Model, fields_to_check: &[FieldCoord]) {
 }
 
 fn check_hexes(model: &mut Model, coord: &HexCoord) -> (u32, Vec<FieldCoord>) {
-    if model.board.is_hex_removable(coord) {
-        remove_hex(model, coord)
-    } else {
-        (0, vec![])
-    }
-}
-
-fn remove_hex(model: &mut Model, coord: &HexCoord) -> (u32, Vec<FieldCoord>) {
-    let mut remove_count = 1;
-    model.board.remove_hex(coord);
-
+    let mut remove_count = 0;
     let mut fields = vec![];
 
-    for i in 0..6 {
-        if let Some(neighbor) = model.board.get_hex_neighbor(coord, i) {
-            if model.board.is_hex_removable(&neighbor) {
-                let (removed, mut new_fields) = remove_hex(model, &neighbor);
-                remove_count += removed;
-                fields.append(&mut new_fields);
-            } else {
-                let field = neighbor.to_field((i + 3) % 6);
-                if field.color() != model.turn {
-                    fields.push(field);
+    if model.board.is_hex_removable(coord) {
+        model.board.remove_hex(coord);
+        remove_count += 1;
+        for f in 0..6 {
+            if let Some(neighbor) = model.board.get_hex_neighbor(coord, f) {
+                let (removed, mut new_fields) = check_hexes(model, &neighbor);
+                if remove_count == 0 {
+                    let field = neighbor.to_field((f + 3) % 6);
+                    if field.color() != model.turn {
+                        fields.push(field);
+                    }
+                } else {
+                    remove_count += removed;
+                    fields.append(&mut new_fields);
                 }
             }
         }
