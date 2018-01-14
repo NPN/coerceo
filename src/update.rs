@@ -39,9 +39,7 @@ pub fn update(model: &mut Model, event: Option<Event>) {
                         model.selected_piece = Some(clicked);
                     }
                 } else if let Some(selected) = model.selected_piece.take() {
-                    if model.board.can_move_piece(&selected, &clicked) {
-                        model.board.move_piece(&selected, &clicked);
-
+                    if model.board.move_piece(&selected, &clicked) {
                         let (capture_count, mut fields_to_check) =
                             check_hexes(model, &selected.to_hex());
                         fields_to_check.append(&mut model.board.get_field_edge_neighbors(&clicked));

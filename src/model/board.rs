@@ -99,27 +99,15 @@ impl Board {
 
         board
     }
-    pub fn move_piece(&mut self, from: &FieldCoord, to: &FieldCoord) {
-        assert!(
-            self.can_move_piece(from, to),
-            "Can't move {:?} at {:?} to {:?} at {:?}. These fields {} vertex neighbors.",
-            self.get_field(from),
-            from,
-            self.get_field(to),
-            to,
-            if self.get_field_vertex_neighbors(from).contains(to) {
-                "ARE"
-            } else {
-                "ARE NOT"
-            },
-        );
+    pub fn move_piece(&mut self, from: &FieldCoord, to: &FieldCoord) -> bool {
+        let movable = self.is_piece_on_field(from) && !self.is_piece_on_field(to)
+            && self.get_field_vertex_neighbors(from).contains(to);
 
-        self.set_field(from, Field::Empty);
-        self.set_field(to, Field::Piece);
-    }
-    pub fn can_move_piece(&self, from: &FieldCoord, to: &FieldCoord) -> bool {
-        self.is_piece_on_field(from) && !self.is_piece_on_field(to)
-            && self.get_field_vertex_neighbors(from).contains(to)
+        if movable {
+            self.set_field(from, Field::Empty);
+            self.set_field(to, Field::Piece);
+        }
+        movable
     }
     /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
     ///
