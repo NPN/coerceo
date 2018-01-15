@@ -15,6 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::mem;
+
 mod board;
 
 pub use self::board::Board;
@@ -61,13 +63,12 @@ impl Model {
     }
     pub fn undo_move(&mut self) {
         if let Some((board, last_move, turn, game_result)) = self.undo_stack.pop() {
-            self.redo_stack
-                .push((self.board, self.last_move, self.turn, self.game_result));
-
-            self.board = board;
-            self.last_move = last_move;
-            self.turn = turn;
-            self.game_result = game_result;
+            self.redo_stack.push((
+                mem::replace(&mut self.board, board),
+                mem::replace(&mut self.last_move, last_move),
+                mem::replace(&mut self.turn, turn),
+                mem::replace(&mut self.game_result, game_result),
+            ));
 
             self.clear_selection();
             self.exchanging = false;
@@ -75,13 +76,12 @@ impl Model {
     }
     pub fn redo_move(&mut self) {
         if let Some((board, last_move, turn, game_result)) = self.redo_stack.pop() {
-            self.undo_stack
-                .push((self.board, self.last_move, self.turn, self.game_result));
-
-            self.board = board;
-            self.last_move = last_move;
-            self.turn = turn;
-            self.game_result = game_result;
+            self.undo_stack.push((
+                mem::replace(&mut self.board, board),
+                mem::replace(&mut self.last_move, last_move),
+                mem::replace(&mut self.turn, turn),
+                mem::replace(&mut self.game_result, game_result),
+            ));
 
             self.clear_selection();
             self.exchanging = false;
