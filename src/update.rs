@@ -61,10 +61,7 @@ pub fn update(model: &mut Model, event: Option<Event>) {
             }
             Resign => {
                 model.commit_move();
-                model.game_result = match model.turn {
-                    Color::Black => GameResult::WhiteWin,
-                    Color::White => GameResult::BlackWin,
-                }
+                model.game_result = GameResult::Win(model.turn.switch());
             }
             Undo => model.undo_move(),
             Redo => model.redo_move(),
@@ -74,8 +71,8 @@ pub fn update(model: &mut Model, event: Option<Event>) {
 
 fn check_win(model: &mut Model) {
     if model.board.white_pieces() == 0 {
-        model.game_result = GameResult::BlackWin;
+        model.game_result = GameResult::Win(Color::Black);
     } else if model.board.black_pieces() == 0 {
-        model.game_result = GameResult::WhiteWin;
+        model.game_result = GameResult::Win(Color::White);
     }
 }

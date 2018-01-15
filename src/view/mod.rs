@@ -65,14 +65,11 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
 
             use model::GameResult::*;
             match model.game_result {
-                BlackWin => {
-                    ui.text("Black wins!");
-                    if model.can_undo() && ui.button(im_str!("Undo"), Vec2::new(100.0, 20.0)) {
-                        insert_if_empty(&mut event, Event::Undo);
-                    }
-                }
-                WhiteWin => {
-                    ui.text("White wins!");
+                Win(color) => {
+                    ui.text(match color {
+                        Color::Black => "Black wins!",
+                        Color::White => "White wins!",
+                    });
                     if model.can_undo() && ui.button(im_str!("Undo"), Vec2::new(100.0, 20.0)) {
                         insert_if_empty(&mut event, Event::Undo);
                     }

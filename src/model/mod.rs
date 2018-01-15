@@ -118,8 +118,7 @@ pub enum Move {
 #[derive(Clone, Copy, PartialEq)]
 pub enum GameResult {
     InProgress,
-    WhiteWin,
-    BlackWin,
+    Win(Color),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
