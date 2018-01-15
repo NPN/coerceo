@@ -108,12 +108,11 @@ impl Board {
         board
     }
     pub fn can_move_piece(&mut self, from: &FieldCoord, to: &FieldCoord) -> bool {
-        self.is_piece_on_field(from) && !self.is_piece_on_field(to)
+        from.color() == self.turn && self.is_piece_on_field(from) && !self.is_piece_on_field(to)
             && self.get_field_vertex_neighbors(from).contains(to)
     }
     pub fn move_piece(&mut self, from: &FieldCoord, to: &FieldCoord) {
         assert!(self.can_move_piece(from, to));
-        assert!(from.color() == self.turn);
 
         self.set_field(from, Field::Empty);
         self.set_field(to, Field::Piece);
@@ -144,9 +143,11 @@ impl Board {
             Color::White => self.white_hexes,
         }
     }
+    pub fn can_exchange_piece(&self, coord: &FieldCoord) -> bool {
+        self.can_exchange() && coord.color() != self.turn && self.is_piece_on_field(coord)
+    }
     pub fn exchange_piece(&mut self, coord: &FieldCoord) {
-        assert!(self.can_exchange());
-        assert!(coord.color() != self.turn);
+        assert!(self.can_exchange_piece(coord));
 
         self.remove_piece(coord);
         match self.turn {
