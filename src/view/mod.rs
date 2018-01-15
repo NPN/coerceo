@@ -79,7 +79,7 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                         insert_if_empty(&mut event, click);
                     }
 
-                    match model.turn {
+                    match model.board.turn() {
                         Color::White => ui.text("It's white's turn."),
                         Color::Black => ui.text("It's black's turn."),
                     }
@@ -111,7 +111,7 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                         insert_if_empty(&mut event, Event::Resign);
                     }
                     ui.same_line(0.0);
-                    if model.board.can_exchange(&model.turn) {
+                    if model.board.can_exchange() {
                         let label = if model.exchanging {
                             im_str!("Stop Exchanging")
                         } else {

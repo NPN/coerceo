@@ -24,20 +24,18 @@ pub use self::board::Board;
 pub struct Model {
     pub board: Board,
     pub last_move: Move,
-    pub turn: Color,
     pub game_result: GameResult,
     pub selected_piece: Option<FieldCoord>,
     pub available_moves: Option<Vec<FieldCoord>>,
     pub exchanging: bool,
-    undo_stack: Vec<(Board, Move, Color, GameResult)>,
-    redo_stack: Vec<(Board, Move, Color, GameResult)>,
+    undo_stack: Vec<(Board, Move, GameResult)>,
+    redo_stack: Vec<(Board, Move, GameResult)>,
 }
 
 impl Model {
     pub fn new() -> Model {
         Model {
             board: Board::new(),
-            turn: Color::White,
             selected_piece: None,
             last_move: Move::None,
             available_moves: None,
@@ -47,9 +45,6 @@ impl Model {
             redo_stack: vec![],
         }
     }
-    pub fn switch_turns(&mut self) {
-        self.turn = self.turn.switch();
-    }
     pub fn can_undo(&self) -> bool {
         !self.undo_stack.is_empty()
     }
@@ -58,15 +53,14 @@ impl Model {
     }
     pub fn commit_move(&mut self) {
         self.undo_stack
-            .push((self.board, self.last_move, self.turn, self.game_result));
+            .push((self.board, self.last_move, self.game_result));
         self.redo_stack.clear();
     }
     pub fn undo_move(&mut self) {
-        if let Some((board, last_move, turn, game_result)) = self.undo_stack.pop() {
+        if let Some((board, last_move, game_result)) = self.undo_stack.pop() {
             self.redo_stack.push((
                 mem::replace(&mut self.board, board),
                 mem::replace(&mut self.last_move, last_move),
-                mem::replace(&mut self.turn, turn),
                 mem::replace(&mut self.game_result, game_result),
             ));
 
@@ -75,11 +69,10 @@ impl Model {
         }
     }
     pub fn redo_move(&mut self) {
-        if let Some((board, last_move, turn, game_result)) = self.redo_stack.pop() {
+        if let Some((board, last_move, game_result)) = self.redo_stack.pop() {
             self.undo_stack.push((
                 mem::replace(&mut self.board, board),
                 mem::replace(&mut self.last_move, last_move),
-                mem::replace(&mut self.turn, turn),
                 mem::replace(&mut self.game_result, game_result),
             ));
 

@@ -41,6 +41,7 @@ pub struct Board {
         See http://www.redblobgames.com/grids/hexagons/#coordinates-axial for more info.
     */
     board: [[Option<Hex>; 5]; 5],
+    turn: Color,
     black_pieces: u32,
     black_hexes: u32,
     white_pieces: u32,
@@ -65,6 +66,7 @@ impl Board {
     pub fn new() -> Board {
         let mut board = Board {
             board: [[None; 5]; 5],
+            turn: Color::White,
             black_pieces: 18,
             black_hexes: 0,
             white_pieces: 18,
@@ -111,19 +113,20 @@ impl Board {
     }
     pub fn move_piece(&mut self, from: &FieldCoord, to: &FieldCoord) {
         assert!(self.can_move_piece(from, to));
+        assert!(from.color() == self.turn);
 
         self.set_field(from, Field::Empty);
         self.set_field(to, Field::Piece);
 
-        let mover = from.color();
         let (capture_count, mut fields_to_check) = self.check_hexes(&from.to_hex());
         fields_to_check.append(&mut self.get_field_edge_neighbors(to));
-        self.check_captures(&fields_to_check, &mover);
+        self.check_captures(&fields_to_check);
 
-        match mover {
+        match self.turn {
             Color::White => self.white_hexes += capture_count,
             Color::Black => self.black_hexes += capture_count,
         }
+        self.turn = self.turn.switch();
     }
     pub fn get_available_moves(&self, field: &FieldCoord) -> Vec<FieldCoord> {
         if self.is_piece_on_field(field) {
@@ -135,25 +138,26 @@ impl Board {
             vec![]
         }
     }
-    pub fn can_exchange(&self, player: &Color) -> bool {
-        2 <= match *player {
+    pub fn can_exchange(&self) -> bool {
+        2 <= match self.turn {
             Color::Black => self.black_hexes,
             Color::White => self.white_hexes,
         }
     }
     pub fn exchange_piece(&mut self, coord: &FieldCoord) {
-        let exchanger = coord.color().switch();
-        assert!(self.can_exchange(&exchanger));
+        assert!(self.can_exchange());
+        assert!(coord.color() != self.turn);
 
         self.remove_piece(coord);
-        match exchanger {
+        match self.turn {
             Color::White => self.white_hexes -= 2,
             Color::Black => self.black_hexes -= 2,
         }
 
         // Players don't collect hexes removed due to an exchange
         let (_, fields_to_check) = self.check_hexes(&coord.to_hex());
-        self.check_captures(&fields_to_check, &exchanger);
+        self.check_captures(&fields_to_check);
+        self.turn = self.turn.switch();
     }
     pub fn is_piece_on_field(&self, coord: &FieldCoord) -> bool {
         self.get_field(coord) == &Field::Piece
@@ -172,6 +176,9 @@ impl Board {
             .iter()
             .filter_map(|&coord| self.try_hex(coord))
             .collect()
+    }
+    pub fn turn(&self) -> Color {
+        self.turn
     }
     pub fn black_pieces(&self) -> u32 {
         self.black_pieces
@@ -251,9 +258,9 @@ impl Board {
             Color::White => self.white_pieces -= 1,
         }
     }
-    fn check_captures(&mut self, fields_to_check: &[FieldCoord], capturer: &Color) {
+    fn check_captures(&mut self, fields_to_check: &[FieldCoord]) {
         for field in fields_to_check {
-            if field.color() != *capturer && self.is_piece_on_field(field)
+            if field.color() != self.turn && self.is_piece_on_field(field)
                 && self.get_field_edge_neighbors(field)
                     .iter()
                     .all(|coord| self.is_piece_on_field(coord))
