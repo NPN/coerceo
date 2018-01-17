@@ -224,13 +224,14 @@ impl Board {
     /// color of the given field. If all of a piece's edge neighbors are occupied, that piece might
     /// be capturable.
     fn get_field_edge_neighbors(&self, coord: &FieldCoord) -> Vec<FieldCoord> {
+        let hex = coord.to_hex();
         let mut neighbors = vec![
             // There are always two edge neighbors on the same hex as the given field
-            FieldCoord::new(coord.x, coord.y, (coord.f + 1) % 6),
-            FieldCoord::new(coord.x, coord.y, (coord.f + 5) % 6),
+            hex.to_field((coord.f + 1) % 6),
+            hex.to_field((coord.f + 5) % 6),
         ];
 
-        if let Some(hex) = self.get_hex_neighbor(&coord.to_hex(), coord.f) {
+        if let Some(hex) = self.get_hex_neighbor(&hex, coord.f) {
             neighbors.push(hex.to_field((coord.f + 3) % 6));
         }
 
@@ -239,13 +240,23 @@ impl Board {
     /// Return fields that share a vertex with the given field and have the same color as the given
     /// field. Pieces can move to fields that are vertex neighbors of the field they are on.
     fn get_field_vertex_neighbors(&self, coord: &FieldCoord) -> Vec<FieldCoord> {
-        // A field's vertex neighbors can be defined as the edge neighbors of its edge neighbors
-        let mut neighbors = vec![];
-        for field in self.get_field_edge_neighbors(coord) {
-            neighbors.append(&mut self.get_field_edge_neighbors(&field));
+        let hex = coord.to_hex();
+        let mut neighbors = vec![
+            // There are always two vertex neighbors on the same hex as the given field
+            hex.to_field((coord.f + 2) % 6),
+            hex.to_field((coord.f + 4) % 6),
+        ];
+        if let Some(hex) = self.get_hex_neighbor(&hex, coord.f) {
+            neighbors.push(hex.to_field((coord.f + 2) % 6));
+            neighbors.push(hex.to_field((coord.f + 4) % 6));
         }
-        // A field is not its own neighbor
-        neighbors.into_iter().filter(|n| n != coord).collect()
+        if let Some(hex) = self.get_hex_neighbor(&hex, (coord.f + 1) % 6) {
+            neighbors.push(hex.to_field((coord.f + 4) % 6));
+        }
+        if let Some(hex) = self.get_hex_neighbor(&hex, (coord.f + 5) % 6) {
+            neighbors.push(hex.to_field((coord.f + 2) % 6));
+        }
+        neighbors
     }
     fn remove_piece(&mut self, coord: &FieldCoord) {
         assert!(
