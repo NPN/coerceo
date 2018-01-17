@@ -292,18 +292,15 @@ impl Board {
         self.board[(coord.x + 2) as usize][(coord.y + 2) as usize] = hex;
     }
     fn get_hex_neighbor(&self, coord: &HexCoord, direction: u32) -> Option<HexCoord> {
-        assert!(direction < 6);
-
-        let neighbors = [
-            (coord.x, coord.y + 1),
-            (coord.x + 1, coord.y),
-            (coord.x + 1, coord.y - 1),
-            (coord.x, coord.y - 1),
-            (coord.x - 1, coord.y),
-            (coord.x - 1, coord.y + 1),
-        ];
-
-        self.try_hex(neighbors[direction as usize])
+        self.try_hex(match direction {
+            0 => (coord.x, coord.y + 1),
+            1 => (coord.x + 1, coord.y),
+            2 => (coord.x + 1, coord.y - 1),
+            3 => (coord.x, coord.y - 1),
+            4 => (coord.x - 1, coord.y),
+            5 => (coord.x - 1, coord.y + 1),
+            _ => panic!("Direction must be less than 6"),
+        })
     }
     /// A hex is removable (and must be removed) if it is empty and is "attached to the board by 3
     /// or less adjacent sides."
