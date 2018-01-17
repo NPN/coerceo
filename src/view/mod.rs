@@ -19,7 +19,7 @@ mod board;
 mod board_parts;
 mod sys;
 
-use imgui::{ImGuiCond, Ui};
+use imgui::{ImGuiCond, ImStr, ImVec2, Ui};
 use imgui_sys;
 
 use model::{Color, FieldCoord, Model};
@@ -95,32 +95,33 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                         model.board.black_hexes(),
                     ));
 
-                    if model.can_undo() && ui.button(im_str!("Undo"), Vec2::new(100.0, 20.0)) {
-                        insert_if_empty(&mut event, Event::Undo);
-                    }
-                    if model.can_redo() {
-                        if model.can_undo() {
-                            ui.same_line(0.0);
-                        }
-                        if ui.button(im_str!("Redo"), Vec2::new(100.0, 20.0)) {
-                            insert_if_empty(&mut event, Event::Redo);
-                        }
-                    }
-
-                    if ui.button(im_str!("Resign"), Vec2::new(100.0, 20.0)) {
-                        insert_if_empty(&mut event, Event::Resign);
-                    }
-                    ui.same_line(0.0);
-                    if model.board.can_exchange() {
-                        let label = if model.exchanging {
-                            im_str!("Stop Exchanging")
-                        } else {
-                            im_str!("Exchange")
-                        };
-                        if ui.button(label, Vec2::new(120.0, 20.0)) {
-                            insert_if_empty(&mut event, Event::Exchange);
-                        }
-                    }
+                    let button_size = Vec2::new(120.0, 20.0);
+                    horz_button_layout(
+                        ui,
+                        vec![
+                            (true, im_str!("Resign"), Event::Resign),
+                            (
+                                model.board.can_exchange(),
+                                if model.exchanging {
+                                    im_str!("Stop Exchanging")
+                                } else {
+                                    im_str!("Exchange")
+                                },
+                                Event::Exchange,
+                            ),
+                        ],
+                        &button_size,
+                        &mut event,
+                    );
+                    horz_button_layout(
+                        ui,
+                        vec![
+                            (model.can_undo(), im_str!("Undo"), Event::Undo),
+                            (model.can_redo(), im_str!("Redo"), Event::Redo),
+                        ],
+                        &button_size,
+                        &mut event,
+                    );
                 }
             }
         });
@@ -130,6 +131,29 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
     }
 
     event
+}
+
+fn horz_button_layout(
+    ui: &Ui,
+    buttons: Vec<(bool, &ImStr, Event)>,
+    size: &Vec2,
+    event: &mut Option<Event>,
+) {
+    let size: ImVec2 = (*size).into();
+
+    for (show, label, action) in buttons {
+        if show {
+            if ui.button(label, size) {
+                insert_if_empty(event, action);
+            }
+        } else {
+            unsafe {
+                imgui_sys::igDummy(&size);
+            }
+        }
+        ui.same_line(0.0);
+    }
+    ui.new_line();
 }
 
 fn insert_if_empty<T>(a: &mut Option<T>, b: T) {
