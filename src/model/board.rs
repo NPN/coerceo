@@ -303,26 +303,27 @@ impl Board {
             },
             None => return false,
         }
+        // After repeatedly failing to find an efficient and elegant way to check if a hex is
+        // removable, I have opted to just use a lookup table. Even if it is not elegant, at
+        // least it is simple and efficient.
+        let neighbor_combinations = [
+            0b000001, 0b000010, 0b000100, 0b001000, 0b010000, 0b100000, 0b000011, 0b000110,
+            0b001100, 0b011000, 0b110000, 0b100001, 0b000111, 0b001110, 0b011100, 0b111000,
+            0b110001, 0b100011,
+        ];
 
-        let has_neighbor = |f| self.get_hex_neighbor(coord, f).is_some();
-        let is_adjacent = |f| has_neighbor((f + 1) % 6) || has_neighbor((f + 5) % 6);
-
-        let mut neighbor_count = 0;
+        let mut neighbors = 0;
         for f in 0..6 {
-            if has_neighbor(f) {
-                if is_adjacent(f) {
-                    neighbor_count += 1;
-                } else {
-                    return false;
-                }
+            if self.get_hex_neighbor(coord, f).is_some() {
+                neighbors += 1 << f;
             }
         }
-
-        match neighbor_count {
-            0 => panic!("A hex at {:?} is empty and has no neighbors", coord),
-            1 | 2 | 3 => true,
-            _ => false,
-        }
+        assert!(
+            neighbors != 0,
+            "A hex at {:?} is empty and has no neighbors",
+            coord
+        );
+        neighbor_combinations.contains(&neighbors)
     }
     fn remove_hex(&mut self, coord: &HexCoord) -> bool {
         let removable = self.is_hex_removable(coord);
