@@ -86,13 +86,13 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
 
                     ui.text(format!(
                         "White has {} piece(s) left and {} captured hex(es).",
-                        model.board.white_pieces(),
-                        model.board.white_hexes(),
+                        model.board.pieces(Color::White),
+                        model.board.hexes(Color::White),
                     ));
                     ui.text(format!(
                         "Black has {} piece(s) left and {} captured hex(es).",
-                        model.board.black_pieces(),
-                        model.board.black_hexes(),
+                        model.board.pieces(Color::Black),
+                        model.board.hexes(Color::Black),
                     ));
 
                     let button_size = Vec2::new(120.0, 20.0);

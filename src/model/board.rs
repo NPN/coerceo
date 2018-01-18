@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use model::{Color, FieldCoord, HexCoord};
+use model::{Color, ColorMap, FieldCoord, HexCoord};
 
 #[derive(Clone, Copy)]
 pub struct Board {
@@ -42,10 +42,24 @@ pub struct Board {
     */
     board: [[Option<Hex>; 5]; 5],
     turn: Color,
-    black_pieces: u32,
-    black_hexes: u32,
-    white_pieces: u32,
-    white_hexes: u32,
+    vitals: ColorMap<PlayerVitals>,
+}
+
+/// A struct tracking a player's piece and captured hex count. So named because these two numbers are
+/// essential to a player's survival (i.e. vital signs).
+#[derive(Clone, Copy)]
+struct PlayerVitals {
+    pieces: u32,
+    hexes: u32,
+}
+
+impl PlayerVitals {
+    fn new() -> PlayerVitals {
+        PlayerVitals {
+            pieces: 18,
+            hexes: 0,
+        }
+    }
 }
 
 // Fields are numbered clockwise from the top. Even indicies are black, odd indicies are white.
@@ -67,10 +81,10 @@ impl Board {
         let mut board = Board {
             board: [[None; 5]; 5],
             turn: Color::White,
-            black_pieces: 18,
-            black_hexes: 0,
-            white_pieces: 18,
-            white_hexes: 0,
+            vitals: ColorMap::new(
+                PlayerVitals::new(),
+                PlayerVitals::new(),
+            )
         };
 
         // (0, 0) is the only empty hex.
@@ -121,10 +135,7 @@ impl Board {
         fields_to_check.append(&mut self.get_field_edge_neighbors(to));
         self.check_captures(&fields_to_check);
 
-        match self.turn {
-            Color::White => self.white_hexes += capture_count,
-            Color::Black => self.black_hexes += capture_count,
-        }
+        self.vitals.get_mut(self.turn).hexes += capture_count;
         self.turn = self.turn.switch();
     }
     pub fn get_available_moves(&self, field: &FieldCoord) -> Vec<FieldCoord> {
@@ -138,10 +149,7 @@ impl Board {
         }
     }
     pub fn can_exchange(&self) -> bool {
-        2 <= match self.turn {
-            Color::Black => self.black_hexes,
-            Color::White => self.white_hexes,
-        }
+        self.vitals.get_ref(self.turn).hexes >= 2
     }
     pub fn can_exchange_piece(&self, coord: &FieldCoord) -> bool {
         self.can_exchange() && coord.color() != self.turn && self.is_piece_on_field(coord)
@@ -150,10 +158,7 @@ impl Board {
         assert!(self.can_exchange_piece(coord));
 
         self.remove_piece(coord);
-        match self.turn {
-            Color::White => self.white_hexes -= 2,
-            Color::Black => self.black_hexes -= 2,
-        }
+        self.vitals.get_mut(self.turn).hexes -= 2;
 
         // Players don't collect hexes removed due to an exchange
         let (_, fields_to_check) = self.check_hexes(&coord.to_hex());
@@ -181,17 +186,11 @@ impl Board {
     pub fn turn(&self) -> Color {
         self.turn
     }
-    pub fn black_pieces(&self) -> u32 {
-        self.black_pieces
+    pub fn pieces(&self, color: Color) -> u32 {
+        self.vitals.get_ref(color).pieces
     }
-    pub fn black_hexes(&self) -> u32 {
-        self.black_hexes
-    }
-    pub fn white_pieces(&self) -> u32 {
-        self.white_pieces
-    }
-    pub fn white_hexes(&self) -> u32 {
-        self.white_hexes
+    pub fn hexes(&self, color: Color) -> u32 {
+        self.vitals.get_ref(color).hexes
     }
 }
 
@@ -265,10 +264,7 @@ impl Board {
             coord
         );
         self.set_field(coord, Field::Empty);
-        match coord.color() {
-            Color::Black => self.black_pieces -= 1,
-            Color::White => self.white_pieces -= 1,
-        }
+        self.vitals.get_mut(coord.color()).pieces -= 1;
     }
     fn check_captures(&mut self, fields_to_check: &[FieldCoord]) {
         for field in fields_to_check {
