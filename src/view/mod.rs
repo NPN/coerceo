@@ -66,10 +66,7 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
             use model::GameResult::*;
             match model.game_result {
                 Win(color) => {
-                    ui.text(match color {
-                        Color::Black => "Black wins!",
-                        Color::White => "White wins!",
-                    });
+                    ui.text(format!("{:?} wins!", color));
                     if model.can_undo() && ui.button(im_str!("Undo"), Vec2::new(100.0, 20.0)) {
                         insert_if_empty(&mut event, Event::Undo);
                     }
@@ -79,18 +76,17 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                         insert_if_empty(&mut event, click);
                     }
 
-                    match model.board.turn() {
-                        Color::White => ui.text("It's white's turn."),
-                        Color::Black => ui.text("It's black's turn."),
-                    }
+                    ui.text(format!("It's {:?}'s turn.", model.board.turn()));
 
                     ui.text(format!(
-                        "White has {} piece(s) left and {} captured hex(es).",
+                        "{:?} has {} piece(s) left and {} captured hex(es).",
+                        Color::White,
                         model.board.pieces(Color::White),
                         model.board.hexes(Color::White),
                     ));
                     ui.text(format!(
-                        "Black has {} piece(s) left and {} captured hex(es).",
+                        "{:?} has {} piece(s) left and {} captured hex(es).",
+                        Color::Black,
                         model.board.pieces(Color::Black),
                         model.board.hexes(Color::Black),
                     ));
