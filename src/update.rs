@@ -71,9 +71,9 @@ pub fn update(model: &mut Model, event: Option<Event>) {
 }
 
 fn check_win(model: &mut Model) {
-    if model.board.pieces(Color::Black) == 0 {
-        model.game_result = GameResult::Win(Color::Black);
-    } else if model.board.pieces(Color::White) == 0 {
+    if model.board.pieces(Color::White) == 0 {
         model.game_result = GameResult::Win(Color::White);
+    } else if model.board.pieces(Color::Black) == 0 {
+        model.game_result = GameResult::Win(Color::Black);
     }
 }

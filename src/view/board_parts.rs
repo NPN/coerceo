@@ -125,8 +125,8 @@ fn field_center(coord: &FieldCoord, origin: Vec2, size: f32) -> Vec2 {
     let center_x = (v1.x + v2.x + v3.x) / 3.0;
     let min_y = (v1.y).min(v2.y).min(v3.y);
     let center_y = match coord.color() {
-        Color::Black => min_y + size / (2.0 * SQRT_3),
         Color::White => min_y + size / SQRT_3,
+        Color::Black => min_y + size / (2.0 * SQRT_3),
     };
 
     Vec2::new(center_x, center_y)

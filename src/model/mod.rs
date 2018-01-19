@@ -131,24 +131,24 @@ pub struct HexCoord {
 /// track of player-specific information, which almost always comes in pairs.
 #[derive(Clone, Copy)]
 pub struct ColorMap<T> {
-    black: T,
     white: T,
+    black: T,
 }
 
 impl<T> ColorMap<T> {
-    pub fn new(black: T, white: T) -> ColorMap<T> {
-        ColorMap { black, white }
+    pub fn new(white: T, black: T) -> ColorMap<T> {
+        ColorMap { white, black }
     }
     pub fn get_ref(&self, color: Color) -> &T {
         match color {
-            Color::Black => &self.black,
             Color::White => &self.white,
+            Color::Black => &self.black,
         }
     }
     pub fn get_mut(&mut self, color: Color) -> &mut T {
         match color {
-            Color::Black => &mut self.black,
             Color::White => &mut self.white,
+            Color::Black => &mut self.black,
         }
     }
 }
