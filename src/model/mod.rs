@@ -23,6 +23,7 @@ pub use self::board::Board;
 
 pub struct Model {
     pub board: Board,
+    pub players: ColorMap<PlayerType>,
     pub last_move: Move,
     pub game_result: GameResult,
     pub selected_piece: Option<FieldCoord>,
@@ -33,16 +34,10 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn new() -> Model {
+    pub fn new(players: ColorMap<PlayerType>) -> Model {
         Model {
-            board: Board::new(),
-            selected_piece: None,
-            last_move: Move::None,
-            available_moves: None,
-            exchanging: false,
-            game_result: GameResult::InProgress,
-            undo_stack: vec![],
-            redo_stack: vec![],
+            players,
+            ..Default::default()
         }
     }
     pub fn can_undo(&self) -> bool {
@@ -86,6 +81,22 @@ impl Model {
     }
 }
 
+impl Default for Model {
+    fn default() -> Self {
+        Model {
+            board: Board::new(),
+            players: ColorMap::new(PlayerType::Human, PlayerType::Human),
+            selected_piece: None,
+            last_move: Move::None,
+            available_moves: None,
+            exchanging: false,
+            game_result: GameResult::InProgress,
+            undo_stack: vec![],
+            redo_stack: vec![],
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Color {
     White,
@@ -99,6 +110,12 @@ impl Color {
             Color::Black => Color::White,
         }
     }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum PlayerType {
+    Human,
+    Computer,
 }
 
 #[derive(Clone, Copy)]
@@ -129,10 +146,10 @@ pub struct HexCoord {
 
 /// A map to associate any two values with the variants of the Color enum. Useful for keeping
 /// track of player-specific information, which almost always comes in pairs.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct ColorMap<T> {
-    white: T,
-    black: T,
+    pub white: T,
+    pub black: T,
 }
 
 impl<T> ColorMap<T> {

@@ -31,7 +31,7 @@ use imgui::Ui;
 use model::Model;
 
 fn main() {
-    let mut model = Model::new();
+    let mut model = Model::default();
 
     view::run(
         String::from("Coerceo"),

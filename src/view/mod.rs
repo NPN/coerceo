@@ -22,7 +22,7 @@ mod sys;
 use imgui::{ImGuiCond, ImStr, ImVec2, Ui};
 use imgui_sys;
 
-use model::{Color, FieldCoord, Model};
+use model::{Color, ColorMap, FieldCoord, Model, PlayerType};
 use vec2::Vec2;
 use self::board::board;
 pub use self::sys::run;
@@ -31,7 +31,7 @@ pub use self::sys::run;
 pub enum Event {
     Click(FieldCoord),
     Exchange,
-    NewGame,
+    NewGame(ColorMap<PlayerType>),
     Resign,
     Undo,
     Redo,
@@ -46,8 +46,24 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
 
     ui.main_menu_bar(|| {
         ui.menu(im_str!("Game")).build(|| {
-            if ui.menu_item(im_str!("New game")).build() {
-                insert_if_empty(&mut event, Event::NewGame);
+            ui.menu_item(im_str!("New game")).enabled(false).build();
+            if ui.menu_item(im_str!("Human vs. Human")).build() {
+                insert_if_empty(
+                    &mut event,
+                    Event::NewGame(ColorMap::new(PlayerType::Human, PlayerType::Human)),
+                );
+            }
+            if ui.menu_item(im_str!("Human vs. Computer")).build() {
+                insert_if_empty(
+                    &mut event,
+                    Event::NewGame(ColorMap::new(PlayerType::Human, PlayerType::Computer)),
+                );
+            }
+            if ui.menu_item(im_str!("Computer vs. Human")).build() {
+                insert_if_empty(
+                    &mut event,
+                    Event::NewGame(ColorMap::new(PlayerType::Computer, PlayerType::Human)),
+                );
             }
         });
     });
@@ -60,8 +76,12 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
         .movable(false)
         .build(|| {
             ui.text("Welcome to Coerceo!");
+            ui.text(format!(
+                "{:?} vs. {:?}",
+                model.players.white, model.players.black
+            ));
 
-            let click = board(model, Vec2::new(size.0 - 16.0, size.1 - 155.0));
+            let click = board(model, Vec2::new(size.0 - 16.0, size.1 - 170.0));
 
             use model::GameResult::*;
             match model.game_result {
