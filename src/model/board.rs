@@ -172,16 +172,15 @@ impl Board {
     ///
     /// Return the coordinates of the hexes that have not been removed yet.
     pub fn extant_hexes(&self) -> Vec<HexCoord> {
-        let mut coords = vec![];
+        let mut coords = Vec::with_capacity(19);
         for x in -2..3 {
             for y in -2..3 {
-                coords.push((x, y));
+                if let Some(hex) = self.try_hex((x, y)) {
+                    coords.push(hex);
+                }
             }
         }
         coords
-            .iter()
-            .filter_map(|&coord| self.try_hex(coord))
-            .collect()
     }
     pub fn turn(&self) -> Color {
         self.turn
@@ -223,28 +222,28 @@ impl Board {
     /// color of the given field. If all of a piece's edge neighbors are occupied, that piece might
     /// be capturable.
     fn get_field_edge_neighbors(&self, coord: &FieldCoord) -> Vec<FieldCoord> {
+        let mut neighbors = Vec::with_capacity(3);
         let hex = coord.to_hex();
-        let mut neighbors = vec![
-            // There are always two edge neighbors on the same hex as the given field
-            hex.to_field((coord.f + 1) % 6),
-            hex.to_field((coord.f + 5) % 6),
-        ];
+
+        // There are always two edge neighbors on the same hex as the given field
+        neighbors.push(hex.to_field((coord.f + 1) % 6));
+        neighbors.push(hex.to_field((coord.f + 5) % 6));
 
         if let Some(hex) = self.get_hex_neighbor(&hex, coord.f) {
             neighbors.push(hex.to_field((coord.f + 3) % 6));
         }
-
         neighbors
     }
     /// Return fields that share a vertex with the given field and have the same color as the given
     /// field. Pieces can move to fields that are vertex neighbors of the field they are on.
     fn get_field_vertex_neighbors(&self, coord: &FieldCoord) -> Vec<FieldCoord> {
+        let mut neighbors = Vec::with_capacity(6);
         let hex = coord.to_hex();
-        let mut neighbors = vec![
-            // There are always two vertex neighbors on the same hex as the given field
-            hex.to_field((coord.f + 2) % 6),
-            hex.to_field((coord.f + 4) % 6),
-        ];
+
+        // There are always two vertex neighbors on the same hex as the given field
+        neighbors.push(hex.to_field((coord.f + 2) % 6));
+        neighbors.push(hex.to_field((coord.f + 4) % 6));
+
         if let Some(hex) = self.get_hex_neighbor(&hex, coord.f) {
             neighbors.push(hex.to_field((coord.f + 2) % 6));
             neighbors.push(hex.to_field((coord.f + 4) % 6));
