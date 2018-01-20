@@ -31,22 +31,13 @@ pub fn update(model: &mut Model, event: Option<Event>) {
                         model.available_moves = Some(model.board.get_available_moves(&clicked));
                         model.selected_piece = Some(clicked);
                     } else {
-                        if model.board.can_move_piece(&selected, &clicked) {
-                            model.commit_move();
-                            model.board.move_piece(&selected, &clicked);
-                            model.last_move = Some(Move::Move(selected, clicked));
-                            check_win(model);
-                        }
+                        try_move(model, Move::Move(selected, clicked));
                         model.clear_selection();
                     }
                 }
                 None => {
-                    if model.exchanging && model.board.can_exchange_piece(&clicked) {
-                        model.commit_move();
-                        model.board.exchange_piece(&clicked);
-                        model.last_move = Some(Move::Exchange(clicked));
+                    if model.exchanging && try_move(model, Move::Exchange(clicked)) {
                         model.exchanging = false;
-                        check_win(model);
                     } else if !model.exchanging && clicked.color() == model.board.turn()
                         && model.board.is_piece_on_field(&clicked)
                     {
@@ -67,6 +58,18 @@ pub fn update(model: &mut Model, event: Option<Event>) {
             Undo => model.undo_move(),
             Redo => model.redo_move(),
         }
+    }
+}
+
+fn try_move(model: &mut Model, mv: Move) -> bool {
+    if model.board.can_apply_move(&mv) {
+        model.commit_move();
+        model.board.apply_move(&mv);
+        model.last_move = Some(mv);
+        check_win(model);
+        true
+    } else {
+        false
     }
 }
 

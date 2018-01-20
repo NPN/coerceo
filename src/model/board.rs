@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use model::{Color, ColorMap, FieldCoord, HexCoord};
+use model::{Color, ColorMap, FieldCoord, HexCoord, Move};
 
 #[derive(Clone, Copy)]
 pub struct Board {
@@ -121,22 +121,41 @@ impl Board {
 
         board
     }
-    pub fn can_move_piece(&self, from: &FieldCoord, to: &FieldCoord) -> bool {
-        from.color() == self.turn && self.is_piece_on_field(from) && !self.is_piece_on_field(to)
-            && self.get_field_vertex_neighbors(from).contains(to)
+    pub fn apply_move(&mut self, mv: &Move) {
+        assert!(self.can_apply_move(mv));
+        match *mv {
+            Move::Move(from, to) => {
+                self.set_field(&from, Field::Empty);
+                self.set_field(&to, Field::Piece);
+
+                let (capture_count, mut fields_to_check) = self.check_hexes(&from.to_hex());
+                fields_to_check.append(&mut self.get_field_edge_neighbors(&to));
+                self.check_captures(&fields_to_check);
+
+                self.vitals.get_mut(self.turn).hexes += capture_count;
+                self.turn = self.turn.switch();
+            }
+            Move::Exchange(coord) => {
+                self.remove_piece(&coord);
+                self.vitals.get_mut(self.turn).hexes -= 2;
+
+                // Players don't collect hexes removed due to an exchange
+                let (_, fields_to_check) = self.check_hexes(&coord.to_hex());
+                self.check_captures(&fields_to_check);
+                self.turn = self.turn.switch();
+            }
+        }
     }
-    pub fn move_piece(&mut self, from: &FieldCoord, to: &FieldCoord) {
-        assert!(self.can_move_piece(from, to));
-
-        self.set_field(from, Field::Empty);
-        self.set_field(to, Field::Piece);
-
-        let (capture_count, mut fields_to_check) = self.check_hexes(&from.to_hex());
-        fields_to_check.append(&mut self.get_field_edge_neighbors(to));
-        self.check_captures(&fields_to_check);
-
-        self.vitals.get_mut(self.turn).hexes += capture_count;
-        self.turn = self.turn.switch();
+    pub fn can_apply_move(&self, mv: &Move) -> bool {
+        match *mv {
+            Move::Move(from, to) => {
+                from.color() == self.turn && self.get_field_vertex_neighbors(&from).contains(&to)
+                    && self.is_piece_on_field(&from) && !self.is_piece_on_field(&to)
+            }
+            Move::Exchange(coord) => {
+                self.can_exchange() && coord.color() != self.turn && self.is_piece_on_field(&coord)
+            }
+        }
     }
     pub fn get_available_moves(&self, field: &FieldCoord) -> Vec<FieldCoord> {
         if self.is_piece_on_field(field) {
@@ -150,20 +169,6 @@ impl Board {
     }
     pub fn can_exchange(&self) -> bool {
         self.vitals.get_ref(self.turn).hexes >= 2
-    }
-    pub fn can_exchange_piece(&self, coord: &FieldCoord) -> bool {
-        self.can_exchange() && coord.color() != self.turn && self.is_piece_on_field(coord)
-    }
-    pub fn exchange_piece(&mut self, coord: &FieldCoord) {
-        assert!(self.can_exchange_piece(coord));
-
-        self.remove_piece(coord);
-        self.vitals.get_mut(self.turn).hexes -= 2;
-
-        // Players don't collect hexes removed due to an exchange
-        let (_, fields_to_check) = self.check_hexes(&coord.to_hex());
-        self.check_captures(&fields_to_check);
-        self.turn = self.turn.switch();
     }
     pub fn is_piece_on_field(&self, coord: &FieldCoord) -> bool {
         self.get_field(coord) == &Field::Piece
