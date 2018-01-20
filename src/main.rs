@@ -21,6 +21,7 @@ extern crate imgui;
 extern crate imgui_glium_renderer;
 extern crate imgui_sys;
 
+mod ai;
 mod model;
 mod update;
 mod view;
