@@ -53,19 +53,20 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
         draw_hex(hex, origin, side_len);
     }
 
-    match model.last_move {
-        Move::Exchange(ref exchanged) => {
-            if is_hex_extant(exchanged.to_hex()) {
-                highlight_field(EXCHANGE_HIGHLIGHT, exchanged, origin, side_len);
+    if let Some(mv) = model.last_move {
+        match mv {
+            Move::Exchange(ref exchanged) => {
+                if is_hex_extant(exchanged.to_hex()) {
+                    highlight_field(EXCHANGE_HIGHLIGHT, exchanged, origin, side_len);
+                }
+            }
+            Move::Move(ref from, ref to) => {
+                if is_hex_extant(from.to_hex()) {
+                    highlight_field(LAST_MOVE_HIGHLIGHT, from, origin, side_len);
+                }
+                highlight_field(LAST_MOVE_HIGHLIGHT, to, origin, side_len);
             }
         }
-        Move::Move(ref from, ref to) => {
-            if is_hex_extant(from.to_hex()) {
-                highlight_field(LAST_MOVE_HIGHLIGHT, from, origin, side_len);
-            }
-            highlight_field(LAST_MOVE_HIGHLIGHT, to, origin, side_len);
-        }
-        Move::None => {}
     }
 
     if let Some(ref coord) = model.selected_piece {

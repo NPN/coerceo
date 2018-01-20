@@ -24,13 +24,13 @@ pub use self::board::Board;
 pub struct Model {
     pub board: Board,
     pub players: ColorMap<PlayerType>,
-    pub last_move: Move,
+    pub last_move: Option<Move>,
     pub game_result: GameResult,
     pub selected_piece: Option<FieldCoord>,
     pub available_moves: Option<Vec<FieldCoord>>,
     pub exchanging: bool,
-    undo_stack: Vec<(Board, Move, GameResult)>,
-    redo_stack: Vec<(Board, Move, GameResult)>,
+    undo_stack: Vec<(Board, Option<Move>, GameResult)>,
+    redo_stack: Vec<(Board, Option<Move>, GameResult)>,
 }
 
 impl Model {
@@ -87,7 +87,7 @@ impl Default for Model {
             board: Board::new(),
             players: ColorMap::new(PlayerType::Human, PlayerType::Human),
             selected_piece: None,
-            last_move: Move::None,
+            last_move: None,
             available_moves: None,
             exchanging: false,
             game_result: GameResult::InProgress,
@@ -122,7 +122,6 @@ pub enum PlayerType {
 pub enum Move {
     Exchange(FieldCoord),
     Move(FieldCoord, FieldCoord),
-    None,
 }
 
 #[derive(Clone, Copy, PartialEq)]

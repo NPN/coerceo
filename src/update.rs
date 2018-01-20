@@ -34,7 +34,7 @@ pub fn update(model: &mut Model, event: Option<Event>) {
                         if model.board.can_move_piece(&selected, &clicked) {
                             model.commit_move();
                             model.board.move_piece(&selected, &clicked);
-                            model.last_move = Move::Move(selected, clicked);
+                            model.last_move = Some(Move::Move(selected, clicked));
                             check_win(model);
                         }
                         model.clear_selection();
@@ -44,7 +44,7 @@ pub fn update(model: &mut Model, event: Option<Event>) {
                     if model.exchanging && model.board.can_exchange_piece(&clicked) {
                         model.commit_move();
                         model.board.exchange_piece(&clicked);
-                        model.last_move = Move::Exchange(clicked);
+                        model.last_move = Some(Move::Exchange(clicked));
                         model.exchanging = false;
                         check_win(model);
                     } else if !model.exchanging && clicked.color() == model.board.turn()
