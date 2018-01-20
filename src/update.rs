@@ -52,7 +52,7 @@ pub fn update(model: &mut Model, event: Option<Event>) {
                 model.clear_selection();
             },
             Resign => {
-                model.commit_move();
+                model.commit_state();
                 model.game_result = GameResult::Win(model.board.turn().switch());
             }
             Undo => model.undo_move(),
@@ -63,7 +63,7 @@ pub fn update(model: &mut Model, event: Option<Event>) {
 
 fn try_move(model: &mut Model, mv: Move) -> bool {
     if model.board.can_apply_move(&mv) {
-        model.commit_move();
+        model.commit_state();
         model.board.apply_move(&mv);
         model.last_move = Some(mv);
         check_win(model);

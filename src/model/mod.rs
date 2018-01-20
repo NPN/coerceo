@@ -46,7 +46,7 @@ impl Model {
     pub fn can_redo(&self) -> bool {
         !self.redo_stack.is_empty()
     }
-    pub fn commit_move(&mut self) {
+    pub fn commit_state(&mut self) {
         self.undo_stack
             .push((self.board, self.last_move, self.game_result));
         self.redo_stack.clear();
