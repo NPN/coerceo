@@ -79,9 +79,15 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
         }
     }
 
-    let hover_field = pixel_to_field(mouse_pos, origin, side_len);
+    let mut hover_field = pixel_to_field(mouse_pos, origin, side_len);
+    if !hover_field
+        .map(|field| is_hex_extant(field.to_hex()))
+        .unwrap_or(false)
+    {
+        hover_field = None;
+    }
     if let Some(ref coord) = hover_field {
-        if model.exchanging && coord.color() != model.board.turn() && is_hex_extant(coord.to_hex())
+        if model.exchanging && coord.color() != model.board.turn()
             && model.board.is_piece_on_field(coord)
         {
             highlight_field(EXCHANGE_HIGHLIGHT, coord, origin, side_len);
