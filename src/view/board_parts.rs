@@ -171,7 +171,7 @@ fn field_vertexes(coord: &FieldCoord, origin: Vec2, size: f32) -> (Vec2, Vec2, V
             v1 = center + west;
             v2 = center + northwest;
         }
-        _ => panic!("You made the impossible possible."),
+        _ => unreachable!(),
     };
 
     (center, v1, v2)
