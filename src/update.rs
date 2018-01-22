@@ -15,48 +15,81 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use model::{Color, GameResult, Model, Move};
+use ai::ai_move;
+use model::{Color, FieldCoord, GameResult, Model, Move};
 use view::Event;
 
 pub fn update(model: &mut Model, event: Option<Event>) {
     if let Some(event) = event {
-        use view::Event::*;
-
-        match event {
-            Click(clicked) => match model.selected_piece {
-                Some(selected) => {
-                    if clicked.color() != model.board.turn() || selected == clicked {
-                        model.clear_selection();
-                    } else if model.board.is_piece_on_field(&clicked) {
-                        model.available_moves = Some(model.board.get_available_moves(&clicked));
-                        model.selected_piece = Some(clicked);
-                    } else {
-                        try_move(model, Move::Move(selected, clicked));
-                        model.clear_selection();
-                    }
+        if model.is_ai_turn() {
+            use view::Event::*;
+            match event {
+                Click(_) | Exchange => return,
+                _ => {
+                    let _ = model.ai_handle.as_ref().unwrap().stop_sender.send(());
                 }
-                None => {
-                    if model.exchanging && try_move(model, Move::Exchange(clicked)) {
-                        model.exchanging = false;
-                    } else if !model.exchanging && clicked.color() == model.board.turn()
-                        && model.board.is_piece_on_field(&clicked)
-                    {
-                        model.available_moves = Some(model.board.get_available_moves(&clicked));
-                        model.selected_piece = Some(clicked);
-                    }
-                }
-            },
-            NewGame(players) => *model = Model::new(players),
-            Exchange => if model.board.can_exchange() {
-                model.exchanging = !model.exchanging;
-                model.clear_selection();
-            },
-            Resign => {
-                model.commit_state();
-                model.game_result = GameResult::Win(model.board.turn().switch());
             }
-            Undo => model.undo_move(),
-            Redo => model.redo_move(),
+        }
+
+        handle_event(model, event);
+
+        if model.is_ai_turn() {
+            model.ai_handle = Some(ai_move(model.board, 3, model.ai_handle.take()));
+        }
+    } else if model.is_ai_turn() {
+        if let Ok(mv) = model.ai_handle.as_ref().unwrap().move_receiver.try_recv() {
+            if let Some(mv) = mv {
+                model.ai_handle = None;
+                model.board.apply_move(&mv);
+                model.last_move = Some(mv);
+                check_win(model);
+            } else {
+                unimplemented!("AI couldn't find a move");
+            }
+        }
+    }
+}
+
+fn handle_event(model: &mut Model, event: Event) {
+    use view::Event::*;
+    match event {
+        Click(clicked) => handle_click(model, clicked),
+        Exchange => if model.board.can_exchange() {
+            model.exchanging = !model.exchanging;
+            model.clear_selection();
+        },
+        NewGame(players) => *model = Model::new(players),
+        Resign => {
+            model.commit_state();
+            model.game_result = GameResult::Win(model.board.turn().switch());
+        }
+        Undo => model.undo_move(),
+        Redo => model.redo_move(),
+    }
+}
+
+fn handle_click(model: &mut Model, clicked: FieldCoord) {
+    match model.selected_piece {
+        Some(selected) => {
+            if clicked.color() != model.board.turn() || selected == clicked {
+                model.clear_selection();
+            } else if model.board.is_piece_on_field(&clicked) {
+                model.available_moves = Some(model.board.get_available_moves(&clicked));
+                model.selected_piece = Some(clicked);
+            } else {
+                try_move(model, Move::Move(selected, clicked));
+                model.clear_selection();
+            }
+        }
+        None => {
+            if model.exchanging && try_move(model, Move::Exchange(clicked)) {
+                model.exchanging = false;
+            } else if !model.exchanging && clicked.color() == model.board.turn()
+                && model.board.is_piece_on_field(&clicked)
+            {
+                model.available_moves = Some(model.board.get_available_moves(&clicked));
+                model.selected_piece = Some(clicked);
+            }
         }
     }
 }

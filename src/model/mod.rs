@@ -20,6 +20,7 @@ use std::mem;
 mod board;
 
 pub use self::board::Board;
+use ai::AIHandle;
 
 pub struct Model {
     pub board: Board,
@@ -29,6 +30,7 @@ pub struct Model {
     pub selected_piece: Option<FieldCoord>,
     pub available_moves: Option<Vec<FieldCoord>>,
     pub exchanging: bool,
+    pub ai_handle: Option<AIHandle>,
     undo_stack: Vec<(Board, Option<Move>, GameResult)>,
     redo_stack: Vec<(Board, Option<Move>, GameResult)>,
 }
@@ -79,6 +81,9 @@ impl Model {
         self.selected_piece = None;
         self.available_moves = None;
     }
+    pub fn is_ai_turn(&self) -> bool {
+        self.players.get_ref(self.board.turn()) == &PlayerType::Computer
+    }
 }
 
 impl Default for Model {
@@ -91,6 +96,7 @@ impl Default for Model {
             available_moves: None,
             exchanging: false,
             game_result: GameResult::InProgress,
+            ai_handle: None,
             undo_stack: vec![],
             redo_stack: vec![],
         }

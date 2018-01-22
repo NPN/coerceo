@@ -15,24 +15,57 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::sync::mpsc::{self, Receiver, Sender};
+use std::thread::{self, JoinHandle};
+
 use model::{Board, Move};
 
-pub fn ai_move(board: &Board, depth: u32) -> Option<Move> {
+pub struct AIHandle {
+    pub move_receiver: Receiver<Option<Move>>,
+    pub stop_sender: Sender<()>,
+    handle: JoinHandle<()>,
+}
+
+pub fn ai_move(board: Board, depth: u32, prev_handle: Option<AIHandle>) -> AIHandle {
     assert!(depth != 0);
 
-    let mut max_score = i32::min_value();
-    let mut best_move = None;
-    for mv in generate_moves(board) {
-        let mut new_board = *board;
-        new_board.apply_move(&mv);
+    let (move_sender, move_receiver) = mpsc::channel();
+    let (stop_sender, stop_receiver) = mpsc::channel();
 
-        let score = -negamax(&new_board, depth - 1);
-        if score > max_score {
-            max_score = score;
-            best_move = Some(mv);
+    let handle = thread::spawn(move || {
+        if let Some(prev_handle) = prev_handle {
+            // If send returns an error, the other thread has already terminated
+            if prev_handle.stop_sender.send(()).is_ok() {
+                prev_handle.handle.join().expect(
+                    "Previous AI thread panicked while new AI thread was waiting for it to finish",
+                );
+            }
         }
+
+        let mut max_score = i32::min_value();
+        let mut best_move = None;
+        for mv in generate_moves(&board) {
+            if stop_receiver.try_recv().is_ok() {
+                return;
+            }
+
+            let mut new_board = board;
+            new_board.apply_move(&mv);
+
+            let score = -negamax(&new_board, depth - 1);
+            if score > max_score {
+                max_score = score;
+                best_move = Some(mv);
+            }
+        }
+        move_sender.send(best_move).expect("AI failed to send Move");
+    });
+
+    AIHandle {
+        move_receiver,
+        stop_sender,
+        handle,
     }
-    best_move
 }
 
 fn negamax(board: &Board, depth: u32) -> i32 {

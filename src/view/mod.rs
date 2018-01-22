@@ -117,7 +117,7 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                         vec![
                             (true, im_str!("Resign"), Event::Resign),
                             (
-                                model.board.can_exchange(),
+                                model.board.can_exchange() && !model.is_ai_turn(),
                                 if model.exchanging {
                                     im_str!("Stop Exchanging")
                                 } else {
