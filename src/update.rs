@@ -46,7 +46,7 @@ pub fn update(model: &mut Model, event: Option<Event>) {
                     }
                 }
             },
-            NewGame(map) => *model = Model::new(map),
+            NewGame(players) => *model = Model::new(players),
             Exchange => if model.board.can_exchange() {
                 model.exchanging = !model.exchanging;
                 model.clear_selection();
