@@ -42,7 +42,7 @@ pub fn ai_move(board: Board, depth: u32, prev_handle: Option<AIHandle>) -> AIHan
             }
         }
 
-        let mut max_score = i32::min_value();
+        let mut max_score = -i32::max_value();
         let mut best_move = None;
         for mv in generate_moves(&board) {
             if stop_receiver.try_recv().is_ok() {
@@ -52,7 +52,7 @@ pub fn ai_move(board: Board, depth: u32, prev_handle: Option<AIHandle>) -> AIHan
             let mut new_board = board;
             new_board.apply_move(&mv);
 
-            let score = -negamax(&new_board, depth - 1);
+            let score = -alphabeta_negamax(&new_board, -i32::max_value(), i32::max_value(), depth - 1);
             if score > max_score {
                 max_score = score;
                 best_move = Some(mv);
@@ -68,7 +68,7 @@ pub fn ai_move(board: Board, depth: u32, prev_handle: Option<AIHandle>) -> AIHan
     }
 }
 
-fn negamax(board: &Board, depth: u32) -> i32 {
+fn alphabeta_negamax(board: &Board, mut alpha: i32, beta: i32, depth: u32) -> i32 {
     if depth == 0 {
         evaluate(board)
     } else {
@@ -76,13 +76,18 @@ fn negamax(board: &Board, depth: u32) -> i32 {
         if moves.is_empty() {
             evaluate(board)
         } else {
-            let mut max = i32::min_value();
             for mv in moves {
                 let mut new_board = *board;
                 new_board.apply_move(&mv);
-                max = max.max(-negamax(&new_board, depth - 1));
+
+                let score = -alphabeta_negamax(&new_board, -beta, -alpha, depth - 1);
+                if score >= beta {
+                    return beta;
+                } else if score > alpha {
+                    alpha = score;
+                }
             }
-            max
+            alpha
         }
     }
 }

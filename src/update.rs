@@ -34,7 +34,7 @@ pub fn update(model: &mut Model, event: Option<Event>) {
         handle_event(model, event);
 
         if model.is_ai_turn() {
-            model.ai_handle = Some(ai_move(model.board, 3, model.ai_handle.take()));
+            model.ai_handle = Some(ai_move(model.board, 5, model.ai_handle.take()));
         }
     } else if model.is_ai_turn() {
         if let Ok(mv) = model.ai_handle.as_ref().unwrap().move_receiver.try_recv() {
