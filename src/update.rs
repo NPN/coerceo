@@ -106,6 +106,7 @@ fn try_move(model: &mut Model, mv: Move) -> bool {
     }
 }
 
+// TODO: check for draws
 fn check_win(model: &mut Model) {
     if model.board.pieces(Color::White) == 0 {
         model.game_result = GameResult::Win(Color::White);
