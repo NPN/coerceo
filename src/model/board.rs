@@ -157,7 +157,34 @@ impl Board {
             }
         }
     }
-    pub fn get_available_moves(&self, field: &FieldCoord) -> Vec<FieldCoord> {
+    pub fn generate_moves(&self) -> Vec<Move> {
+        let turn = self.turn();
+        // A player with no pieces cannot make any moves, including exchange moves
+        if self.pieces(turn) == 0 {
+            return vec![];
+        }
+
+        let mut moves = vec![];
+        let can_exchange = self.can_exchange();
+
+        for hex in self.extant_hexes() {
+            for f in 0..6 {
+                let field = hex.to_field(f);
+                if self.is_piece_on_field(&field) {
+                    if field.color() == turn {
+                        moves.append(&mut self.available_moves_for_piece(&field)
+                            .into_iter()
+                            .map(|to| Move::Move(field, to))
+                            .collect());
+                    } else if can_exchange {
+                        moves.push(Move::Exchange(field));
+                    }
+                }
+            }
+        }
+        moves
+    }
+    pub fn available_moves_for_piece(&self, field: &FieldCoord) -> Vec<FieldCoord> {
         if self.is_piece_on_field(field) {
             self.get_field_vertex_neighbors(field)
                 .into_iter()

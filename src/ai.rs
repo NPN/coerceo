@@ -50,7 +50,7 @@ pub fn ai_move(board: Board, depth: u32, prev_handle: Option<AIHandle>) -> AIHan
 
         let mut max_score = NEG_INFINITY;
         let mut best_move = None;
-        for mv in generate_moves(&board) {
+        for mv in board.generate_moves() {
             if stop_receiver.try_recv().is_ok() {
                 return;
             }
@@ -75,7 +75,7 @@ pub fn ai_move(board: Board, depth: u32, prev_handle: Option<AIHandle>) -> AIHan
 }
 
 fn alphabeta_negamax(board: &Board, mut alpha: i32, beta: i32, depth: u32) -> i32 {
-    let moves = generate_moves(board);
+    let moves = board.generate_moves();
     if moves.is_empty() {
         evaluate_empty(board)
     } else if depth == 0 {
@@ -127,36 +127,6 @@ fn evaluate_empty(board: &Board) -> i32 {
     } else {
         DRAW
     }
-
-}
-
-fn generate_moves(board: &Board) -> Vec<Move> {
-    let turn = board.turn();
-    // Ensure we don't let a player with zero pieces make exchange moves
-    if board.pieces(turn) == 0 {
-        return vec![];
-    }
-
-    let mut moves = vec![];
-    let can_exchange = board.can_exchange();
-
-    for hex in board.extant_hexes() {
-        for f in 0..6 {
-            let field = hex.to_field(f);
-            if board.is_piece_on_field(&field) {
-                if field.color() == turn {
-                    moves.append(&mut board
-                        .get_available_moves(&field)
-                        .into_iter()
-                        .map(|to| Move::Move(field, to))
-                        .collect());
-                } else if can_exchange {
-                    moves.push(Move::Exchange(field));
-                }
-            }
-        }
-    }
-    moves
 }
 
 pub fn perft(board: &Board, depth: u32) -> u32 {
@@ -164,7 +134,7 @@ pub fn perft(board: &Board, depth: u32) -> u32 {
         1
     } else {
         let mut sum = 0;
-        for mv in generate_moves(board) {
+        for mv in board.generate_moves() {
             let mut new_board = *board;
             new_board.apply_move(&mv);
             sum += perft(&new_board, depth - 1);
