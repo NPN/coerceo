@@ -68,7 +68,7 @@ type Hex = [Field; 6];
 // There's no need to store the color of the piece on this field, since only white pieces can be on
 // white fields, and vice versa.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub enum Field {
+enum Field {
     Piece,
     Empty,
 }
