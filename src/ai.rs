@@ -15,11 +15,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::cmp;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::{self, JoinHandle};
 
-use model::{Board, Move};
+use model::{Board, Move, Outcome};
 
 const INFINITY: i32 = 2_147_483_647;
 const NEG_INFINITY: i32 = -2_147_483_647;
@@ -75,12 +74,20 @@ pub fn ai_move(board: Board, depth: u32, prev_handle: Option<AIHandle>) -> AIHan
 }
 
 fn alphabeta_negamax(board: &Board, mut alpha: i32, beta: i32, depth: u32) -> i32 {
-    let moves = board.generate_moves();
-    if moves.is_empty() {
-        evaluate_empty(board)
-    } else if depth == 0 {
+    match board.outcome() {
+        Outcome::Draw => return DRAW,
+        Outcome::Win(color) => {
+            assert!(color != board.turn());
+            // TODO: weight by depth to encourage shorter wins
+            return LOSE;
+        }
+        _ => {}
+    }
+
+    if depth == 0 {
         evaluate(board)
     } else {
+        let moves = board.generate_moves();
         for mv in moves {
             let mut new_board = *board;
             new_board.apply_move(&mv);
@@ -96,36 +103,17 @@ fn alphabeta_negamax(board: &Board, mut alpha: i32, beta: i32, depth: u32) -> i3
     }
 }
 
-// Assume the current player has at least one move to make
 fn evaluate(board: &Board) -> i32 {
     use model::Color::*;
-    let wp = board.pieces(White);
-    let bp = board.pieces(Black);
-    let wh = board.hexes(White);
-    let bh = board.hexes(Black);
 
-    // If neither side can capture the other's pieces, the game is drawn
-    if wp == 1 && bp == 1 && (board.extant_hexes().len() as u32 + cmp::max(wh, bh) - 1 < 2) {
-        return DRAW;
-    }
-
-    let wp = 100 * wp as i32;
-    let bp = 100 * bp as i32;
-    let wh = 50 * wh as i32;
-    let bh = 50 * bh as i32;
+    let wp = 100 * board.pieces(White) as i32;
+    let bp = 100 * board.pieces(Black) as i32;
+    let wh = 50 * board.hexes(White) as i32;
+    let bh = 50 * board.hexes(Black) as i32;
 
     match board.turn() {
         White => (wp + wh) - (bp + bh),
         Black => (bp + bh) - (wp + wh),
-    }
-}
-
-fn evaluate_empty(board: &Board) -> i32 {
-    if board.pieces(board.turn()) == 0 {
-        // TODO: weight by depth to encourage shorter wins
-        LOSE
-    } else {
-        DRAW
     }
 }
 

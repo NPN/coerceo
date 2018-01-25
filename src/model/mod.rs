@@ -19,20 +19,19 @@ use std::mem;
 
 mod board;
 
-pub use self::board::Board;
+pub use self::board::{Board, Outcome};
 use ai::AIHandle;
 
 pub struct Model {
     pub board: Board,
     pub players: ColorMap<PlayerType>,
     pub last_move: Option<Move>,
-    pub game_result: GameResult,
     pub selected_piece: Option<FieldCoord>,
     pub available_moves: Option<Vec<FieldCoord>>,
     pub exchanging: bool,
     pub ai_handle: Option<AIHandle>,
-    undo_stack: Vec<(Board, Option<Move>, GameResult)>,
-    redo_stack: Vec<(Board, Option<Move>, GameResult)>,
+    undo_stack: Vec<(Board, Option<Move>)>,
+    redo_stack: Vec<(Board, Option<Move>)>,
 }
 
 impl Model {
@@ -49,16 +48,14 @@ impl Model {
         !self.redo_stack.is_empty()
     }
     pub fn commit_state(&mut self) {
-        self.undo_stack
-            .push((self.board, self.last_move, self.game_result));
+        self.undo_stack.push((self.board, self.last_move));
         self.redo_stack.clear();
     }
     pub fn undo_move(&mut self) {
-        if let Some((board, last_move, game_result)) = self.undo_stack.pop() {
+        if let Some((board, last_move)) = self.undo_stack.pop() {
             self.redo_stack.push((
                 mem::replace(&mut self.board, board),
                 mem::replace(&mut self.last_move, last_move),
-                mem::replace(&mut self.game_result, game_result),
             ));
 
             self.clear_selection();
@@ -66,11 +63,10 @@ impl Model {
         }
     }
     pub fn redo_move(&mut self) {
-        if let Some((board, last_move, game_result)) = self.redo_stack.pop() {
+        if let Some((board, last_move)) = self.redo_stack.pop() {
             self.undo_stack.push((
                 mem::replace(&mut self.board, board),
                 mem::replace(&mut self.last_move, last_move),
-                mem::replace(&mut self.game_result, game_result),
             ));
 
             self.clear_selection();
@@ -84,6 +80,9 @@ impl Model {
     pub fn is_ai_turn(&self) -> bool {
         self.players.get_ref(self.board.turn()) == &PlayerType::Computer
     }
+    pub fn is_game_over(&self) -> bool {
+        self.board.outcome() != Outcome::InProgress
+    }
 }
 
 impl Default for Model {
@@ -95,7 +94,6 @@ impl Default for Model {
             last_move: None,
             available_moves: None,
             exchanging: false,
-            game_result: GameResult::InProgress,
             ai_handle: None,
             undo_stack: vec![],
             redo_stack: vec![],
@@ -128,12 +126,6 @@ pub enum PlayerType {
 pub enum Move {
     Exchange(FieldCoord),
     Move(FieldCoord, FieldCoord),
-}
-
-#[derive(Clone, Copy, PartialEq)]
-pub enum GameResult {
-    InProgress,
-    Win(Color),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

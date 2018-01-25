@@ -81,21 +81,25 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                 model.players.white, model.players.black
             ));
 
-            let click = board(model, Vec2::new(size.0 - 16.0, size.1 - 170.0));
+            if let Some(click) = board(model, Vec2::new(size.0 - 16.0, size.1 - 170.0)) {
+                insert_if_empty(&mut event, click);
+            }
 
-            use model::GameResult::*;
-            match model.game_result {
+            use model::Outcome::*;
+            match model.board.outcome() {
                 Win(color) => {
                     ui.text(format!("{:?} wins!", color));
                     if model.can_undo() && ui.button(im_str!("Undo"), Vec2::new(100.0, 20.0)) {
                         insert_if_empty(&mut event, Event::Undo);
                     }
                 }
-                InProgress => {
-                    if let Some(click) = click {
-                        insert_if_empty(&mut event, click);
+                Draw => {
+                    ui.text("It's a draw!");
+                    if model.can_undo() && ui.button(im_str!("Undo"), Vec2::new(100.0, 20.0)) {
+                        insert_if_empty(&mut event, Event::Undo);
                     }
-
+                }
+                InProgress => {
                     ui.text(format!("It's {:?}'s turn.", model.board.turn()));
 
                     ui.text(format!(

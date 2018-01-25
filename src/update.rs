@@ -16,12 +16,14 @@
  */
 
 use ai::ai_move;
-use model::{Color, FieldCoord, GameResult, Model, Move};
+use model::{FieldCoord, Model, Move};
 use view::Event;
 
 pub fn update(model: &mut Model, event: Option<Event>) {
+    let ai_should_move = |model: &Model| model.is_ai_turn() && !model.is_game_over();
+
     if let Some(event) = event {
-        if model.is_ai_turn() {
+        if ai_should_move(model) {
             use view::Event::*;
             match event {
                 Click(_) | Exchange => return,
@@ -33,16 +35,15 @@ pub fn update(model: &mut Model, event: Option<Event>) {
 
         handle_event(model, event);
 
-        if model.is_ai_turn() {
+        if ai_should_move(model) {
             model.ai_handle = Some(ai_move(model.board, 5, model.ai_handle.take()));
         }
-    } else if model.is_ai_turn() {
+    } else if ai_should_move(model) {
         if let Ok(mv) = model.ai_handle.as_ref().unwrap().move_receiver.try_recv() {
             if let Some(mv) = mv {
                 model.ai_handle = None;
                 model.board.apply_move(&mv);
                 model.last_move = Some(mv);
-                check_win(model);
             } else {
                 unimplemented!("AI couldn't find a move");
             }
@@ -53,15 +54,17 @@ pub fn update(model: &mut Model, event: Option<Event>) {
 fn handle_event(model: &mut Model, event: Event) {
     use view::Event::*;
     match event {
-        Click(clicked) => handle_click(model, clicked),
-        Exchange => if model.board.can_exchange() {
+        Click(clicked) => if !model.is_game_over() {
+            handle_click(model, clicked);
+        },
+        Exchange => if model.board.can_exchange() && !model.is_game_over() {
             model.exchanging = !model.exchanging;
             model.clear_selection();
         },
         NewGame(players) => *model = Model::new(players),
         Resign => {
             model.commit_state();
-            model.game_result = GameResult::Win(model.board.turn().switch());
+            model.board.resign();
         }
         Undo => model.undo_move(),
         Redo => model.redo_move(),
@@ -99,18 +102,8 @@ fn try_move(model: &mut Model, mv: Move) -> bool {
         model.commit_state();
         model.board.apply_move(&mv);
         model.last_move = Some(mv);
-        check_win(model);
         true
     } else {
         false
-    }
-}
-
-// TODO: check for draws
-fn check_win(model: &mut Model) {
-    if model.board.pieces(Color::White) == 0 {
-        model.game_result = GameResult::Win(Color::White);
-    } else if model.board.pieces(Color::Black) == 0 {
-        model.game_result = GameResult::Win(Color::Black);
     }
 }

@@ -15,6 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::cmp;
+
 use model::{Color, ColorMap, FieldCoord, HexCoord, Move};
 
 #[derive(Clone, Copy)]
@@ -43,6 +45,7 @@ pub struct Board {
     board: [[Option<Hex>; 5]; 5],
     turn: Color,
     vitals: ColorMap<PlayerVitals>,
+    outcome: Outcome,
 }
 
 /// A struct tracking a player's piece and captured hex count. So named because these two numbers are
@@ -60,6 +63,16 @@ impl PlayerVitals {
             hexes: 0,
         }
     }
+}
+
+/// The outcome of a game. Wins or draws caused by a resignation or an offered and accepted draw are
+/// not differentiated from wins and draws by capturing all of an opponent's pieces, running out of
+/// moves, being unable to capture any of the opponent's pieces, or reaching threefold repetition.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Outcome {
+    InProgress,
+    Win(Color),
+    Draw,
 }
 
 // Fields are numbered clockwise from the top. Even indicies are black, odd indicies are white.
@@ -84,7 +97,8 @@ impl Board {
             vitals: ColorMap::new(
                 PlayerVitals::new(),
                 PlayerVitals::new(),
-            )
+            ),
+            outcome: Outcome::InProgress
         };
 
         // (0, 0) is the only empty hex.
@@ -145,6 +159,7 @@ impl Board {
                 self.turn = self.turn.switch();
             }
         }
+        self.update_outcome();
     }
     pub fn can_apply_move(&self, mv: &Move) -> bool {
         match *mv {
@@ -214,6 +229,10 @@ impl Board {
         }
         coords
     }
+    pub fn resign(&mut self) {
+        assert_eq!(self.outcome, Outcome::InProgress);
+        self.outcome = Outcome::Win(self.turn.switch());
+    }
     pub fn turn(&self) -> Color {
         self.turn
     }
@@ -222,6 +241,32 @@ impl Board {
     }
     pub fn hexes(&self, color: Color) -> u32 {
         self.vitals.get_ref(color).hexes
+    }
+    pub fn outcome(&self) -> Outcome {
+        self.outcome
+    }
+}
+
+impl Board {
+    // TODO: check for threefold repetition
+    fn update_outcome(&mut self) {
+        if self.pieces(self.turn) == 0 {
+            self.outcome = Outcome::Win(self.turn.switch());
+        } else if self.generate_moves().is_empty() {
+            self.outcome = Outcome::Draw;
+        } else {
+            use model::Color::*;
+
+            let wp = self.pieces(White);
+            let bp = self.pieces(Black);
+            let wh = self.hexes(White);
+            let bh = self.hexes(Black);
+
+            // If neither side can capture the other's pieces, the game is drawn
+            if wp == 1 && bp == 1 && (self.extant_hexes().len() as u32 + cmp::max(wh, bh) - 1 < 2) {
+                self.outcome = Outcome::Draw;
+            }
+        }
     }
 }
 
