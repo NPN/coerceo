@@ -37,12 +37,18 @@ pub struct Board {
                \____/
 
         The hex board uses an axial coordinate system with (0, 0) at the center. The x-axis slopes
-        up to the right, and the y-axis goes up and down. The board is stored as a dense 2D array,
-        because a ragged array won't work (since each row would have to be a different type).
-
+        up to the right, and the y-axis goes up and down. The board is stored as a 1D array.
         See http://www.redblobgames.com/grids/hexagons/#coordinates-axial for more info.
+
+        u8 hex layout:
+                         Field number. Fields are numbered clockwise from the top.
+               543210 -- Even indicies are black, odd indicies are white.
+        [0][0][000000]
+         |  |    +------ Store fields
+         |  +----------- Has hex been removed?
+         +-------------- Unused
     */
-    board: [[Option<Hex>; 5]; 5],
+    board: [u8; 25],
     turn: Color,
     vitals: ColorMap<PlayerVitals>,
     outcome: Outcome,
@@ -75,9 +81,6 @@ pub enum Outcome {
     Draw,
 }
 
-// Fields are numbered clockwise from the top. Even indicies are black, odd indicies are white.
-type Hex = [Field; 6];
-
 // There's no need to store the color of the piece on this field, since only white pieces can be on
 // white fields, and vice versa.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -92,7 +95,7 @@ impl Board {
     /// Create a new board with the "Laurentius" starting position.
     pub fn new() -> Board {
         let mut board = Board {
-            board: [[None; 5]; 5],
+            board: [0; 25],
             turn: Color::White,
             vitals: ColorMap::new(
                 PlayerVitals::new(),
@@ -102,7 +105,7 @@ impl Board {
         };
 
         // (0, 0) is the only empty hex.
-        board.set_hex(&HexCoord::new(0, 0), Some([Field::Empty; 6]));
+        board.set_hex(&HexCoord::new(0, 0), 0b1_000000);
 
         // All other hexes have exactly two pieces on them in the starting position.
         let piece_locations = [
@@ -127,10 +130,8 @@ impl Board {
         ];
 
         for &(x, y, f1, f2) in &piece_locations {
-            let mut hex = [Field::Empty; 6];
-            hex[f1] = Field::Piece;
-            hex[f2] = Field::Piece;
-            board.set_hex(&HexCoord::new(x, y), Some(hex));
+            let hex = 0b1_000000 + (1 << f1) + (1 << f2);
+            board.set_hex(&HexCoord::new(x, y), hex);
         }
 
         board
@@ -213,7 +214,7 @@ impl Board {
         self.vitals.get_ref(self.turn).hexes >= 2
     }
     pub fn is_piece_on_field(&self, coord: &FieldCoord) -> bool {
-        self.get_field(coord) == &Field::Piece
+        self.get_field(coord) == Field::Piece
     }
     /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
     ///
@@ -228,6 +229,12 @@ impl Board {
             }
         }
         coords
+    }
+    /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
+    ///
+    /// Returns true if a hex has not been removed yet.
+    pub fn is_hex_extant(&self, coord: &HexCoord) -> bool {
+        self.get_hex(coord) & 0b1_000000 != 0
     }
     pub fn resign(&mut self) {
         assert_eq!(self.outcome, Outcome::InProgress);
@@ -272,28 +279,36 @@ impl Board {
 
 // Field and piece methods
 impl Board {
-    fn get_field(&self, coord: &FieldCoord) -> &Field {
-        match *self.get_hex(&coord.to_hex()) {
-            Some(ref hex) => &hex[coord.f as usize],
-            None => panic!(
-                "Cannot get field {} on removed hex at {:?}",
-                coord.f,
-                coord.to_hex()
-            ),
+    fn get_field(&self, coord: &FieldCoord) -> Field {
+        assert!(
+            self.is_hex_extant(&coord.to_hex()),
+            "Cannot get field {} on removed hex at {:?}",
+            coord.f,
+            coord.to_hex()
+        );
+
+        if self.get_hex(&coord.to_hex()) & (1 << coord.f) == 0 {
+            Field::Empty
+        } else {
+            Field::Piece
         }
     }
     fn set_field(&mut self, coord: &FieldCoord, field: Field) {
-        match *self.get_hex(&coord.to_hex()) {
-            Some(mut hex) => {
-                hex[coord.f as usize] = field;
-                self.set_hex(&coord.to_hex(), Some(hex));
-            }
-            None => panic!(
-                "Cannot set field {} on removed hex at {:?}",
-                coord.f,
-                coord.to_hex()
-            ),
-        }
+        let f = coord.f;
+        let coord = coord.to_hex();
+
+        assert!(
+            self.is_hex_extant(&coord),
+            "Cannot set field {} on removed hex at {:?}",
+            f,
+            coord
+        );
+
+        let hex = match field {
+            Field::Piece => self.get_hex(&coord) | 1 << f,
+            Field::Empty => self.get_hex(&coord) & !(1 << f),
+        };
+        self.set_hex(&coord, hex);
     }
     /// Return fields that share an edge with the given field. These fields are always the opposite
     /// color of the given field. If all of a piece's edge neighbors are occupied, that piece might
@@ -357,11 +372,21 @@ impl Board {
 
 // Hex methods
 impl Board {
-    fn get_hex(&self, coord: &HexCoord) -> &Option<Hex> {
-        &self.board[(coord.x + 2) as usize][(coord.y + 2) as usize]
+    fn get_hex(&self, coord: &HexCoord) -> u8 {
+        let x = (coord.x + 2) as usize;
+        let y = (coord.y + 2) as usize;
+
+        self.board[x + y * 5]
     }
-    fn set_hex(&mut self, coord: &HexCoord, hex: Option<Hex>) {
-        self.board[(coord.x + 2) as usize][(coord.y + 2) as usize] = hex;
+    fn set_hex(&mut self, coord: &HexCoord, hex: u8) {
+        let x = (coord.x + 2) as usize;
+        let y = (coord.y + 2) as usize;
+
+        self.board[x + y * 5] = hex;
+    }
+    fn is_hex_empty(&self, coord: &HexCoord) -> bool {
+        assert!(self.is_hex_extant(coord));
+        self.get_hex(coord) & 0b0_111111 == 0
     }
     fn get_hex_neighbor(&self, coord: &HexCoord, direction: u32) -> Option<HexCoord> {
         self.try_hex(match direction {
@@ -377,12 +402,10 @@ impl Board {
     /// A hex is removable (and must be removed) if it is empty and is "attached to the board by 3
     /// or less adjacent sides."
     fn is_hex_removable(&self, coord: &HexCoord) -> bool {
-        match *self.get_hex(coord) {
-            Some(hex) => if hex != [Field::Empty; 6] {
-                return false;
-            },
-            None => return false,
+        if !self.is_hex_extant(coord) || !self.is_hex_empty(coord) {
+            return false;
         }
+
         // After repeatedly failing to find an efficient and elegant way to check if a hex is
         // removable, I have opted to just use a lookup table. Even if it is not elegant, at
         // least it is simple and efficient.
@@ -409,13 +432,13 @@ impl Board {
         let removable = self.is_hex_removable(coord);
 
         if removable {
-            self.set_hex(coord, None);
+            self.set_hex(coord, 0);
         }
         removable
     }
     fn try_hex(&self, coord: (i32, i32)) -> Option<HexCoord> {
         if let Some(coord) = HexCoord::try_new(coord.0, coord.1) {
-            if self.get_hex(&coord).is_some() {
+            if self.is_hex_extant(&coord) {
                 return Some(coord);
             }
         }

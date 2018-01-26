@@ -47,7 +47,6 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
     let origin = cursor_pos + size / 2.0;
 
     let extant_hexes = model.board.extant_hexes();
-    let is_hex_extant = |hex| extant_hexes.contains(&hex);
 
     for hex in &extant_hexes {
         draw_hex(hex, origin, side_len);
@@ -56,12 +55,12 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
     if let Some(mv) = model.last_move {
         match mv {
             Move::Exchange(ref exchanged) => {
-                if is_hex_extant(exchanged.to_hex()) {
+                if model.board.is_hex_extant(&exchanged.to_hex()) {
                     highlight_field(EXCHANGE_HIGHLIGHT, exchanged, origin, side_len);
                 }
             }
             Move::Move(ref from, ref to) => {
-                if is_hex_extant(from.to_hex()) {
+                if model.board.is_hex_extant(&from.to_hex()) {
                     highlight_field(LAST_MOVE_HIGHLIGHT, from, origin, side_len);
                 }
                 highlight_field(LAST_MOVE_HIGHLIGHT, to, origin, side_len);
@@ -81,7 +80,7 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
 
     let mut hover_field = pixel_to_field(mouse_pos, origin, side_len);
     if !hover_field
-        .map(|field| is_hex_extant(field.to_hex()))
+        .map(|field| model.board.is_hex_extant(&field.to_hex()))
         .unwrap_or(false)
     {
         hover_field = None;
