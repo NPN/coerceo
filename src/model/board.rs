@@ -272,7 +272,7 @@ impl Board {
     fn update_outcome(&mut self) {
         if self.pieces(self.turn) == 0 {
             self.outcome = Outcome::Win(self.turn.switch());
-        } else if self.generate_moves().is_empty() {
+        } else if !self.can_move() {
             self.outcome = Outcome::Draw;
         } else {
             use model::Color::*;
@@ -287,6 +287,30 @@ impl Board {
                 self.outcome = Outcome::Draw;
             }
         }
+    }
+    fn can_move(&self) -> bool {
+        if self.can_exchange() {
+            return true;
+        }
+
+        let fields = match self.turn() {
+            Color::White => [1, 3, 5],
+            Color::Black => [0, 2, 4],
+        };
+
+        for hex in self.extant_hexes() {
+            for &f in &fields {
+                let field = hex.to_field(f);
+                if self.is_piece_on_field(&field)
+                    && self.get_field_vertex_neighbors(&field)
+                        .iter()
+                        .any(|to| !self.is_piece_on_field(to))
+                {
+                    return true;
+                }
+            }
+        }
+        false
     }
 }
 
