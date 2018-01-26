@@ -176,7 +176,10 @@ impl FieldCoord {
         self.f
     }
     pub fn to_hex(&self) -> HexCoord {
-        HexCoord::new(self.x, self.y)
+        HexCoord {
+            x: self.x,
+            y: self.y,
+        }
     }
     fn is_valid_coord(x: i32, y: i32, f: u32) -> bool {
         (x + y).abs() <= 2 && x.abs() <= 2 && y.abs() <= 2 && f < 6
@@ -209,7 +212,12 @@ impl HexCoord {
         self.y
     }
     pub fn to_field(&self, f: u32) -> FieldCoord {
-        FieldCoord::new(self.x, self.y, f)
+        assert!(f < 6);
+        FieldCoord {
+            x: self.x,
+            y: self.y,
+            f,
+        }
     }
     fn is_valid_coord(x: i32, y: i32) -> bool {
         (x + y).abs() <= 2 && x.abs() <= 2 && y.abs() <= 2
