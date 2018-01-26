@@ -180,17 +180,30 @@ impl Board {
             return vec![];
         }
 
-        let mut moves = vec![];
         let can_exchange = self.can_exchange();
+        let mut moves = Vec::with_capacity(
+            // 3 moves per piece is an untested guess
+            self.pieces(turn) as usize * 3 + if can_exchange {
+                self.pieces(turn.switch()) as usize
+            } else {
+                0
+            },
+        );
 
         for hex in self.extant_hexes() {
             for f in 0..6 {
                 let field = hex.to_field(f);
                 if self.is_piece_on_field(&field) {
                     if field.color() == turn {
-                        moves.append(&mut self.available_moves_for_piece(&field)
+                        moves.append(&mut self.get_field_vertex_neighbors(&field)
                             .into_iter()
-                            .map(|to| Move::Move(field, to))
+                            .filter_map(|to| {
+                                if self.is_piece_on_field(&to) {
+                                    None
+                                } else {
+                                    Some(Move::Move(field, to))
+                                }
+                            })
                             .collect());
                     } else if can_exchange {
                         moves.push(Move::Exchange(field));
