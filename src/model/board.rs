@@ -236,10 +236,20 @@ impl Board {
     /// Return the coordinates of the hexes that have not been removed yet.
     pub fn extant_hexes(&self) -> Vec<HexCoord> {
         let mut coords = Vec::with_capacity(19);
-        for x in -2..3 {
-            for y in -2..3 {
-                if let Some(hex) = self.try_hex((x, y)) {
-                    coords.push(hex);
+        let try_coord = |coords: &mut Vec<HexCoord>, x, y| {
+            let hex = HexCoord::new_unchecked(x, y);
+            if self.is_hex_extant(&hex) {
+                coords.push(hex);
+            }
+        };
+        try_coord(&mut coords, 1, 1);
+        try_coord(&mut coords, -1, -1);
+
+        for x in 0..3 {
+            for y in -2..1 {
+                try_coord(&mut coords, x, y);
+                if x != y {
+                    try_coord(&mut coords, -x, -y);
                 }
             }
         }

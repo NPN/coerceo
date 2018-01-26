@@ -205,6 +205,9 @@ impl HexCoord {
             None
         }
     }
+    pub fn new_unchecked(x: i32, y: i32) -> HexCoord {
+        HexCoord { x, y }
+    }
     pub fn x(&self) -> i32 {
         self.x
     }
