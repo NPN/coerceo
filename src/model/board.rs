@@ -49,6 +49,7 @@ pub struct Board {
          +-------------- Unused
     */
     board: [u8; 25],
+    extant_hexes: u8,
     turn: Color,
     vitals: ColorMap<PlayerVitals>,
     outcome: Outcome,
@@ -96,6 +97,7 @@ impl Board {
     pub fn new() -> Board {
         let mut board = Board {
             board: [0; 25],
+            extant_hexes: 19,
             turn: Color::White,
             vitals: ColorMap::new(
                 PlayerVitals::new(),
@@ -283,7 +285,7 @@ impl Board {
             let bh = self.hexes(Black);
 
             // If neither side can capture the other's pieces, the game is drawn
-            if wp == 1 && bp == 1 && (self.extant_hexes().len() as u32 + cmp::max(wh, bh) - 1 < 2) {
+            if wp == 1 && bp == 1 && (self.extant_hexes as u32 + cmp::max(wh, bh) - 1 < 2) {
                 self.outcome = Outcome::Draw;
             }
         }
@@ -470,6 +472,7 @@ impl Board {
 
         if removable {
             self.set_hex(coord, 0);
+            self.extant_hexes -= 1;
         }
         removable
     }
