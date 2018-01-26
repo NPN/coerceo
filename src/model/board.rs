@@ -59,8 +59,8 @@ pub struct Board {
 /// essential to a player's survival (i.e. vital signs).
 #[derive(Clone, Copy)]
 struct PlayerVitals {
-    pieces: u32,
-    hexes: u32,
+    pieces: u8,
+    hexes: u8,
 }
 
 impl PlayerVitals {
@@ -258,10 +258,10 @@ impl Board {
     pub fn turn(&self) -> Color {
         self.turn
     }
-    pub fn pieces(&self, color: Color) -> u32 {
+    pub fn pieces(&self, color: Color) -> u8 {
         self.vitals.get_ref(color).pieces
     }
-    pub fn hexes(&self, color: Color) -> u32 {
+    pub fn hexes(&self, color: Color) -> u8 {
         self.vitals.get_ref(color).hexes
     }
     pub fn outcome(&self) -> Outcome {
@@ -285,7 +285,7 @@ impl Board {
             let bh = self.hexes(Black);
 
             // If neither side can capture the other's pieces, the game is drawn
-            if wp == 1 && bp == 1 && (self.extant_hexes as u32 + cmp::max(wh, bh) - 1 < 2) {
+            if wp == 1 && bp == 1 && (self.extant_hexes + cmp::max(wh, bh) - 1 < 2) {
                 self.outcome = Outcome::Draw;
             }
         }
@@ -484,7 +484,7 @@ impl Board {
         }
         None
     }
-    fn check_hexes(&mut self, coord: &HexCoord) -> (u32, Vec<FieldCoord>) {
+    fn check_hexes(&mut self, coord: &HexCoord) -> (u8, Vec<FieldCoord>) {
         let mut remove_count = 0;
         let mut fields = vec![];
 

@@ -106,10 +106,10 @@ fn alphabeta_negamax(board: &Board, mut alpha: i32, beta: i32, depth: u32) -> i3
 fn evaluate(board: &Board) -> i32 {
     use model::Color::*;
 
-    let wp = 100 * board.pieces(White) as i32;
-    let bp = 100 * board.pieces(Black) as i32;
-    let wh = 50 * board.hexes(White) as i32;
-    let bh = 50 * board.hexes(Black) as i32;
+    let wp = 100 * i32::from(board.pieces(White));
+    let bp = 100 * i32::from(board.pieces(Black));
+    let wh = 50 * i32::from(board.hexes(White));
+    let bh = 50 * i32::from(board.hexes(Black));
 
     match board.turn() {
         White => (wp + wh) - (bp + bh),
