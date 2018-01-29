@@ -85,35 +85,40 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                 insert_if_empty(&mut event, click);
             }
 
+            let display_vitals = || {
+                ui.text(format!(
+                    "{:?} has {} piece(s) left and {} captured hex(es).",
+                    Color::White,
+                    model.board.pieces(Color::White),
+                    model.board.hexes(Color::White),
+                ));
+                ui.text(format!(
+                    "{:?} has {} piece(s) left and {} captured hex(es).",
+                    Color::Black,
+                    model.board.pieces(Color::Black),
+                    model.board.hexes(Color::Black),
+                ));
+            };
+
             use model::Outcome::*;
             match model.board.outcome() {
                 Win(color) => {
                     ui.text(format!("{:?} wins!", color));
+                    display_vitals();
                     if model.can_undo() && ui.button(im_str!("Undo"), Vec2::new(100.0, 20.0)) {
                         insert_if_empty(&mut event, Event::Undo);
                     }
                 }
                 Draw => {
                     ui.text("It's a draw!");
+                    display_vitals();
                     if model.can_undo() && ui.button(im_str!("Undo"), Vec2::new(100.0, 20.0)) {
                         insert_if_empty(&mut event, Event::Undo);
                     }
                 }
                 InProgress => {
                     ui.text(format!("It's {:?}'s turn.", model.board.turn()));
-
-                    ui.text(format!(
-                        "{:?} has {} piece(s) left and {} captured hex(es).",
-                        Color::White,
-                        model.board.pieces(Color::White),
-                        model.board.hexes(Color::White),
-                    ));
-                    ui.text(format!(
-                        "{:?} has {} piece(s) left and {} captured hex(es).",
-                        Color::Black,
-                        model.board.pieces(Color::Black),
-                        model.board.hexes(Color::Black),
-                    ));
+                    display_vitals();
 
                     let button_size = Vec2::new(120.0, 20.0);
                     horz_button_layout(
