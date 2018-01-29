@@ -44,6 +44,5 @@ fn main() {
 
 fn game_loop(ui: &Ui, size: (f32, f32), model: &mut Model) -> bool {
     let event = view::draw(ui, size, model);
-    update::update(model, event);
-    true
+    update::update(model, event)
 }

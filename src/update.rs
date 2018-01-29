@@ -19,14 +19,18 @@ use ai::ai_move;
 use model::{FieldCoord, Model, Move};
 use view::Event;
 
-pub fn update(model: &mut Model, event: Option<Event>) {
+pub fn update(model: &mut Model, event: Option<Event>) -> bool {
     let ai_should_move = |model: &Model| model.is_ai_turn() && !model.is_game_over();
 
     if let Some(event) = event {
+        if event == Event::Quit {
+            return false;
+        }
+
         if ai_should_move(model) {
             use view::Event::*;
             match event {
-                Click(_) | Exchange => return,
+                Click(_) | Exchange => return true,
                 _ => {
                     let _ = model.ai_handle.as_ref().unwrap().stop_sender.send(());
                 }
@@ -49,6 +53,7 @@ pub fn update(model: &mut Model, event: Option<Event>) {
             }
         }
     }
+    true
 }
 
 fn handle_event(model: &mut Model, event: Event) {
@@ -68,6 +73,7 @@ fn handle_event(model: &mut Model, event: Event) {
         }
         Undo => model.undo_move(),
         Redo => model.redo_move(),
+        Quit => unreachable!(),
     }
 }
 

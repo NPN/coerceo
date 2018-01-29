@@ -35,6 +35,7 @@ pub enum Event {
     Resign,
     Undo,
     Redo,
+    Quit,
 }
 
 pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
@@ -64,6 +65,10 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                     &mut event,
                     Event::NewGame(ColorMap::new(PlayerType::Computer, PlayerType::Human)),
                 );
+            }
+            ui.separator();
+            if ui.menu_item(im_str!("Quit")).build() {
+                insert_if_empty(&mut event, Event::Quit);
             }
         });
     });
