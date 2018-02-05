@@ -20,10 +20,10 @@ use std::thread::{self, JoinHandle};
 
 use model::{Board, Move, Outcome};
 
-const INFINITY: i32 = 2_147_483_647;
-const NEG_INFINITY: i32 = -2_147_483_647;
-const LOSE: i32 = -1_073_741_824;
-const DRAW: i32 = 0;
+const INFINITY: i16 = 0x7FFF;
+const NEG_INFINITY: i16 = -0x7FFF;
+const LOSE: i16 = -0x4000;
+const DRAW: i16 = 0;
 
 pub struct AIHandle {
     pub move_receiver: Receiver<Option<Move>>,
@@ -73,7 +73,7 @@ pub fn ai_move(board: Board, depth: u32, prev_handle: Option<AIHandle>) -> AIHan
     }
 }
 
-fn alphabeta_negamax(board: &Board, mut alpha: i32, beta: i32, depth: u32) -> i32 {
+fn alphabeta_negamax(board: &Board, mut alpha: i16, beta: i16, depth: u32) -> i16 {
     match board.outcome() {
         Outcome::Draw => return DRAW,
         Outcome::Win(color) => {
@@ -103,13 +103,13 @@ fn alphabeta_negamax(board: &Board, mut alpha: i32, beta: i32, depth: u32) -> i3
     }
 }
 
-fn evaluate(board: &Board) -> i32 {
+fn evaluate(board: &Board) -> i16 {
     use model::Color::*;
 
-    let wp = 100 * i32::from(board.pieces(White));
-    let bp = 100 * i32::from(board.pieces(Black));
-    let wh = 50 * i32::from(board.hexes(White));
-    let bh = 50 * i32::from(board.hexes(Black));
+    let wp = 100 * i16::from(board.pieces(White));
+    let bp = 100 * i16::from(board.pieces(Black));
+    let wh = 50 * i16::from(board.hexes(White));
+    let bh = 50 * i16::from(board.hexes(Black));
 
     match board.turn() {
         White => (wp + wh) - (bp + bh),
