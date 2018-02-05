@@ -277,8 +277,5 @@ fn round_hex_coord(x: f32, y: f32) -> Option<HexCoord> {
         ry = -rx - rz;
     }
 
-    let rx = rx as i8;
-    let ry = ry as i8;
-
-    HexCoord::try_new(rx, ry)
+    HexCoord::try_new(rx as i8, ry as i8)
 }
