@@ -247,11 +247,15 @@ pub fn pixel_to_field(p: Vec2, origin: Vec2, size: f32) -> Option<FieldCoord> {
             i |= 0b001;
         }
 
-        // Using a lookup table because nested ifs are too confusing
-        const INVALID: u8 = 6;
-        let field_lookup = [3, 4, 2, INVALID, INVALID, 5, 1, 0];
-
-        Some(hex.to_field(field_lookup[i]))
+        Some(hex.to_field(match i {
+            0 => 3,
+            1 => 4,
+            2 => 2,
+            5 => 5,
+            6 => 1,
+            7 => 0,
+            _ => unreachable!(),
+        }))
     } else {
         None
     }
