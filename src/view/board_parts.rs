@@ -179,8 +179,8 @@ fn field_vertexes(coord: &FieldCoord, origin: Vec2, size: f32) -> (Vec2, Vec2, V
 
 // Algorithm based on http://www.redblobgames.com/grids/hexagons/#hex-to-pixel
 fn hex_to_pixel(coord: &HexCoord, origin: Vec2, size: f32) -> Vec2 {
-    let x = coord.x() as f32;
-    let y = coord.y() as f32;
+    let x = f32::from(coord.x());
+    let y = f32::from(coord.y());
 
     let p = Vec2::new(size * (3.0 / 2.0) * x, size * -SQRT_3 * (x / 2.0 + y));
 
@@ -233,8 +233,8 @@ pub fn pixel_to_field(p: Vec2, origin: Vec2, size: f32) -> Option<FieldCoord> {
                y +  2x >= 0, so our field is to the right of (\), and is either 0 or 1.
                y -   x <  0, so our field is to the right of (/), and is 1.
         */
-        let x_diff = q - hex.x() as f32;
-        let y_diff = r - hex.y() as f32;
+        let x_diff = q - f32::from(hex.x());
+        let y_diff = r - f32::from(hex.y());
         let mut i = 0;
 
         if y_diff + x_diff / 2.0 >= 0.0 {
@@ -248,7 +248,7 @@ pub fn pixel_to_field(p: Vec2, origin: Vec2, size: f32) -> Option<FieldCoord> {
         }
 
         // Using a lookup table because nested ifs are too confusing
-        const INVALID: u32 = 6;
+        const INVALID: u8 = 6;
         let field_lookup = [3, 4, 2, INVALID, INVALID, 5, 1, 0];
 
         Some(hex.to_field(field_lookup[i]))
@@ -275,8 +275,8 @@ fn round_hex_coord(x: f32, y: f32) -> Option<HexCoord> {
         ry = -rx - rz;
     }
 
-    let rx = rx as i32;
-    let ry = ry as i32;
+    let rx = rx as i8;
+    let ry = ry as i8;
 
     HexCoord::try_new(rx, ry)
 }

@@ -437,7 +437,7 @@ impl Board {
         assert!(self.is_hex_extant(coord));
         self.get_hex(coord) & 0b0_111111 == 0
     }
-    fn get_hex_neighbor(&self, coord: &HexCoord, direction: u32) -> Option<HexCoord> {
+    fn get_hex_neighbor(&self, coord: &HexCoord, direction: u8) -> Option<HexCoord> {
         self.try_hex(match direction {
             0 => (coord.x, coord.y + 1),
             1 => (coord.x + 1, coord.y),
@@ -486,7 +486,7 @@ impl Board {
         }
         removable
     }
-    fn try_hex(&self, coord: (i32, i32)) -> Option<HexCoord> {
+    fn try_hex(&self, coord: (i8, i8)) -> Option<HexCoord> {
         if let Some(coord) = HexCoord::try_new(coord.0, coord.1) {
             if self.is_hex_extant(&coord) {
                 return Some(coord);

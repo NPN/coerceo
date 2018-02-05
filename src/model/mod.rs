@@ -130,15 +130,15 @@ pub enum Move {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct FieldCoord {
-    x: i32,
-    y: i32,
-    f: u32,
+    x: i8,
+    y: i8,
+    f: u8,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct HexCoord {
-    x: i32,
-    y: i32,
+    x: i8,
+    y: i8,
 }
 
 /// A map to associate any two values with the variants of the Color enum. Useful for keeping
@@ -168,11 +168,11 @@ impl<T> ColorMap<T> {
 }
 
 impl FieldCoord {
-    pub fn new(x: i32, y: i32, f: u32) -> FieldCoord {
+    pub fn new(x: i8, y: i8, f: u8) -> FieldCoord {
         assert!(Self::is_valid_coord(x, y, f));
         FieldCoord { x, y, f }
     }
-    pub fn f(&self) -> u32 {
+    pub fn f(&self) -> u8 {
         self.f
     }
     pub fn to_hex(&self) -> HexCoord {
@@ -181,7 +181,7 @@ impl FieldCoord {
             y: self.y,
         }
     }
-    fn is_valid_coord(x: i32, y: i32, f: u32) -> bool {
+    fn is_valid_coord(x: i8, y: i8, f: u8) -> bool {
         (x + y).abs() <= 2 && x.abs() <= 2 && y.abs() <= 2 && f < 6
     }
     pub fn color(&self) -> Color {
@@ -194,27 +194,27 @@ impl FieldCoord {
 }
 
 impl HexCoord {
-    pub fn new(x: i32, y: i32) -> HexCoord {
+    pub fn new(x: i8, y: i8) -> HexCoord {
         assert!(Self::is_valid_coord(x, y));
         HexCoord { x, y }
     }
-    pub fn try_new(x: i32, y: i32) -> Option<HexCoord> {
+    pub fn try_new(x: i8, y: i8) -> Option<HexCoord> {
         if Self::is_valid_coord(x, y) {
             Some(HexCoord { x, y })
         } else {
             None
         }
     }
-    pub fn new_unchecked(x: i32, y: i32) -> HexCoord {
+    pub fn new_unchecked(x: i8, y: i8) -> HexCoord {
         HexCoord { x, y }
     }
-    pub fn x(&self) -> i32 {
+    pub fn x(&self) -> i8 {
         self.x
     }
-    pub fn y(&self) -> i32 {
+    pub fn y(&self) -> i8 {
         self.y
     }
-    pub fn to_field(&self, f: u32) -> FieldCoord {
+    pub fn to_field(&self, f: u8) -> FieldCoord {
         assert!(f < 6);
         FieldCoord {
             x: self.x,
@@ -222,7 +222,7 @@ impl HexCoord {
             f,
         }
     }
-    fn is_valid_coord(x: i32, y: i32) -> bool {
+    fn is_valid_coord(x: i8, y: i8) -> bool {
         (x + y).abs() <= 2 && x.abs() <= 2 && y.abs() <= 2
     }
 }
