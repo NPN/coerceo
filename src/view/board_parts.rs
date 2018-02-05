@@ -194,7 +194,7 @@ pub fn pixel_to_field(p: Vec2, origin: Vec2, size: f32) -> Option<FieldCoord> {
     let q = v.x * (2.0 / 3.0) / size;
     let r = (-v.x - SQRT_3 * v.y) / (size * 3.0);
 
-    if let Some(hex) = round_hex_coord(q, r) {
+    round_hex_coord(q, r).and_then(|hex| {
         /*
            To find the field, we subtract the converted hex coordinates (q, r) from the rounded hex
            coordinates (hex) to get the fractional part of the coordinates. Here is a diagram of a
@@ -256,9 +256,7 @@ pub fn pixel_to_field(p: Vec2, origin: Vec2, size: f32) -> Option<FieldCoord> {
             7 => 0,
             _ => unreachable!(),
         }))
-    } else {
-        None
-    }
+    })
 }
 
 // Algorithm from http://www.redblobgames.com/grids/hexagons/#rounding
