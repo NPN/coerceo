@@ -31,7 +31,7 @@ pub struct AIHandle {
     handle: JoinHandle<()>,
 }
 
-pub fn ai_move(board: Board, depth: u32, prev_handle: Option<AIHandle>) -> AIHandle {
+pub fn ai_move(board: Board, depth: u8, prev_handle: Option<AIHandle>) -> AIHandle {
     assert!(depth != 0);
 
     let (move_sender, move_receiver) = mpsc::channel();
@@ -73,7 +73,7 @@ pub fn ai_move(board: Board, depth: u32, prev_handle: Option<AIHandle>) -> AIHan
     }
 }
 
-fn alphabeta_negamax(board: &Board, mut alpha: i16, beta: i16, depth: u32) -> i16 {
+fn alphabeta_negamax(board: &Board, mut alpha: i16, beta: i16, depth: u8) -> i16 {
     match board.outcome() {
         Outcome::Draw => return DRAW,
         Outcome::Win(color) => {
@@ -117,7 +117,7 @@ fn evaluate(board: &Board) -> i16 {
     }
 }
 
-pub fn perft(board: &Board, depth: u32) -> u32 {
+pub fn perft(board: &Board, depth: u8) -> u32 {
     if depth == 0 {
         1
     } else {
