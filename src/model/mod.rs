@@ -18,6 +18,7 @@
 use std::mem;
 
 mod board;
+mod lookup_tables;
 
 pub use self::board::{Board, Outcome};
 use ai::AIHandle;
@@ -100,6 +101,8 @@ impl Default for Model {
         }
     }
 }
+
+pub type BitBoard = u64;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Color {
