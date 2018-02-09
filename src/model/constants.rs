@@ -24,6 +24,48 @@ struct FieldCoord {
     f: u8,
 }
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
+/// Generate the Laurentius starting position.
+pub fn generate_laurentius() -> (BitBoard, BitBoard) {
+    let mut white = 0;
+    let mut black = 0;
+
+    // (0, 0) is the only empty hex.
+    // All other hexes have exactly two pieces on them in the starting position.
+    let piece_locations = [
+        (-2,  2, 0, 4),
+        (-2,  1, 0, 3),
+        (-2,  0, 3, 5),
+        (-1,  2, 1, 4),
+        (-1,  1, 0, 4),
+        (-1,  0, 3, 5),
+        (-1, -1, 2, 5),
+        ( 0,  2, 1, 5),
+        ( 0,  1, 1, 5),
+        ( 0, -1, 2, 4),
+        ( 0, -2, 2, 4),
+        ( 1,  1, 2, 5),
+        ( 1,  0, 0, 2),
+        ( 1, -1, 1, 3),
+        ( 1, -2, 1, 4),
+        ( 2,  0, 0, 2),
+        ( 2, -1, 0, 3),
+        ( 2, -2, 1, 3),
+    ];
+
+    {
+        let mut set_field = |coord: FieldCoord| match coord.color() {
+            Color::White => white |= coord.to_bitboard(),
+            Color::Black => black |= coord.to_bitboard(),
+        };
+        for &(x, y, f1, f2) in &piece_locations {
+            set_field(FieldCoord::new(x, y, f1));
+            set_field(FieldCoord::new(x, y, f2));
+        }
+    }
+    (white, black)
+}
+
 pub fn generate_edge_neighbors(color: Color) -> [BitBoard; 57] {
     let mut neighbors = [0; 57];
 
@@ -187,6 +229,13 @@ impl FieldCoord {
         };
 
         Self::new(x, y, (self.f + 3) % 6)
+    }
+    fn color(&self) -> Color {
+        if self.f % 2 == 1 {
+            Color::White
+        } else {
+            Color::Black
+        }
     }
 }
 
