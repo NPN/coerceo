@@ -18,7 +18,7 @@
 use std::mem;
 
 mod board;
-mod lookup_tables;
+mod constants;
 
 pub use self::board::{Board, Outcome};
 use ai::AIHandle;

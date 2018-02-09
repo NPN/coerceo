@@ -18,7 +18,7 @@
 use std::cmp;
 
 use model::{BitBoard, Color, ColorMap, FieldCoord, HexCoord, Move};
-use model::lookup_tables::*;
+use model::constants::*;
 
 #[derive(Clone, Copy)]
 pub struct Board {
@@ -89,6 +89,23 @@ pub enum Outcome {
 enum Field {
     Piece,
     Empty,
+}
+
+lazy_static! {
+    static ref EDGE_NEIGHBORS: ColorMap<[BitBoard; 57]> = ColorMap::new(
+        generate_edge_neighbors(Color::White),
+        generate_edge_neighbors(Color::Black),
+    );
+    static ref VERTEX_NEIGHBORS: ColorMap<[BitBoard; 57]> = ColorMap::new(
+        generate_vertex_neighbors(Color::White),
+        generate_vertex_neighbors(Color::Black),
+    );
+    static ref HEX_MASK: [BitBoard; 19] = generate_hex_mask();
+    static ref HEX_FIELD_NEIGHBORS: ColorMap<[BitBoard; 19]> = ColorMap::new(
+        generate_hex_field_neighbors(Color::White),
+        generate_hex_field_neighbors(Color::Black),
+    );
+    static ref REMOVABLE_HEX_COMBS: [BitBoard; 342] = generate_removable_hex_combs();
 }
 
 // Public methods
@@ -515,21 +532,4 @@ impl Board {
         }
         (remove_count, fields)
     }
-}
-
-lazy_static! {
-    static ref EDGE_NEIGHBORS: ColorMap<[BitBoard; 57]> = ColorMap::new(
-        generate_edge_neighbors(Color::White),
-        generate_edge_neighbors(Color::Black),
-    );
-    static ref VERTEX_NEIGHBORS: ColorMap<[BitBoard; 57]> = ColorMap::new(
-        generate_vertex_neighbors(Color::White),
-        generate_vertex_neighbors(Color::Black),
-    );
-    static ref HEX_MASK: [BitBoard; 19] = generate_hex_mask();
-    static ref HEX_FIELD_NEIGHBORS: ColorMap<[BitBoard; 19]> = ColorMap::new(
-        generate_hex_field_neighbors(Color::White),
-        generate_hex_field_neighbors(Color::Black),
-    );
-    static ref REMOVABLE_HEX_COMBS: [BitBoard; 342] = generate_removable_hex_combs();
 }
