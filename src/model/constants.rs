@@ -26,6 +26,7 @@ enum OptionFieldCoord {
     None,
 }
 
+// 19 hexes * 3 bits per hex = 57 set bits
 pub const HEX_STARTING_POSITION: BitBoard = 0x1FF_FFFF_FFFF_FFFF;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
