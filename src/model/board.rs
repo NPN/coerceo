@@ -241,6 +241,13 @@ impl Board {
         self.vitals.get_ref(self.turn).hexes >= 2
     }
     pub fn is_piece_on_field(&self, coord: &FieldCoord) -> bool {
+        assert!(
+            self.is_hex_extant(&coord.to_hex()),
+            "Cannot cannot check if piece is on {:?}. Hex at {:?} was removed.",
+            coord,
+            coord.to_hex()
+        );
+
         coord.to_bitboard() & self.fields.get_ref(coord.color()) != 0
     }
     /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
