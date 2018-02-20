@@ -104,6 +104,13 @@ impl Default for Model {
 
 pub type BitBoard = u64;
 
+pub fn pop_bit(bb: &mut BitBoard) -> BitBoard {
+    // bb & -bb
+    let bit = *bb & (1 + !*bb);
+    *bb ^= bit;
+    bit
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Color {
     White,
@@ -125,7 +132,7 @@ pub enum PlayerType {
     Computer,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum Move {
     Exchange(FieldCoord),
     Move(FieldCoord, FieldCoord),

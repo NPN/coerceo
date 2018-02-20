@@ -18,39 +18,55 @@
 use std::cmp;
 
 use model::{BitBoard, Color, ColorMap, FieldCoord, HexCoord, Move};
+use model::pop_bit;
 use model::constants::*;
 
 #[derive(Clone, Copy)]
 pub struct Board {
     /*
-                ____
-               /    \
-          ____/  +y  \____
-         /    \      /    \
-        /      \____/  +x  \
-        \      /    \      /
-         \____/      \____/
-         /    \      /    \
-        /  -x  \____/      \
-        \      /    \      /
-         \____/  -y  \____/
-              \      /
-               \____/
+    Board layout:
+    The hex board uses an axial coordinate system with (0, 0) at the center. The x-axis slopes
+    up and to the right, and the y-axis goes up and down.
+    See http://www.redblobgames.com/grids/hexagons/#coordinates-axial for more info.
+                                             ____
+                                            /    \
+                                       ____/  +y  \____
+                                      /    \      /    \
+                                     /      \____/  +x  \
+                                     \      /    \      /
+                                      \____/      \____/
+                                      /    \      /    \
+                                     /  -x  \____/      \
+                                     \      /    \      /
+                                      \____/  -y  \____/
+                                           \      /
+                                            \____/
 
-        The hex board uses an axial coordinate system with (0, 0) at the center. The x-axis slopes
-        up to the right, and the y-axis goes up and down. The board is stored as a 1D array.
-        See http://www.redblobgames.com/grids/hexagons/#coordinates-axial for more info.
+    Field layout:
+    Fields are numbered clockwise from the top. Even indicies are black, odd indicies are white.
+                                          _________
+                                         / \     / \
+                                        /   \ 0 /   \
+                                       /  5  \ /  1  \
+                                      (-------*-------)
+                                       \  4  / \  2  /
+                                        \   / 3 \   /
+                                         \_/_____\_/
+    u64 Bitboard layout:
 
-        u8 hex layout:
-                         Field number. Fields are numbered clockwise from the top.
-               543210 -- Even indicies are black, odd indicies are white.
-        [0][0][000000]
-         |  |    +------ Store fields
-         |  +----------- Has hex been removed?
-         +-------------- Unused
+     MSB                                                                              LSB
+
+     7 bits                            57 bits (19 groups of 3)
+     +-----+  +-------------------------------------------------------------------------+
+    [0000000][000 111 000 000 000 000 000 000 000 000 000 000 000 000 000 000 000 010 000]
+     Unused   -+- -+-                 ||+-- Field 0           ||+-- Field 1       |+-- Piece on field
+               |   +-- Extant hex     |+--- Field 2           |+--- Field 3       +--- No piece on field
+               +------ Removed hex    +---- Field 4           +---- Field 5            (Field bitboards)
+                      (Hex bitboard)  (Black field bitboard)  (White field bitboard)
     */
-    board: [u8; 25],
-    extant_hexes: u8,
+    fields: ColorMap<BitBoard>,
+    hexes: BitBoard,
+    extant_hex_count: u8,
     turn: Color,
     vitals: ColorMap<PlayerVitals>,
     outcome: Outcome,
@@ -110,62 +126,27 @@ lazy_static! {
 
 // Public methods
 impl Board {
-    #[cfg_attr(rustfmt, rustfmt_skip)]
     /// Create a new board with the "Laurentius" starting position.
     pub fn new() -> Board {
-        let mut board = Board {
-            board: [0; 25],
-            extant_hexes: 19,
+        Board {
+            fields: generate_laurentius(),
+            hexes: HEX_STARTING_POSITION,
+            extant_hex_count: 19,
             turn: Color::White,
-            vitals: ColorMap::new(
-                PlayerVitals::new(),
-                PlayerVitals::new(),
-            ),
-            outcome: Outcome::InProgress
-        };
-
-        // (0, 0) is the only empty hex.
-        board.set_hex(&HexCoord::new(0, 0), 0b1_000000);
-
-        // All other hexes have exactly two pieces on them in the starting position.
-        let piece_locations = [
-            (-2,  2, 0, 4),
-            (-2,  1, 0, 3),
-            (-2,  0, 3, 5),
-            (-1,  2, 1, 4),
-            (-1,  1, 0, 4),
-            (-1,  0, 3, 5),
-            (-1, -1, 2, 5),
-            ( 0,  2, 1, 5),
-            ( 0,  1, 1, 5),
-            ( 0, -1, 2, 4),
-            ( 0, -2, 2, 4),
-            ( 1,  1, 2, 5),
-            ( 1,  0, 0, 2),
-            ( 1, -1, 1, 3),
-            ( 1, -2, 1, 4),
-            ( 2,  0, 0, 2),
-            ( 2, -1, 0, 3),
-            ( 2, -2, 1, 3),
-        ];
-
-        for &(x, y, f1, f2) in &piece_locations {
-            let hex = 0b1_000000 + (1 << f1) + (1 << f2);
-            board.set_hex(&HexCoord::new(x, y), hex);
+            vitals: ColorMap::new(PlayerVitals::new(), PlayerVitals::new()),
+            outcome: Outcome::InProgress,
         }
-
-        board
     }
     pub fn apply_move(&mut self, mv: &Move) {
-        assert!(self.can_apply_move(mv));
+        assert!(self.can_apply_move(mv), "Cannot apply {:?}", mv);
         match *mv {
             Move::Move(from, to) => {
                 self.set_field(&from, Field::Empty);
                 self.set_field(&to, Field::Piece);
 
                 let (capture_count, mut fields_to_check) = self.check_hexes(&from.to_hex());
-                fields_to_check.append(&mut self.get_field_edge_neighbors(&to));
-                self.check_captures(&fields_to_check);
+                fields_to_check |= EDGE_NEIGHBORS.get_ref(to.color())[to.to_index()];
+                self.check_captures(fields_to_check);
 
                 self.vitals.get_mut(self.turn).hexes += capture_count;
                 self.turn = self.turn.switch();
@@ -176,7 +157,7 @@ impl Board {
 
                 // Players don't collect hexes removed due to an exchange
                 let (_, fields_to_check) = self.check_hexes(&coord.to_hex());
-                self.check_captures(&fields_to_check);
+                self.check_captures(fields_to_check);
                 self.turn = self.turn.switch();
             }
         }
@@ -185,7 +166,9 @@ impl Board {
     pub fn can_apply_move(&self, mv: &Move) -> bool {
         match *mv {
             Move::Move(from, to) => {
-                from.color() == self.turn && self.get_field_vertex_neighbors(&from).contains(&to)
+                let color = from.color();
+                let vertex_neighbors = VERTEX_NEIGHBORS.get_ref(color)[from.to_index()];
+                color == self.turn && (to.to_bitboard() & vertex_neighbors != 0)
                     && self.is_piece_on_field(&from) && !self.is_piece_on_field(&to)
             }
             Move::Exchange(coord) => {
@@ -210,35 +193,46 @@ impl Board {
             },
         );
 
-        for hex in self.extant_hexes() {
-            for f in 0..6 {
-                let field = hex.to_field(f);
-                if self.is_piece_on_field(&field) {
-                    if field.color() == turn {
-                        moves.append(&mut self.get_field_vertex_neighbors(&field)
-                            .into_iter()
-                            .filter_map(|to| {
-                                if self.is_piece_on_field(&to) {
-                                    None
-                                } else {
-                                    Some(Move::Move(field, to))
-                                }
-                            })
-                            .collect());
-                    } else if can_exchange {
-                        moves.push(Move::Exchange(field));
-                    }
-                }
+        let color = turn;
+        let mut us = *self.fields.get_ref(color);
+        while us != 0 {
+            let field = FieldCoord::from_index(pop_bit(&mut us).trailing_zeros() as u8, turn);
+            let mut vertex_neighbors = VERTEX_NEIGHBORS.get_ref(color)[field.to_index()];
+            vertex_neighbors &= !self.fields.get_ref(color);
+
+            while vertex_neighbors != 0 {
+                let dest = FieldCoord::from_index(
+                    pop_bit(&mut vertex_neighbors).trailing_zeros() as u8,
+                    turn,
+                );
+                moves.push(Move::Move(field, dest));
+            }
+        }
+
+        if can_exchange {
+            let color = turn.switch();
+            let mut them = *self.fields.get_ref(color);
+            while them != 0 {
+                let field =
+                    FieldCoord::from_index(pop_bit(&mut them).trailing_zeros() as u8, color);
+                moves.push(Move::Exchange(field));
             }
         }
         moves
     }
     pub fn available_moves_for_piece(&self, field: &FieldCoord) -> Vec<FieldCoord> {
         if self.is_piece_on_field(field) {
-            self.get_field_vertex_neighbors(field)
-                .into_iter()
-                .filter(|c| !self.is_piece_on_field(c))
-                .collect()
+            let color = field.color();
+            let mut vertex_neighbors = VERTEX_NEIGHBORS.get_ref(color)[field.to_index()];
+            let mut moves = Vec::with_capacity(3);
+
+            while vertex_neighbors != 0 {
+                moves.push(FieldCoord::from_index(
+                    pop_bit(&mut vertex_neighbors).trailing_zeros() as u8,
+                    color,
+                ));
+            }
+            moves
         } else {
             vec![]
         }
@@ -247,7 +241,7 @@ impl Board {
         self.vitals.get_ref(self.turn).hexes >= 2
     }
     pub fn is_piece_on_field(&self, coord: &FieldCoord) -> bool {
-        self.get_field(coord) == Field::Piece
+        coord.to_bitboard() & self.fields.get_ref(coord.color()) != 0
     }
     /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
     ///
@@ -277,7 +271,7 @@ impl Board {
     ///
     /// Returns true if a hex has not been removed yet.
     pub fn is_hex_extant(&self, coord: &HexCoord) -> bool {
-        self.get_hex(coord) & 0b1_000000 != 0
+        self.hexes & HEX_MASK[coord.to_index()] != 0
     }
     pub fn resign(&mut self) {
         assert_eq!(self.outcome, Outcome::InProgress);
@@ -313,7 +307,7 @@ impl Board {
             let bh = self.hexes(Black);
 
             // If neither side can capture the other's pieces, the game is drawn
-            if wp == 1 && bp == 1 && (self.extant_hexes + cmp::max(wh, bh) - 1 < 2) {
+            if wp == 1 && bp == 1 && (self.extant_hex_count + cmp::max(wh, bh) - 1 < 2) {
                 self.outcome = Outcome::Draw;
             }
         }
@@ -323,21 +317,15 @@ impl Board {
             return true;
         }
 
-        let fields = match self.turn() {
-            Color::White => [1, 3, 5],
-            Color::Black => [0, 2, 4],
-        };
-
-        for hex in self.extant_hexes() {
-            for &f in &fields {
-                let field = hex.to_field(f);
-                if self.is_piece_on_field(&field)
-                    && self.get_field_vertex_neighbors(&field)
-                        .iter()
-                        .any(|to| !self.is_piece_on_field(to))
-                {
-                    return true;
-                }
+        let color = self.turn;
+        let mut us = *self.fields.get_ref(color);
+        while us != 0 {
+            let field = FieldCoord::from_index(pop_bit(&mut us).trailing_zeros() as u8, color);
+            let vertex_neighbors = VERTEX_NEIGHBORS.get_ref(color)[field.to_index()];
+            if self.is_piece_on_field(&field)
+                && (vertex_neighbors & self.fields.get_ref(color) != vertex_neighbors)
+            {
+                return true;
             }
         }
         false
@@ -346,74 +334,23 @@ impl Board {
 
 // Field and piece methods
 impl Board {
-    fn get_field(&self, coord: &FieldCoord) -> Field {
-        assert!(
-            self.is_hex_extant(&coord.to_hex()),
-            "Cannot get field {} on removed hex at {:?}",
-            coord.f,
-            coord.to_hex()
-        );
-
-        if self.get_hex(&coord.to_hex()) & (1 << coord.f) == 0 {
-            Field::Empty
-        } else {
-            Field::Piece
-        }
-    }
     fn set_field(&mut self, coord: &FieldCoord, field: Field) {
         let f = coord.f;
-        let coord = coord.to_hex();
+        let hex = coord.to_hex();
 
         assert!(
-            self.is_hex_extant(&coord),
+            self.is_hex_extant(&hex),
             "Cannot set field {} on removed hex at {:?}",
             f,
-            coord
+            hex
         );
 
-        let hex = match field {
-            Field::Piece => self.get_hex(&coord) | 1 << f,
-            Field::Empty => self.get_hex(&coord) & !(1 << f),
+        let color = coord.color();
+        let fields = *self.fields.get_ref(color);
+        match field {
+            Field::Piece => *self.fields.get_mut(coord.color()) = fields | coord.to_bitboard(),
+            Field::Empty => *self.fields.get_mut(coord.color()) = fields & !coord.to_bitboard(),
         };
-        self.set_hex(&coord, hex);
-    }
-    /// Return fields that share an edge with the given field. These fields are always the opposite
-    /// color of the given field. If all of a piece's edge neighbors are occupied, that piece might
-    /// be capturable.
-    fn get_field_edge_neighbors(&self, coord: &FieldCoord) -> Vec<FieldCoord> {
-        let mut neighbors = Vec::with_capacity(3);
-        let hex = coord.to_hex();
-
-        // There are always two edge neighbors on the same hex as the given field
-        neighbors.push(hex.to_field((coord.f + 1) % 6));
-        neighbors.push(hex.to_field((coord.f + 5) % 6));
-
-        if let Some(hex) = self.get_hex_neighbor(&hex, coord.f) {
-            neighbors.push(hex.to_field((coord.f + 3) % 6));
-        }
-        neighbors
-    }
-    /// Return fields that share a vertex with the given field and have the same color as the given
-    /// field. Pieces can move to fields that are vertex neighbors of the field they are on.
-    fn get_field_vertex_neighbors(&self, coord: &FieldCoord) -> Vec<FieldCoord> {
-        let mut neighbors = Vec::with_capacity(6);
-        let hex = coord.to_hex();
-
-        // There are always two vertex neighbors on the same hex as the given field
-        neighbors.push(hex.to_field((coord.f + 2) % 6));
-        neighbors.push(hex.to_field((coord.f + 4) % 6));
-
-        if let Some(hex) = self.get_hex_neighbor(&hex, coord.f) {
-            neighbors.push(hex.to_field((coord.f + 2) % 6));
-            neighbors.push(hex.to_field((coord.f + 4) % 6));
-        }
-        if let Some(hex) = self.get_hex_neighbor(&hex, (coord.f + 1) % 6) {
-            neighbors.push(hex.to_field((coord.f + 4) % 6));
-        }
-        if let Some(hex) = self.get_hex_neighbor(&hex, (coord.f + 5) % 6) {
-            neighbors.push(hex.to_field((coord.f + 2) % 6));
-        }
-        neighbors
     }
     fn remove_piece(&mut self, coord: &FieldCoord) {
         assert!(
@@ -424,14 +361,16 @@ impl Board {
         self.set_field(coord, Field::Empty);
         self.vitals.get_mut(coord.color()).pieces -= 1;
     }
-    fn check_captures(&mut self, fields_to_check: &[FieldCoord]) {
-        for field in fields_to_check {
-            if field.color() != self.turn && self.is_piece_on_field(field)
-                && self.get_field_edge_neighbors(field)
-                    .iter()
-                    .all(|coord| self.is_piece_on_field(coord))
-            {
-                self.remove_piece(field);
+    fn check_captures(&mut self, mut fields_to_check: BitBoard) {
+        // fields_to_check must be a BitBoard for the opponent player (i.e. opposite of current turn)
+        let us = self.turn;
+        let them = us.switch();
+        fields_to_check &= self.hexes & self.fields.get_ref(them);
+        while fields_to_check != 0 {
+            let index = pop_bit(&mut fields_to_check).trailing_zeros() as u8;
+            let field = FieldCoord::from_index(index, them);
+            if !self.fields.get_ref(us) & EDGE_NEIGHBORS.get_ref(them)[field.to_index()] == 0 {
+                self.remove_piece(&field);
             }
         }
     }
@@ -439,21 +378,9 @@ impl Board {
 
 // Hex methods
 impl Board {
-    fn get_hex(&self, coord: &HexCoord) -> u8 {
-        let x = (coord.x + 2) as usize;
-        let y = (coord.y + 2) as usize;
-
-        self.board[x + y * 5]
-    }
-    fn set_hex(&mut self, coord: &HexCoord, hex: u8) {
-        let x = (coord.x + 2) as usize;
-        let y = (coord.y + 2) as usize;
-
-        self.board[x + y * 5] = hex;
-    }
     fn is_hex_empty(&self, coord: &HexCoord) -> bool {
         assert!(self.is_hex_extant(coord));
-        self.get_hex(coord) & 0b0_111111 == 0
+        (self.fields.white | self.fields.black) & HEX_MASK[coord.to_index()] == 0
     }
     fn get_hex_neighbor(&self, coord: &HexCoord, direction: u8) -> Option<HexCoord> {
         self.try_hex(match direction {
@@ -473,34 +400,22 @@ impl Board {
             return false;
         }
 
-        // After repeatedly failing to find an efficient and elegant way to check if a hex is
-        // removable, I have opted to just use a lookup table. Even if it is not elegant, at
-        // least it is simple and efficient.
-        let neighbor_combinations = [
-            0b000001, 0b000010, 0b000100, 0b001000, 0b010000, 0b100000, 0b000011, 0b000110,
-            0b001100, 0b011000, 0b110000, 0b100001, 0b000111, 0b001110, 0b011100, 0b111000,
-            0b110001, 0b100011,
-        ];
-
-        let mut neighbors = 0;
-        for f in 0..6 {
-            if self.get_hex_neighbor(coord, f).is_some() {
-                neighbors += 1 << f;
-            }
-        }
-        assert!(
-            neighbors != 0,
-            "A hex at {:?} is empty and has no neighbors",
-            coord
-        );
-        neighbor_combinations.contains(&neighbors)
+        let index = coord.to_index();
+        let hex =
+            self.hexes & (HEX_FIELD_NEIGHBORS.white[index] | HEX_FIELD_NEIGHBORS.black[index]);
+        // There are 18 combinations to check for each hex
+        REMOVABLE_HEX_COMBS
+            .iter()
+            .skip(index * 18)
+            .take(18)
+            .any(|&comb| hex == comb)
     }
     fn remove_hex(&mut self, coord: &HexCoord) -> bool {
         let removable = self.is_hex_removable(coord);
 
         if removable {
-            self.set_hex(coord, 0);
-            self.extant_hexes -= 1;
+            self.hexes &= !HEX_MASK[coord.to_index()];
+            self.extant_hex_count -= 1;
         }
         removable
     }
@@ -512,20 +427,24 @@ impl Board {
         }
         None
     }
-    fn check_hexes(&mut self, coord: &HexCoord) -> (u8, Vec<FieldCoord>) {
+    fn check_hexes(&mut self, coord: &HexCoord) -> (u8, BitBoard) {
         let mut remove_count = 0;
-        let mut fields = vec![];
+        let mut fields = 0;
 
         if self.remove_hex(coord) {
             remove_count += 1;
             for f in 0..6 {
                 if let Some(neighbor) = self.get_hex_neighbor(coord, f) {
-                    let (new_remove_count, mut new_fields) = self.check_hexes(&neighbor);
+                    let (new_remove_count, new_fields) = self.check_hexes(&neighbor);
                     if new_remove_count == 0 {
-                        fields.push(neighbor.to_field((f + 3) % 6));
+                        // TODO: actually use HEX_FIELD_NEIGHBORS?
+                        let field = neighbor.to_field((f + 3) % 6);
+                        if field.color() != self.turn() {
+                            fields |= field.to_bitboard();
+                        }
                     } else {
                         remove_count += new_remove_count;
-                        fields.append(&mut new_fields);
+                        fields |= new_fields;
                     }
                 }
             }
