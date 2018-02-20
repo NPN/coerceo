@@ -175,8 +175,30 @@ impl FieldCoord {
         assert!(Self::is_valid_coord(x, y, f));
         FieldCoord { x, y, f }
     }
-    pub fn f(&self) -> u8 {
-        self.f
+    pub fn from_index(index: u8, color: Color) -> FieldCoord {
+        assert!(index < 57);
+
+        let f = 2 * (index % 3) + match color {
+            Color::White => 1,
+            Color::Black => 0,
+        };
+
+        Self::from_hex_f(index / 3, f)
+    }
+    pub fn from_hex_f(hex: u8, f: u8) -> FieldCoord {
+        assert!(hex < 19);
+        assert!(f < 6);
+
+        let hex = hex as i8 + match hex {
+            0...2 => 2,
+            3...15 => 3,
+            16...18 => 4,
+            _ => unreachable!(),
+        };
+        Self::new(hex % 5 - 2, hex / 5 - 2, f as u8)
+    }
+    pub fn to_index(&self) -> usize {
+        self.to_bitboard().trailing_zeros() as usize
     }
     pub fn to_hex(&self) -> HexCoord {
         HexCoord {
@@ -184,8 +206,19 @@ impl FieldCoord {
             y: self.y,
         }
     }
-    fn is_valid_coord(x: i8, y: i8, f: u8) -> bool {
-        (x + y).abs() <= 2 && x.abs() <= 2 && y.abs() <= 2 && f < 6
+    pub fn to_bitboard(&self) -> BitBoard {
+        let hex = 5 * (self.y + 2) + self.x + 2;
+        let hex = hex as u8 - match hex {
+            2...4 => 2,
+            6...18 => 3,
+            20...22 => 4,
+            _ => unreachable!(),
+        };
+
+        1 << (hex * 3 + self.f / 2)
+    }
+    pub fn f(&self) -> u8 {
+        self.f
     }
     pub fn color(&self) -> Color {
         if self.f % 2 == 0 {
@@ -193,6 +226,9 @@ impl FieldCoord {
         } else {
             Color::White
         }
+    }
+    fn is_valid_coord(x: i8, y: i8, f: u8) -> bool {
+        (x + y).abs() <= 2 && x.abs() <= 2 && y.abs() <= 2 && f < 6
     }
 }
 
@@ -225,7 +261,32 @@ impl HexCoord {
             f,
         }
     }
+    pub fn to_index(&self) -> usize {
+        let hex = 5 * (self.y + 2) + self.x + 2;
+        hex as usize - match hex {
+            2...4 => 2,
+            6...18 => 3,
+            20...22 => 4,
+            _ => unreachable!(),
+        }
+    }
     fn is_valid_coord(x: i8, y: i8) -> bool {
         (x + y).abs() <= 2 && x.abs() <= 2 && y.abs() <= 2
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn index_reflextivity() {
+        for index in 0..57 {
+            let white = FieldCoord::from_index(index as u8, Color::White);
+            assert_eq!(index, white.to_index());
+
+            let black = FieldCoord::from_index(index as u8, Color::Black);
+            assert_eq!(index, black.to_index());
+        }
     }
 }

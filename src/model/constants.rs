@@ -15,13 +15,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use model::{BitBoard, Color, ColorMap};
+use model::{BitBoard, Color, ColorMap, FieldCoord};
 
-#[derive(Clone, Copy, PartialEq)]
-struct FieldCoord {
-    x: i8,
-    y: i8,
-    f: u8,
+use self::OptionFieldCoord::*;
+
+/// A wrapper enum representing a `FieldCoord` which may be invalid (i.e. one that is off the board).
+/// Useful for keeping lookup table generation clean.
+enum OptionFieldCoord {
+    Some(FieldCoord),
+    None,
 }
 
 pub const HEX_STARTING_POSITION: BitBoard = 0x1FF_FFFF_FFFF_FFFF;
@@ -72,7 +74,7 @@ pub fn generate_edge_neighbors(color: Color) -> [BitBoard; 57] {
     let mut neighbors = [0; 57];
 
     for index in 0..57 {
-        let coord = FieldCoord::from_index(index, color);
+        let coord = OptionFieldCoord::from_index(index, color);
         neighbors[index as usize] =
             fold_coords(&[coord.flip(), coord.shift_f(1), coord.shift_f(-1)]);
     }
@@ -83,7 +85,7 @@ pub fn generate_vertex_neighbors(color: Color) -> [BitBoard; 57] {
     let mut neighbors = [0; 57];
 
     for index in 0..57 {
-        let coord = FieldCoord::from_index(index, color);
+        let coord = OptionFieldCoord::from_index(index, color);
         neighbors[index as usize] = fold_coords(&[
             coord.flip().shift_f(1),
             coord.flip().shift_f(-1),
@@ -110,7 +112,7 @@ pub fn generate_hex_mask() -> [BitBoard; 19] {
 pub fn generate_hex_field_neighbors(color: Color) -> [BitBoard; 19] {
     let mut neighbors = [0; 19];
 
-    let field_neighbor = |hex, f| FieldCoord::from_hex_f(hex, f).flip();
+    let field_neighbor = |hex, f| OptionFieldCoord::from_hex_f(hex, f).flip();
 
     for hex in 0..19 {
         neighbors[hex as usize] = fold_coords(&match color {
@@ -132,7 +134,7 @@ pub fn generate_hex_field_neighbors(color: Color) -> [BitBoard; 19] {
 pub fn generate_removable_hex_combs() -> [BitBoard; 342] {
     let mut table = [0; 342];
 
-    let bb_neighbor = |hex, f| FieldCoord::from_hex_f(hex, f).flip().to_bitboard();
+    let bb_neighbor = |hex, f| OptionFieldCoord::from_hex_f(hex, f).flip().to_bitboard();
 
     for hex in 0..19 {
         let neighbors = [
@@ -165,94 +167,58 @@ pub fn generate_removable_hex_combs() -> [BitBoard; 342] {
     table
 }
 
-fn fold_coords(coords: &[FieldCoord]) -> BitBoard {
-    coords.iter().fold(0, |acc, &c| acc | c.to_bitboard())
+fn fold_coords(coords: &[OptionFieldCoord]) -> BitBoard {
+    coords.iter().fold(0, |acc, c| acc | c.to_bitboard())
 }
 
-impl FieldCoord {
-    fn new(x: i8, y: i8, f: u8) -> FieldCoord {
-        FieldCoord { x, y, f }
+impl OptionFieldCoord {
+    fn from_index(index: u8, color: Color) -> Self {
+        Some(FieldCoord::from_index(index, color))
     }
-    fn is_valid_coord(&self) -> bool {
-        (self.x + self.y).abs() <= 2 && self.x.abs() <= 2 && self.y.abs() <= 2 && self.f < 6
+    fn from_hex_f(hex: u8, f: u8) -> Self {
+        Some(FieldCoord::from_hex_f(hex, f))
     }
-    fn from_index(index: u8, color: Color) -> FieldCoord {
-        assert!(index < 57);
-
-        let f = 2 * (index % 3) + match color {
-            Color::White => 1,
-            Color::Black => 0,
-        };
-
-        Self::from_hex_f(index / 3, f)
-    }
-    fn from_hex_f(hex: u8, f: u8) -> FieldCoord {
-        assert!(hex < 19);
-        assert!(f < 6);
-
-        let hex = hex as i8 + match hex {
-            0...2 => 2,
-            3...15 => 3,
-            16...18 => 4,
-            _ => unreachable!(),
-        };
-        Self::new(hex % 5 - 2, hex / 5 - 2, f as u8)
-    }
-    fn to_bitboard(&self) -> BitBoard {
-        if !self.is_valid_coord() {
-            return 0;
-        }
-        let hex = 5 * (self.y + 2) + self.x + 2;
-        let hex = hex as u8 - match hex {
-            2...4 => 2,
-            6...18 => 3,
-            20...22 => 4,
-            _ => unreachable!(),
-        };
-
-        1 << (hex * 3 + self.f / 2)
-    }
-    fn shift_f(&self, n: i8) -> FieldCoord {
+    fn shift_f(&self, n: i8) -> Self {
         assert!(-6 < n && n < 6);
 
-        Self::new(self.x, self.y, (self.f + (n + 6) as u8) % 6)
+        match *self {
+            Some(coord) => Some(FieldCoord::new(
+                coord.x,
+                coord.y,
+                (coord.f + (n + 6) as u8) % 6,
+            )),
+            None => None,
+        }
     }
     /// Return the edge neighbor of this field that does not share its hex, i.e. "flip" this field
     /// over the boundary of its hex.
-    fn flip(&self) -> FieldCoord {
-        let (x, y) = match self.f {
-            0 => (self.x, self.y + 1),
-            1 => (self.x + 1, self.y),
-            2 => (self.x + 1, self.y - 1),
-            3 => (self.x, self.y - 1),
-            4 => (self.x - 1, self.y),
-            5 => (self.x - 1, self.y + 1),
-            _ => unreachable!(),
-        };
+    fn flip(&self) -> Self {
+        match *self {
+            Some(coord) => {
+                let (x, y) = match coord.f {
+                    0 => (coord.x, coord.y + 1),
+                    1 => (coord.x + 1, coord.y),
+                    2 => (coord.x + 1, coord.y - 1),
+                    3 => (coord.x, coord.y - 1),
+                    4 => (coord.x - 1, coord.y),
+                    5 => (coord.x - 1, coord.y + 1),
+                    _ => unreachable!(),
+                };
+                let f = (coord.f + 3) % 6;
 
-        Self::new(x, y, (self.f + 3) % 6)
-    }
-    fn color(&self) -> Color {
-        if self.f % 2 == 1 {
-            Color::White
-        } else {
-            Color::Black
+                if FieldCoord::is_valid_coord(x, y, f) {
+                    Some(FieldCoord::new(x, y, f))
+                } else {
+                    None
+                }
+            }
+            None => None,
         }
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn index_reflextivity() {
-        for index in 0..57 {
-            let white = FieldCoord::from_index(index as u8, Color::White);
-            assert_eq!(index, white.to_bitboard().trailing_zeros());
-
-            let black = FieldCoord::from_index(index as u8, Color::Black);
-            assert_eq!(index, black.to_bitboard().trailing_zeros());
+    fn to_bitboard(&self) -> BitBoard {
+        match *self {
+            Some(coord) => coord.to_bitboard(),
+            None => 0,
         }
     }
 }
