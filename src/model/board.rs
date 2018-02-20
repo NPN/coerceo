@@ -198,7 +198,7 @@ impl Board {
         while us != 0 {
             let field = FieldCoord::from_index(pop_bit(&mut us).trailing_zeros() as u8, turn);
             let mut vertex_neighbors = VERTEX_NEIGHBORS.get_ref(color)[field.to_index()];
-            vertex_neighbors &= !self.fields.get_ref(color);
+            vertex_neighbors &= !self.fields.get_ref(color) & self.hexes;
 
             while vertex_neighbors != 0 {
                 let dest = FieldCoord::from_index(
