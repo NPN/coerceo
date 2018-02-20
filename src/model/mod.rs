@@ -240,10 +240,6 @@ impl FieldCoord {
 }
 
 impl HexCoord {
-    pub fn new(x: i8, y: i8) -> HexCoord {
-        assert!(Self::is_valid_coord(x, y));
-        HexCoord { x, y }
-    }
     pub fn try_new(x: i8, y: i8) -> Option<HexCoord> {
         if Self::is_valid_coord(x, y) {
             Some(HexCoord { x, y })
