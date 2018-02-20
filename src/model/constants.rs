@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use model::{BitBoard, Color};
+use model::{BitBoard, Color, ColorMap};
 
 #[derive(Clone, Copy, PartialEq)]
 struct FieldCoord {
@@ -24,9 +24,11 @@ struct FieldCoord {
     f: u8,
 }
 
+pub const HEX_STARTING_POSITION: BitBoard = 0x1FF_FFFF_FFFF_FFFF;
+
 #[cfg_attr(rustfmt, rustfmt_skip)]
 /// Generate the Laurentius starting position.
-pub fn generate_laurentius() -> (BitBoard, BitBoard) {
+pub fn generate_laurentius() -> ColorMap<BitBoard> {
     let mut white = 0;
     let mut black = 0;
 
@@ -63,7 +65,7 @@ pub fn generate_laurentius() -> (BitBoard, BitBoard) {
             set_field(FieldCoord::new(x, y, f2));
         }
     }
-    (white, black)
+    ColorMap::new(white, black)
 }
 
 pub fn generate_edge_neighbors(color: Color) -> [BitBoard; 57] {
