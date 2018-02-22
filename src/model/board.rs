@@ -256,8 +256,7 @@ impl Board {
     pub fn extant_hexes(&self) -> Vec<HexCoord> {
         let mut coords = Vec::with_capacity(19);
         let try_coord = |coords: &mut Vec<HexCoord>, x, y| {
-            let hex = HexCoord::new_unchecked(x, y);
-            if self.is_hex_extant(&hex) {
+            if let Some(hex) = self.try_hex((x, y)) {
                 coords.push(hex);
             }
         };

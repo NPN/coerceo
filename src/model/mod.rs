@@ -247,9 +247,6 @@ impl HexCoord {
             None
         }
     }
-    pub fn new_unchecked(x: i8, y: i8) -> Self {
-        Self { x, y }
-    }
     pub fn x(&self) -> i8 {
         self.x
     }
