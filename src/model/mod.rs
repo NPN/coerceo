@@ -36,8 +36,8 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn new(players: ColorMap<PlayerType>) -> Model {
-        Model {
+    pub fn new(players: ColorMap<PlayerType>) -> Self {
+        Self {
             players,
             ..Default::default()
         }
@@ -88,7 +88,7 @@ impl Model {
 
 impl Default for Model {
     fn default() -> Self {
-        Model {
+        Self {
             board: Board::new(),
             players: ColorMap::new(PlayerType::Human, PlayerType::Human),
             selected_piece: None,
@@ -118,7 +118,7 @@ pub enum Color {
 }
 
 impl Color {
-    pub fn switch(&self) -> Color {
+    pub fn switch(&self) -> Self {
         match *self {
             Color::White => Color::Black,
             Color::Black => Color::White,
@@ -160,8 +160,8 @@ pub struct ColorMap<T> {
 }
 
 impl<T> ColorMap<T> {
-    pub fn new(white: T, black: T) -> ColorMap<T> {
-        ColorMap { white, black }
+    pub fn new(white: T, black: T) -> Self {
+        Self { white, black }
     }
     pub fn get_ref(&self, color: Color) -> &T {
         match color {
@@ -178,11 +178,11 @@ impl<T> ColorMap<T> {
 }
 
 impl FieldCoord {
-    pub fn new(x: i8, y: i8, f: u8) -> FieldCoord {
+    pub fn new(x: i8, y: i8, f: u8) -> Self {
         assert!(Self::is_valid_coord(x, y, f));
-        FieldCoord { x, y, f }
+        Self { x, y, f }
     }
-    pub fn from_index(index: u8, color: Color) -> FieldCoord {
+    pub fn from_index(index: u8, color: Color) -> Self {
         assert!(index < 57);
 
         let f = 2 * (index % 3) + match color {
@@ -192,7 +192,7 @@ impl FieldCoord {
 
         Self::from_hex_f(index / 3, f)
     }
-    pub fn from_hex_f(hex: u8, f: u8) -> FieldCoord {
+    pub fn from_hex_f(hex: u8, f: u8) -> Self {
         assert!(hex < 19);
         assert!(f < 6);
 
@@ -240,15 +240,15 @@ impl FieldCoord {
 }
 
 impl HexCoord {
-    pub fn try_new(x: i8, y: i8) -> Option<HexCoord> {
+    pub fn try_new(x: i8, y: i8) -> Option<Self> {
         if Self::is_valid_coord(x, y) {
-            Some(HexCoord { x, y })
+            Some(Self { x, y })
         } else {
             None
         }
     }
-    pub fn new_unchecked(x: i8, y: i8) -> HexCoord {
-        HexCoord { x, y }
+    pub fn new_unchecked(x: i8, y: i8) -> Self {
+        Self { x, y }
     }
     pub fn x(&self) -> i8 {
         self.x

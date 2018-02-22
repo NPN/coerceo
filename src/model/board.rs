@@ -81,8 +81,8 @@ struct PlayerVitals {
 }
 
 impl PlayerVitals {
-    fn new() -> PlayerVitals {
-        PlayerVitals {
+    fn new() -> Self {
+        Self {
             pieces: 18,
             hexes: 0,
         }
@@ -127,8 +127,8 @@ lazy_static! {
 // Public methods
 impl Board {
     /// Create a new board with the "Laurentius" starting position.
-    pub fn new() -> Board {
-        Board {
+    pub fn new() -> Self {
+        Self {
             fields: generate_laurentius(),
             hexes: HEX_STARTING_POSITION,
             extant_hex_count: 19,
