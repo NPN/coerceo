@@ -375,7 +375,8 @@ impl Board {
         while fields_to_check != 0 {
             let index = pop_bit(&mut fields_to_check).trailing_zeros() as u8;
             let field = FieldCoord::from_index(index, them);
-            if !self.fields.get_ref(us) & EDGE_NEIGHBORS.get_ref(them)[field.to_index()] == 0 {
+            let neighbors = EDGE_NEIGHBORS.get_ref(them)[field.to_index()] & self.hexes;
+            if !self.fields.get_ref(us) & neighbors == 0 {
                 self.remove_piece(&field);
             }
         }
