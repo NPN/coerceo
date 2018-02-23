@@ -223,7 +223,8 @@ impl Board {
     pub fn available_moves_for_piece(&self, field: &FieldCoord) -> Vec<FieldCoord> {
         if self.is_piece_on_field(field) {
             let color = field.color();
-            let mut vertex_neighbors = VERTEX_NEIGHBORS.get_ref(color)[field.to_index()];
+            let mut vertex_neighbors =
+                self.hexes & VERTEX_NEIGHBORS.get_ref(color)[field.to_index()];
             let mut moves = Vec::with_capacity(3);
 
             while vertex_neighbors != 0 {
