@@ -196,15 +196,12 @@ impl Board {
         let color = turn;
         let mut us = *self.fields.get_ref(color);
         while us != 0 {
-            let field = FieldCoord::from_index(pop_bit(&mut us).trailing_zeros() as u8, turn);
+            let field = FieldCoord::from_bitboard(pop_bit(&mut us), turn);
             let mut vertex_neighbors = VERTEX_NEIGHBORS.get_ref(color)[field.to_index()];
             vertex_neighbors &= !self.fields.get_ref(color) & self.hexes;
 
             while vertex_neighbors != 0 {
-                let dest = FieldCoord::from_index(
-                    pop_bit(&mut vertex_neighbors).trailing_zeros() as u8,
-                    turn,
-                );
+                let dest = FieldCoord::from_bitboard(pop_bit(&mut vertex_neighbors), turn);
                 moves.push(Move::Move(field, dest));
             }
         }
@@ -213,8 +210,7 @@ impl Board {
             let color = turn.switch();
             let mut them = *self.fields.get_ref(color);
             while them != 0 {
-                let field =
-                    FieldCoord::from_index(pop_bit(&mut them).trailing_zeros() as u8, color);
+                let field = FieldCoord::from_bitboard(pop_bit(&mut them), color);
                 moves.push(Move::Exchange(field));
             }
         }
@@ -228,8 +224,8 @@ impl Board {
             let mut moves = Vec::with_capacity(3);
 
             while vertex_neighbors != 0 {
-                moves.push(FieldCoord::from_index(
-                    pop_bit(&mut vertex_neighbors).trailing_zeros() as u8,
+                moves.push(FieldCoord::from_bitboard(
+                    pop_bit(&mut vertex_neighbors),
                     color,
                 ));
             }
@@ -327,7 +323,7 @@ impl Board {
         let color = self.turn;
         let mut us = *self.fields.get_ref(color);
         while us != 0 {
-            let field = FieldCoord::from_index(pop_bit(&mut us).trailing_zeros() as u8, color);
+            let field = FieldCoord::from_bitboard(pop_bit(&mut us), color);
             let vertex_neighbors = VERTEX_NEIGHBORS.get_ref(color)[field.to_index()];
             if self.is_piece_on_field(&field)
                 && (vertex_neighbors & self.fields.get_ref(color) != vertex_neighbors)
@@ -374,8 +370,7 @@ impl Board {
         let them = us.switch();
         fields_to_check &= self.hexes & self.fields.get_ref(them);
         while fields_to_check != 0 {
-            let index = pop_bit(&mut fields_to_check).trailing_zeros() as u8;
-            let field = FieldCoord::from_index(index, them);
+            let field = FieldCoord::from_bitboard(pop_bit(&mut fields_to_check), them);
             let neighbors = EDGE_NEIGHBORS.get_ref(them)[field.to_index()] & self.hexes;
             if !self.fields.get_ref(us) & neighbors == 0 {
                 self.remove_piece(&field);

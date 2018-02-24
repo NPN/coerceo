@@ -182,6 +182,9 @@ impl FieldCoord {
         assert!(Self::is_valid_coord(x, y, f));
         Self { x, y, f }
     }
+    pub fn from_bitboard(bb: BitBoard, color: Color) -> Self {
+        Self::from_index(bb.trailing_zeros() as u8, color)
+    }
     pub fn from_index(index: u8, color: Color) -> Self {
         assert!(index < 57);
 
