@@ -17,7 +17,7 @@
 
 use imgui_sys::{self, ImVec2};
 
-use model::{Model, Move};
+use model::{FieldCoord, Model, Move};
 use view::board_parts::*;
 use view::Event;
 use vec2::Vec2;
@@ -54,16 +54,21 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
 
     if let Some(mv) = model.last_move {
         match mv {
-            Move::Exchange(ref exchanged) => {
+            Move::Exchange(exchanged, color) => {
+                let exchanged = FieldCoord::from_bitboard(exchanged, color);
+
                 if model.board.is_hex_extant(&exchanged.to_hex()) {
-                    highlight_field(EXCHANGE_HIGHLIGHT, exchanged, origin, side_len);
+                    highlight_field(EXCHANGE_HIGHLIGHT, &exchanged, origin, side_len);
                 }
             }
-            Move::Move(ref from, ref to) => {
+            Move::Move(from, to, color) => {
+                let from = FieldCoord::from_bitboard(from, color);
+                let to = FieldCoord::from_bitboard(to, color);
+
                 if model.board.is_hex_extant(&from.to_hex()) {
-                    highlight_field(LAST_MOVE_HIGHLIGHT, from, origin, side_len);
+                    highlight_field(LAST_MOVE_HIGHLIGHT, &from, origin, side_len);
                 }
-                highlight_field(LAST_MOVE_HIGHLIGHT, to, origin, side_len);
+                highlight_field(LAST_MOVE_HIGHLIGHT, &to, origin, side_len);
             }
         }
     }

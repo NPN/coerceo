@@ -134,8 +134,17 @@ pub enum PlayerType {
 
 #[derive(Clone, Copy, Debug)]
 pub enum Move {
-    Exchange(FieldCoord),
-    Move(FieldCoord, FieldCoord),
+    Exchange(BitBoard, Color),
+    Move(BitBoard, BitBoard, Color),
+}
+
+impl Move {
+    pub fn move_from_field(from: &FieldCoord, to: &FieldCoord) -> Self {
+        Move::Move(from.to_bitboard(), to.to_bitboard(), from.color())
+    }
+    pub fn exchange_from_field(field: &FieldCoord) -> Self {
+        Move::Exchange(field.to_bitboard(), field.color())
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

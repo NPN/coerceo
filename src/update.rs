@@ -86,12 +86,12 @@ fn handle_click(model: &mut Model, clicked: FieldCoord) {
                 model.available_moves = Some(model.board.available_moves_for_piece(&clicked));
                 model.selected_piece = Some(clicked);
             } else {
-                try_move(model, Move::Move(selected, clicked));
+                try_move(model, Move::move_from_field(&selected, &clicked));
                 model.clear_selection();
             }
         }
         None => {
-            if model.exchanging && try_move(model, Move::Exchange(clicked)) {
+            if model.exchanging && try_move(model, Move::exchange_from_field(&clicked)) {
                 model.exchanging = false;
             } else if !model.exchanging && clicked.color() == model.board.turn()
                 && model.board.is_piece_on_field(&clicked)

@@ -99,14 +99,6 @@ pub enum Outcome {
     Draw,
 }
 
-// There's no need to store the color of the piece on this field, since only white pieces can be on
-// white fields, and vice versa.
-#[derive(Clone, Copy, Debug, PartialEq)]
-enum Field {
-    Piece,
-    Empty,
-}
-
 lazy_static! {
     static ref EDGE_NEIGHBORS: ColorMap<[BitBoard; 57]> = ColorMap::new(
         generate_edge_neighbors(Color::White),
@@ -140,23 +132,25 @@ impl Board {
     pub fn apply_move(&mut self, mv: &Move) {
         assert!(self.can_apply_move(mv), "Cannot apply {:?}", mv);
         match *mv {
-            Move::Move(from, to) => {
-                self.set_field(&from, Field::Empty);
-                self.set_field(&to, Field::Piece);
+            Move::Move(from, to, color) => {
+                self.toggle_field(from, color);
+                self.toggle_field(to, color);
 
-                let (capture_count, mut fields_to_check) = self.check_hexes(&from.to_hex());
-                fields_to_check |= EDGE_NEIGHBORS.get_ref(to.color())[to.to_index()];
+                let (capture_count, mut fields_to_check) =
+                    self.check_hexes(&FieldCoord::from_bitboard(from, color).to_hex());
+                fields_to_check |= EDGE_NEIGHBORS.get_ref(color)[to.trailing_zeros() as usize];
                 self.check_captures(fields_to_check);
 
                 self.vitals.get_mut(self.turn).hexes += capture_count;
                 self.turn = self.turn.switch();
             }
-            Move::Exchange(coord) => {
-                self.remove_piece(&coord);
+            Move::Exchange(bb, color) => {
+                self.remove_piece(bb, color);
                 self.vitals.get_mut(self.turn).hexes -= 2;
 
                 // Players don't collect hexes removed due to an exchange
-                let (_, fields_to_check) = self.check_hexes(&coord.to_hex());
+                let (_, fields_to_check) =
+                    self.check_hexes(&FieldCoord::from_bitboard(bb, color).to_hex());
                 self.check_captures(fields_to_check);
                 self.turn = self.turn.switch();
             }
@@ -165,14 +159,15 @@ impl Board {
     }
     pub fn can_apply_move(&self, mv: &Move) -> bool {
         match *mv {
-            Move::Move(from, to) => {
-                let color = from.color();
-                let vertex_neighbors = VERTEX_NEIGHBORS.get_ref(color)[from.to_index()];
-                color == self.turn && (to.to_bitboard() & vertex_neighbors != 0)
-                    && self.is_piece_on_field(&from) && !self.is_piece_on_field(&to)
+            Move::Move(from, to, color) => {
+                let vertex_neighbors =
+                    VERTEX_NEIGHBORS.get_ref(color)[from.trailing_zeros() as usize];
+                color == self.turn && (to & vertex_neighbors != 0)
+                    && self.is_piece_on_bitboard(from, color)
+                    && !self.is_piece_on_bitboard(to, color)
             }
-            Move::Exchange(coord) => {
-                self.can_exchange() && coord.color() != self.turn && self.is_piece_on_field(&coord)
+            Move::Exchange(bb, color) => {
+                self.can_exchange() && color != self.turn && self.is_piece_on_bitboard(bb, color)
             }
         }
     }
@@ -196,13 +191,14 @@ impl Board {
         let color = turn;
         let mut us = *self.fields.get_ref(color);
         while us != 0 {
-            let field = FieldCoord::from_bitboard(pop_bit(&mut us), turn);
-            let mut vertex_neighbors = VERTEX_NEIGHBORS.get_ref(color)[field.to_index()];
+            let from = pop_bit(&mut us);
+            let mut vertex_neighbors =
+                VERTEX_NEIGHBORS.get_ref(color)[from.trailing_zeros() as usize];
             vertex_neighbors &= !self.fields.get_ref(color) & self.hexes;
 
             while vertex_neighbors != 0 {
-                let dest = FieldCoord::from_bitboard(pop_bit(&mut vertex_neighbors), turn);
-                moves.push(Move::Move(field, dest));
+                let to = pop_bit(&mut vertex_neighbors);
+                moves.push(Move::Move(from, to, color));
             }
         }
 
@@ -210,8 +206,7 @@ impl Board {
             let color = turn.switch();
             let mut them = *self.fields.get_ref(color);
             while them != 0 {
-                let field = FieldCoord::from_bitboard(pop_bit(&mut them), color);
-                moves.push(Move::Exchange(field));
+                moves.push(Move::Exchange(pop_bit(&mut them), color));
             }
         }
         moves
@@ -246,6 +241,15 @@ impl Board {
         );
 
         coord.to_bitboard() & self.fields.get_ref(coord.color()) != 0
+    }
+    pub fn is_piece_on_bitboard(&self, bb: BitBoard, color: Color) -> bool {
+        assert!(
+            bb & self.hexes != 0,
+            "Cannot cannot check if piece is on {:?}. Hex was removed.",
+            FieldCoord::from_bitboard(bb, color),
+        );
+
+        bb & self.fields.get_ref(color) != 0
     }
     /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
     ///
@@ -337,32 +341,23 @@ impl Board {
 
 // Field and piece methods
 impl Board {
-    fn set_field(&mut self, coord: &FieldCoord, field: Field) {
-        let f = coord.f;
-        let hex = coord.to_hex();
-
+    fn toggle_field(&mut self, bb: BitBoard, color: Color) {
         assert!(
-            self.is_hex_extant(&hex),
-            "Cannot set field {} on removed hex at {:?}",
-            f,
-            hex
+            bb & self.hexes != 0,
+            "Cannot set field {:?}. Hex was removed.",
+            FieldCoord::from_bitboard(bb, color),
         );
 
-        let color = coord.color();
-        let fields = *self.fields.get_ref(color);
-        match field {
-            Field::Piece => *self.fields.get_mut(coord.color()) = fields | coord.to_bitboard(),
-            Field::Empty => *self.fields.get_mut(coord.color()) = fields & !coord.to_bitboard(),
-        };
+        *self.fields.get_mut(color) ^= bb;
     }
-    fn remove_piece(&mut self, coord: &FieldCoord) {
+    fn remove_piece(&mut self, bb: BitBoard, color: Color) {
         assert!(
-            self.is_piece_on_field(coord),
+            self.is_piece_on_bitboard(bb, color),
             "There is no piece at {:?} to remove",
-            coord
+            FieldCoord::from_bitboard(bb, color)
         );
-        self.set_field(coord, Field::Empty);
-        self.vitals.get_mut(coord.color()).pieces -= 1;
+        self.toggle_field(bb, color);
+        self.vitals.get_mut(color).pieces -= 1;
     }
     fn check_captures(&mut self, mut fields_to_check: BitBoard) {
         // fields_to_check must be a BitBoard for the opponent player (i.e. opposite of current turn)
@@ -370,10 +365,10 @@ impl Board {
         let them = us.switch();
         fields_to_check &= self.hexes & self.fields.get_ref(them);
         while fields_to_check != 0 {
-            let field = FieldCoord::from_bitboard(pop_bit(&mut fields_to_check), them);
-            let neighbors = EDGE_NEIGHBORS.get_ref(them)[field.to_index()] & self.hexes;
+            let bb = pop_bit(&mut fields_to_check);
+            let neighbors = self.hexes & EDGE_NEIGHBORS.get_ref(them)[bb.trailing_zeros() as usize];
             if !self.fields.get_ref(us) & neighbors == 0 {
-                self.remove_piece(&field);
+                self.remove_piece(bb, them);
             }
         }
     }
