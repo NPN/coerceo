@@ -105,19 +105,20 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                 ));
             };
 
+            let button_size = Vec2::new(120.0, 20.0);
             use model::Outcome::*;
             match model.board.outcome() {
                 Win(color) => {
                     ui.text(format!("{:?} wins!", color));
                     display_vitals();
-                    if model.can_undo() && ui.button(im_str!("Undo"), Vec2::new(100.0, 20.0)) {
+                    if model.can_undo() && ui.button(im_str!("Undo"), button_size) {
                         insert_if_empty(&mut event, Event::Undo);
                     }
                 }
                 Draw => {
                     ui.text("It's a draw!");
                     display_vitals();
-                    if model.can_undo() && ui.button(im_str!("Undo"), Vec2::new(100.0, 20.0)) {
+                    if model.can_undo() && ui.button(im_str!("Undo"), button_size) {
                         insert_if_empty(&mut event, Event::Undo);
                     }
                 }
@@ -125,7 +126,15 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                     ui.text(format!("It's {:?}'s turn.", model.board.turn()));
                     display_vitals();
 
-                    let button_size = Vec2::new(120.0, 20.0);
+                    horz_button_layout(
+                        ui,
+                        vec![
+                            (model.can_undo(), im_str!("Undo"), Event::Undo),
+                            (model.can_redo(), im_str!("Redo"), Event::Redo),
+                        ],
+                        &button_size,
+                        &mut event,
+                    );
                     horz_button_layout(
                         ui,
                         vec![
@@ -139,15 +148,6 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                                 },
                                 Event::Exchange,
                             ),
-                        ],
-                        &button_size,
-                        &mut event,
-                    );
-                    horz_button_layout(
-                        ui,
-                        vec![
-                            (model.can_undo(), im_str!("Undo"), Event::Undo),
-                            (model.can_redo(), im_str!("Redo"), Event::Redo),
                         ],
                         &button_size,
                         &mut event,
@@ -169,6 +169,10 @@ fn horz_button_layout(
     size: &Vec2,
     event: &mut Option<Event>,
 ) {
+    if !buttons.iter().any(|&(show, _, _)| show) {
+        return;
+    }
+
     let size: ImVec2 = (*size).into();
 
     for (show, label, action) in buttons {
