@@ -47,9 +47,24 @@ pub fn ai_move(board: Board, depth: u8, prev_handle: Option<AIHandle>) -> AIHand
             }
         }
 
+        // 2-ply iterative deepening
+        let mut moves: Vec<(Move, i16)> = board
+            .generate_moves()
+            .into_iter()
+            .map(|mv| {
+                let mut new_board = board;
+                new_board.apply_move(&mv);
+
+                let score = -alphabeta_negamax(&new_board, NEG_INFINITY, INFINITY, 1);
+                (mv, score)
+            })
+            .collect();
+
+        moves.sort_by(|&(_, a), &(_, b)| b.cmp(&a));
+
         let mut max_score = NEG_INFINITY;
         let mut best_move = None;
-        for mv in board.generate_moves() {
+        for (mv, _) in moves {
             if stop_receiver.try_recv().is_ok() {
                 return;
             }
@@ -57,7 +72,7 @@ pub fn ai_move(board: Board, depth: u8, prev_handle: Option<AIHandle>) -> AIHand
             let mut new_board = board;
             new_board.apply_move(&mv);
 
-            let score = -alphabeta_negamax(&new_board, NEG_INFINITY, INFINITY, depth - 1);
+            let score = -alphabeta_negamax(&new_board, NEG_INFINITY, -max_score, depth - 1);
             if score > max_score {
                 max_score = score;
                 best_move = Some(mv);
