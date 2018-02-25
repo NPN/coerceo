@@ -40,7 +40,7 @@ pub fn update(model: &mut Model, event: Option<Event>) -> bool {
         handle_event(model, event);
 
         if ai_should_move(model) {
-            model.ai_handle = Some(ai_move(model.board, 5, model.ai_handle.take()));
+            model.ai_handle = Some(ai_move(model.board, 6, model.ai_handle.take()));
         }
     } else if ai_should_move(model) {
         if let Ok(mv) = model.ai_handle.as_ref().unwrap().move_receiver.try_recv() {
