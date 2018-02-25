@@ -233,14 +233,7 @@ impl Board {
         self.vitals.get_ref(self.turn).hexes >= 2
     }
     pub fn is_piece_on_field(&self, coord: &FieldCoord) -> bool {
-        assert!(
-            self.is_hex_extant(&coord.to_hex()),
-            "Cannot cannot check if piece is on {:?}. Hex at {:?} was removed.",
-            coord,
-            coord.to_hex()
-        );
-
-        coord.to_bitboard() & self.fields.get_ref(coord.color()) != 0
+        self.is_piece_on_bitboard(coord.to_bitboard(), coord.color())
     }
     pub fn is_piece_on_bitboard(&self, bb: BitBoard, color: Color) -> bool {
         assert!(
