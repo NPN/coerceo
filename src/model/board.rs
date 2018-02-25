@@ -137,7 +137,7 @@ impl Board {
                 self.toggle_field(to, color);
 
                 let (capture_count, mut fields_to_check) =
-                    self.check_hexes(&FieldCoord::from_bitboard(from, color).to_hex());
+                    self.check_hexes(from.trailing_zeros() as usize / 3);
                 fields_to_check |= EDGE_NEIGHBORS.get_ref(color)[to.trailing_zeros() as usize];
                 self.check_captures(fields_to_check);
 
@@ -149,8 +149,7 @@ impl Board {
                 self.vitals.get_mut(self.turn).hexes -= 2;
 
                 // Players don't collect hexes removed due to an exchange
-                let (_, fields_to_check) =
-                    self.check_hexes(&FieldCoord::from_bitboard(bb, color).to_hex());
+                let (_, fields_to_check) = self.check_hexes(bb.trailing_zeros() as usize / 3);
                 self.check_captures(fields_to_check);
                 self.turn = self.turn.switch();
             }
@@ -270,8 +269,8 @@ impl Board {
     /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
     ///
     /// Returns true if a hex has not been removed yet.
-    pub fn is_hex_extant(&self, coord: &HexCoord) -> bool {
-        self.hexes & HEX_MASK[coord.to_index()] != 0
+    pub fn is_hex_extant(&self, index: usize) -> bool {
+        self.hexes & HEX_MASK[index] != 0
     }
     pub fn resign(&mut self) {
         assert_eq!(self.outcome, Outcome::InProgress);
@@ -369,25 +368,11 @@ impl Board {
 
 // Hex methods
 impl Board {
-    fn get_hex_neighbor(&self, coord: &HexCoord, direction: u8) -> Option<HexCoord> {
-        self.try_hex(match direction {
-            0 => (coord.x, coord.y + 1),
-            1 => (coord.x + 1, coord.y),
-            2 => (coord.x + 1, coord.y - 1),
-            3 => (coord.x, coord.y - 1),
-            4 => (coord.x - 1, coord.y),
-            5 => (coord.x - 1, coord.y + 1),
-            _ => panic!("Direction must be less than 6"),
-        })
-    }
     /// A hex is removable (and must be removed) if it is empty and is "attached to the board by 3
     /// or less adjacent sides."
-    fn is_hex_removable(&self, coord: &HexCoord) -> bool {
-        let index = coord.to_index();
-
-        let is_hex_empty =
-            (self.fields.white | self.fields.black) & HEX_MASK[index] == 0;
-        if !self.is_hex_extant(coord) || !is_hex_empty {
+    fn is_hex_removable(&self, index: usize) -> bool {
+        let is_hex_empty = (self.fields.white | self.fields.black) & HEX_MASK[index] == 0;
+        if !self.is_hex_extant(index) || !is_hex_empty {
             return false;
         }
 
@@ -400,42 +385,50 @@ impl Board {
             .take(18)
             .any(|&comb| hex == comb)
     }
-    fn remove_hex(&mut self, coord: &HexCoord) -> bool {
-        let removable = self.is_hex_removable(coord);
+    fn remove_hex(&mut self, index: usize) -> bool {
+        let removable = self.is_hex_removable(index);
 
         if removable {
-            self.hexes &= !HEX_MASK[coord.to_index()];
+            self.hexes &= !HEX_MASK[index];
             self.extant_hex_count -= 1;
         }
         removable
     }
     fn try_hex(&self, coord: (i8, i8)) -> Option<HexCoord> {
         if let Some(coord) = HexCoord::try_new(coord.0, coord.1) {
-            if self.is_hex_extant(&coord) {
+            if self.is_hex_extant(coord.to_index()) {
                 return Some(coord);
             }
         }
         None
     }
-    fn check_hexes(&mut self, coord: &HexCoord) -> (u8, BitBoard) {
+    fn check_hexes(&mut self, index: usize) -> (u8, BitBoard) {
         let mut remove_count = 0;
         let mut fields = 0;
 
-        if self.remove_hex(coord) {
+        if self.remove_hex(index) {
             remove_count += 1;
-            for f in 0..6 {
-                if let Some(neighbor) = self.get_hex_neighbor(coord, f) {
-                    let (new_remove_count, new_fields) = self.check_hexes(&neighbor);
-                    if new_remove_count == 0 {
-                        // TODO: actually use HEX_FIELD_NEIGHBORS?
-                        let field = neighbor.to_field((f + 3) % 6);
-                        if field.color() != self.turn() {
-                            fields |= field.to_bitboard();
-                        }
-                    } else {
-                        remove_count += new_remove_count;
-                        fields |= new_fields;
-                    }
+
+            let mut our_neighbors = HEX_FIELD_NEIGHBORS.get_ref(self.turn())[index];
+            while our_neighbors != 0 {
+                let neighbor = pop_bit(&mut our_neighbors).trailing_zeros() as usize / 3;
+
+                let (new_remove_count, new_fields) = self.check_hexes(neighbor);
+                remove_count += new_remove_count;
+                fields |= new_fields;
+            }
+
+            let mut their_neighbors = HEX_FIELD_NEIGHBORS.get_ref(self.turn().switch())[index];
+            while their_neighbors != 0 {
+                let field_neighbor = pop_bit(&mut their_neighbors);
+                let neighbor = field_neighbor.trailing_zeros() as usize / 3;
+
+                let (new_remove_count, new_fields) = self.check_hexes(neighbor);
+                if new_remove_count == 0 {
+                    fields |= field_neighbor;
+                } else {
+                    remove_count += new_remove_count;
+                    fields |= new_fields;
                 }
             }
         }

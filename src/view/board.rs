@@ -55,19 +55,23 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
     if let Some(mv) = model.last_move {
         match mv {
             Move::Exchange(exchanged, color) => {
-                let exchanged = FieldCoord::from_bitboard(exchanged, color);
-
-                if model.board.is_hex_extant(&exchanged.to_hex()) {
+                if model
+                    .board
+                    .is_hex_extant(exchanged.trailing_zeros() as usize / 3)
+                {
+                    let exchanged = FieldCoord::from_bitboard(exchanged, color);
                     highlight_field(EXCHANGE_HIGHLIGHT, &exchanged, origin, side_len);
                 }
             }
             Move::Move(from, to, color) => {
-                let from = FieldCoord::from_bitboard(from, color);
-                let to = FieldCoord::from_bitboard(to, color);
-
-                if model.board.is_hex_extant(&from.to_hex()) {
+                if model
+                    .board
+                    .is_hex_extant(from.trailing_zeros() as usize / 3)
+                {
+                    let from = FieldCoord::from_bitboard(from, color);
                     highlight_field(LAST_MOVE_HIGHLIGHT, &from, origin, side_len);
                 }
+                let to = FieldCoord::from_bitboard(to, color);
                 highlight_field(LAST_MOVE_HIGHLIGHT, &to, origin, side_len);
             }
         }
@@ -85,7 +89,7 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
 
     let mut hover_field = pixel_to_field(mouse_pos, origin, side_len);
     if !hover_field
-        .map(|field| model.board.is_hex_extant(&field.to_hex()))
+        .map(|field| model.board.is_hex_extant(field.to_hex().to_index()))
         .unwrap_or(false)
     {
         hover_field = None;
