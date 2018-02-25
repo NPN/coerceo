@@ -320,9 +320,9 @@ impl Board {
         let color = self.turn;
         let mut us = *self.fields.get_ref(color);
         while us != 0 {
-            let field = FieldCoord::from_bitboard(pop_bit(&mut us), color);
-            let vertex_neighbors = VERTEX_NEIGHBORS.get_ref(color)[field.to_index()];
-            if self.is_piece_on_field(&field)
+            let bb = pop_bit(&mut us);
+            let vertex_neighbors = VERTEX_NEIGHBORS.get_ref(color)[bb.trailing_zeros() as usize];
+            if self.is_piece_on_bitboard(bb, color)
                 && (vertex_neighbors & self.fields.get_ref(color) != vertex_neighbors)
             {
                 return true;
