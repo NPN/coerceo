@@ -376,10 +376,6 @@ impl Board {
 
 // Hex methods
 impl Board {
-    fn is_hex_empty(&self, coord: &HexCoord) -> bool {
-        assert!(self.is_hex_extant(coord));
-        (self.fields.white | self.fields.black) & HEX_MASK[coord.to_index()] == 0
-    }
     fn get_hex_neighbor(&self, coord: &HexCoord, direction: u8) -> Option<HexCoord> {
         self.try_hex(match direction {
             0 => (coord.x, coord.y + 1),
@@ -394,11 +390,14 @@ impl Board {
     /// A hex is removable (and must be removed) if it is empty and is "attached to the board by 3
     /// or less adjacent sides."
     fn is_hex_removable(&self, coord: &HexCoord) -> bool {
-        if !self.is_hex_extant(coord) || !self.is_hex_empty(coord) {
+        let index = coord.to_index();
+
+        let is_hex_empty =
+            (self.fields.white | self.fields.black) & HEX_MASK[index] == 0;
+        if !self.is_hex_extant(coord) || !is_hex_empty {
             return false;
         }
 
-        let index = coord.to_index();
         let hex =
             self.hexes & (HEX_FIELD_NEIGHBORS.white[index] | HEX_FIELD_NEIGHBORS.black[index]);
         // There are 18 combinations to check for each hex
