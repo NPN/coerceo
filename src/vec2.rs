@@ -28,7 +28,7 @@ pub struct Vec2 {
 
 impl Vec2 {
     pub fn new(x: f32, y: f32) -> Self {
-        Self { x: x, y: y }
+        Self { x, y }
     }
 }
 
