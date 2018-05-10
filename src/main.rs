@@ -26,8 +26,8 @@ extern crate lazy_static;
 mod ai;
 mod model;
 mod update;
-mod view;
 mod vec2;
+mod view;
 
 use imgui::Ui;
 

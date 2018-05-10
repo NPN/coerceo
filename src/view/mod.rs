@@ -22,10 +22,10 @@ mod sys;
 use imgui::{ImGuiCond, ImStr, ImVec2, Ui};
 use imgui_sys;
 
-use model::{Color, ColorMap, FieldCoord, Model, PlayerType};
-use vec2::Vec2;
 use self::board::board;
 pub use self::sys::run;
+use model::{Color, ColorMap, FieldCoord, Model, PlayerType};
+use vec2::Vec2;
 
 #[derive(PartialEq)]
 pub enum Event {

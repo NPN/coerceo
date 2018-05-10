@@ -18,9 +18,9 @@
 use imgui_sys::{self, ImVec2};
 
 use model::{FieldCoord, Model, Move};
+use vec2::Vec2;
 use view::board_parts::*;
 use view::Event;
-use vec2::Vec2;
 
 const SQRT_3: f32 = 1.732_050_807_568_877_f32;
 

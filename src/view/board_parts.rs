@@ -34,7 +34,7 @@ const PIECE_OUTLINE: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 const PIECE_BLACK: [f32; 4] = [0.4588, 0.4588, 0.4588, 1.0];
 
 macro_rules! im_color {
-    ($v: expr) => {
+    ($v:expr) => {
         imgui_sys::igColorConvertFloat4ToU32(ImVec4::from($v))
     };
 }

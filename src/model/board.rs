@@ -17,9 +17,9 @@
 
 use std::cmp;
 
-use model::{BitBoard, Color, ColorMap, FieldCoord, HexCoord, Move};
-use model::pop_bit;
 use model::constants::*;
+use model::pop_bit;
+use model::{BitBoard, Color, ColorMap, FieldCoord, HexCoord, Move};
 
 #[derive(Clone, Copy)]
 pub struct Board {
@@ -418,7 +418,8 @@ impl Board {
                 fields |= new_fields;
             }
 
-            let mut their_neighbors = self.hexes & HEX_FIELD_NEIGHBORS.get_ref(self.turn().switch())[index];
+            let mut their_neighbors =
+                self.hexes & HEX_FIELD_NEIGHBORS.get_ref(self.turn().switch())[index];
             while their_neighbors != 0 {
                 let field_neighbor = pop_bit(&mut their_neighbors);
                 let neighbor = field_neighbor.trailing_zeros() as usize / 3;

@@ -55,8 +55,8 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
 
     loop {
         events_loop.poll_events(|event| {
-            use glium::glutin::WindowEvent::*;
             use glium::glutin::ElementState::Pressed;
+            use glium::glutin::WindowEvent::*;
             use glium::glutin::{Event, MouseButton, MouseScrollDelta, TouchPhase};
 
             if let Event::WindowEvent { event, .. } = event {
