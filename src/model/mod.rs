@@ -111,6 +111,12 @@ pub fn pop_bit(bb: &mut BitBoard) -> BitBoard {
     bit
 }
 
+#[derive(Debug, PartialEq)]
+pub enum PlayerType {
+    Human,
+    Computer,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Color {
     White,
@@ -126,10 +132,30 @@ impl Color {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub enum PlayerType {
-    Human,
-    Computer,
+/// A map to associate any two values with the variants of the Color enum. Useful for keeping
+/// track of player-specific information, which almost always comes in pairs.
+#[derive(Clone, Copy, PartialEq)]
+pub struct ColorMap<T> {
+    pub white: T,
+    pub black: T,
+}
+
+impl<T> ColorMap<T> {
+    pub fn new(white: T, black: T) -> Self {
+        Self { white, black }
+    }
+    pub fn get_ref(&self, color: Color) -> &T {
+        match color {
+            Color::White => &self.white,
+            Color::Black => &self.black,
+        }
+    }
+    pub fn get_mut(&mut self, color: Color) -> &mut T {
+        match color {
+            Color::White => &mut self.white,
+            Color::Black => &mut self.black,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -158,32 +184,6 @@ pub struct FieldCoord {
 pub struct HexCoord {
     x: i8,
     y: i8,
-}
-
-/// A map to associate any two values with the variants of the Color enum. Useful for keeping
-/// track of player-specific information, which almost always comes in pairs.
-#[derive(Clone, Copy, PartialEq)]
-pub struct ColorMap<T> {
-    pub white: T,
-    pub black: T,
-}
-
-impl<T> ColorMap<T> {
-    pub fn new(white: T, black: T) -> Self {
-        Self { white, black }
-    }
-    pub fn get_ref(&self, color: Color) -> &T {
-        match color {
-            Color::White => &self.white,
-            Color::Black => &self.black,
-        }
-    }
-    pub fn get_mut(&mut self, color: Color) -> &mut T {
-        match color {
-            Color::White => &mut self.white,
-            Color::Black => &mut self.black,
-        }
-    }
 }
 
 impl FieldCoord {
