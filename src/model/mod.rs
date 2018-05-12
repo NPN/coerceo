@@ -286,19 +286,3 @@ impl HexCoord {
         (x + y).abs() <= 2 && x.abs() <= 2 && y.abs() <= 2
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn index_reflextivity() {
-        for index in 0..57 {
-            let white = FieldCoord::from_index(index as u8, Color::White);
-            assert_eq!(index, white.to_index());
-
-            let black = FieldCoord::from_index(index as u8, Color::Black);
-            assert_eq!(index, black.to_index());
-        }
-    }
-}
