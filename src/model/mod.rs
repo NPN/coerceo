@@ -25,7 +25,7 @@ use ai::AIHandle;
 
 pub struct Model {
     pub board: Board,
-    pub players: ColorMap<PlayerType>,
+    pub players: ColorMap<Player>,
     pub last_move: Option<Move>,
     pub selected_piece: Option<FieldCoord>,
     pub available_moves: Option<Vec<FieldCoord>>,
@@ -36,7 +36,7 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn new(players: ColorMap<PlayerType>) -> Self {
+    pub fn new(players: ColorMap<Player>) -> Self {
         Self {
             players,
             ..Default::default()
@@ -79,7 +79,7 @@ impl Model {
         self.available_moves = None;
     }
     pub fn is_ai_turn(&self) -> bool {
-        self.players.get_ref(self.board.turn()) == &PlayerType::Computer
+        self.players.get_ref(self.board.turn()) == &Player::Computer
     }
     pub fn is_game_over(&self) -> bool {
         self.board.outcome() != Outcome::InProgress
@@ -90,7 +90,7 @@ impl Default for Model {
     fn default() -> Self {
         Self {
             board: Board::new(),
-            players: ColorMap::new(PlayerType::Human, PlayerType::Human),
+            players: ColorMap::new(Player::Human, Player::Human),
             selected_piece: None,
             last_move: None,
             available_moves: None,
@@ -112,7 +112,7 @@ pub fn pop_bit(bb: &mut BitBoard) -> BitBoard {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum PlayerType {
+pub enum Player {
     Human,
     Computer,
 }

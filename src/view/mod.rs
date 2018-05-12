@@ -24,14 +24,14 @@ use imgui_sys;
 
 use self::board::board;
 pub use self::sys::run;
-use model::{Color, ColorMap, FieldCoord, Model, PlayerType};
+use model::{Color, ColorMap, FieldCoord, Model, Player};
 use vec2::Vec2;
 
 #[derive(PartialEq)]
 pub enum Event {
     Click(FieldCoord),
     Exchange,
-    NewGame(ColorMap<PlayerType>),
+    NewGame(ColorMap<Player>),
     Resign,
     Undo,
     Redo,
@@ -51,19 +51,19 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
             if ui.menu_item(im_str!("Human vs. Human")).build() {
                 insert_if_empty(
                     &mut event,
-                    Event::NewGame(ColorMap::new(PlayerType::Human, PlayerType::Human)),
+                    Event::NewGame(ColorMap::new(Player::Human, Player::Human)),
                 );
             }
             if ui.menu_item(im_str!("Human vs. Computer")).build() {
                 insert_if_empty(
                     &mut event,
-                    Event::NewGame(ColorMap::new(PlayerType::Human, PlayerType::Computer)),
+                    Event::NewGame(ColorMap::new(Player::Human, Player::Computer)),
                 );
             }
             if ui.menu_item(im_str!("Computer vs. Human")).build() {
                 insert_if_empty(
                     &mut event,
-                    Event::NewGame(ColorMap::new(PlayerType::Computer, PlayerType::Human)),
+                    Event::NewGame(ColorMap::new(Player::Computer, Player::Human)),
                 );
             }
             ui.separator();
