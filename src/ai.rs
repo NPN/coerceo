@@ -131,17 +131,3 @@ fn evaluate(board: &Board) -> i16 {
         Black => (bp + bh) - (wp + wh),
     }
 }
-
-pub fn perft(board: &Board, depth: u8) -> u32 {
-    if depth == 0 {
-        1
-    } else {
-        let mut sum = 0;
-        for mv in board.generate_moves() {
-            let mut new_board = *board;
-            new_board.apply_move(&mv);
-            sum += perft(&new_board, depth - 1);
-        }
-        sum
-    }
-}

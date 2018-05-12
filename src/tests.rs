@@ -15,37 +15,30 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-extern crate glium;
-#[macro_use]
-extern crate imgui;
-extern crate imgui_glium_renderer;
-extern crate imgui_sys;
-#[macro_use]
-extern crate lazy_static;
+#![cfg(test)]
 
-mod ai;
-mod model;
-mod tests;
-mod update;
-mod vec2;
-mod view;
+use model::Board;
 
-use imgui::Ui;
-
-use model::Model;
-
-fn main() {
-    let mut model = Model::default();
-
-    view::run(
-        String::from("Coerceo"),
-        (800, 800),
-        [1.0, 1.0, 1.0, 1.0],
-        |ui, size| game_loop(ui, size, &mut model),
-    );
+fn perft(board: &Board, depth: u8) -> u32 {
+    if depth == 0 {
+        1
+    } else {
+        let mut sum = 0;
+        for mv in board.generate_moves() {
+            let mut new_board = *board;
+            new_board.apply_move(&mv);
+            sum += perft(&new_board, depth - 1);
+        }
+        sum
+    }
 }
 
-fn game_loop(ui: &Ui, size: (f32, f32), model: &mut Model) -> bool {
-    let event = view::draw(ui, size, model);
-    update::update(model, event)
+#[test]
+fn perft_depth_4() {
+    let counts = [48, 2304, 110304, 5280654];
+    let board = Board::new();
+
+    for (i, &count) in counts.iter().enumerate() {
+        assert_eq!(count, perft(&board, i as u8 + 1));
+    }
 }
