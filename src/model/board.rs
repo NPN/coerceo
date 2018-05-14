@@ -321,9 +321,7 @@ impl Board {
         while us != 0 {
             let bb = pop_bit(&mut us);
             let vertex_neighbors = VERTEX_NEIGHBORS.get_ref(color)[bb.trailing_zeros() as usize];
-            if self.is_piece_on_bitboard(bb, color)
-                && (vertex_neighbors & self.fields.get_ref(color) != vertex_neighbors)
-            {
+            if vertex_neighbors & self.fields.get_ref(color) != vertex_neighbors {
                 return true;
             }
         }
