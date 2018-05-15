@@ -18,7 +18,6 @@
 use std::cmp;
 
 use model::constants::*;
-use model::pop_bit;
 use model::{BitBoard, Color, ColorMap, FieldCoord, HexCoord, Move};
 
 #[derive(Clone, Copy)]
@@ -171,7 +170,7 @@ impl Board {
         }
     }
     pub fn generate_moves(&self) -> Vec<Move> {
-        let turn = self.turn();
+        let turn = self.turn;
         // A player with no pieces cannot make any moves, including exchange moves
         if self.pieces(turn) == 0 {
             return vec![];
@@ -187,25 +186,21 @@ impl Board {
             },
         );
 
-        let color = turn;
-        let mut us = *self.fields.get_ref(color);
-        while us != 0 {
-            let from = pop_bit(&mut us);
+        let fields = *self.fields.get_ref(turn);
+        for origin in BitBoardIter::new(fields) {
             let mut vertex_neighbors =
-                VERTEX_NEIGHBORS.get_ref(color)[from.trailing_zeros() as usize];
-            vertex_neighbors &= !self.fields.get_ref(color) & self.hexes;
+                VERTEX_NEIGHBORS.get_ref(turn)[origin.trailing_zeros() as usize];
+            vertex_neighbors &= !fields & self.hexes;
 
-            while vertex_neighbors != 0 {
-                let to = pop_bit(&mut vertex_neighbors);
-                moves.push(Move::Move(from, to, color));
+            for dest in BitBoardIter::new(vertex_neighbors) {
+                moves.push(Move::Move(origin, dest, turn));
             }
         }
 
         if can_exchange {
-            let color = turn.switch();
-            let mut them = *self.fields.get_ref(color);
-            while them != 0 {
-                moves.push(Move::Exchange(pop_bit(&mut them), color));
+            let opp_color = turn.switch();
+            for exchanged in BitBoardIter::new(*self.fields.get_ref(opp_color)) {
+                moves.push(Move::Exchange(exchanged, opp_color));
             }
         }
         moves
@@ -213,15 +208,11 @@ impl Board {
     pub fn available_moves_for_piece(&self, field: &FieldCoord) -> Vec<FieldCoord> {
         if self.is_piece_on_field(field) {
             let color = field.color();
-            let mut vertex_neighbors =
-                self.hexes & VERTEX_NEIGHBORS.get_ref(color)[field.to_index()];
+            let vertex_neighbors = self.hexes & VERTEX_NEIGHBORS.get_ref(color)[field.to_index()];
             let mut moves = Vec::with_capacity(3);
 
-            while vertex_neighbors != 0 {
-                moves.push(FieldCoord::from_bitboard(
-                    pop_bit(&mut vertex_neighbors),
-                    color,
-                ));
+            for dest in BitBoardIter::new(vertex_neighbors) {
+                moves.push(FieldCoord::from_bitboard(dest, color));
             }
             moves
         } else {
@@ -316,12 +307,10 @@ impl Board {
             return true;
         }
 
-        let color = self.turn;
-        let mut us = *self.fields.get_ref(color);
-        while us != 0 {
-            let bb = pop_bit(&mut us);
-            let vertex_neighbors = VERTEX_NEIGHBORS.get_ref(color)[bb.trailing_zeros() as usize];
-            if vertex_neighbors & self.fields.get_ref(color) != vertex_neighbors {
+        for bb in BitBoardIter::new(*self.fields.get_ref(self.turn)) {
+            let vertex_neighbors =
+                VERTEX_NEIGHBORS.get_ref(self.turn)[bb.trailing_zeros() as usize];
+            if vertex_neighbors & self.fields.get_ref(self.turn) != vertex_neighbors {
                 return true;
             }
         }
@@ -354,8 +343,7 @@ impl Board {
         let us = self.turn;
         let them = us.switch();
         fields_to_check &= self.hexes & self.fields.get_ref(them);
-        while fields_to_check != 0 {
-            let bb = pop_bit(&mut fields_to_check);
+        for bb in BitBoardIter::new(fields_to_check) {
             let neighbors = self.hexes & EDGE_NEIGHBORS.get_ref(them)[bb.trailing_zeros() as usize];
             if !self.fields.get_ref(us) & neighbors == 0 {
                 self.remove_piece(bb, them);
@@ -407,24 +395,21 @@ impl Board {
         if self.remove_hex(index) {
             remove_count += 1;
 
-            let mut our_neighbors = self.hexes & HEX_FIELD_NEIGHBORS.get_ref(self.turn())[index];
-            while our_neighbors != 0 {
-                let neighbor = pop_bit(&mut our_neighbors).trailing_zeros() as usize / 3;
-
-                let (new_remove_count, new_fields) = self.check_hexes(neighbor);
+            let hex_field_neighbors = self.hexes & HEX_FIELD_NEIGHBORS.get_ref(self.turn)[index];
+            for neighbor in BitBoardIter::new(hex_field_neighbors) {
+                let (new_remove_count, new_fields) =
+                    self.check_hexes(neighbor.trailing_zeros() as usize / 3);
                 remove_count += new_remove_count;
                 fields |= new_fields;
             }
 
-            let mut their_neighbors =
-                self.hexes & HEX_FIELD_NEIGHBORS.get_ref(self.turn().switch())[index];
-            while their_neighbors != 0 {
-                let field_neighbor = pop_bit(&mut their_neighbors);
-                let neighbor = field_neighbor.trailing_zeros() as usize / 3;
-
-                let (new_remove_count, new_fields) = self.check_hexes(neighbor);
+            let their_neighbors =
+                self.hexes & HEX_FIELD_NEIGHBORS.get_ref(self.turn.switch())[index];
+            for neighbor in BitBoardIter::new(their_neighbors) {
+                let (new_remove_count, new_fields) =
+                    self.check_hexes(neighbor.trailing_zeros() as usize / 3);
                 if new_remove_count == 0 {
-                    fields |= field_neighbor;
+                    fields |= neighbor;
                 } else {
                     remove_count += new_remove_count;
                     fields |= new_fields;

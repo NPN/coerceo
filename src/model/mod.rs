@@ -104,13 +104,6 @@ impl Default for Model {
 
 pub type BitBoard = u64;
 
-pub fn pop_bit(bb: &mut BitBoard) -> BitBoard {
-    // bb & -bb
-    let bit = *bb & (1 + !*bb);
-    *bb ^= bit;
-    bit
-}
-
 #[derive(Debug, PartialEq)]
 pub enum Player {
     Human,
