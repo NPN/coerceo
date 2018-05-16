@@ -362,6 +362,7 @@ impl Board {
             return false;
         }
 
+        // Combining colors here is okay because there won't be overlaps
         let hex =
             self.hexes & (HEX_FIELD_NEIGHBORS.white[index] | HEX_FIELD_NEIGHBORS.black[index]);
         // There are 18 combinations to check for each hex
@@ -395,26 +396,19 @@ impl Board {
         if self.remove_hex(index) {
             remove_count += 1;
 
-            let hex_field_neighbors = self.hexes & HEX_FIELD_NEIGHBORS.get_ref(self.turn)[index];
-            for neighbor in BitBoardIter::new(hex_field_neighbors) {
-                let (new_remove_count, new_fields) =
-                    self.check_hexes(neighbor.trailing_zeros() as usize / 3);
-                remove_count += new_remove_count;
-                fields |= new_fields;
-            }
-
+            let our_neighbors = self.hexes & HEX_FIELD_NEIGHBORS.get_ref(self.turn)[index];
             let their_neighbors =
                 self.hexes & HEX_FIELD_NEIGHBORS.get_ref(self.turn.switch())[index];
-            for neighbor in BitBoardIter::new(their_neighbors) {
-                let (new_remove_count, new_fields) =
-                    self.check_hexes(neighbor.trailing_zeros() as usize / 3);
-                if new_remove_count == 0 {
-                    fields |= neighbor;
-                } else {
-                    remove_count += new_remove_count;
-                    fields |= new_fields;
-                }
+
+            for neighbor in BitBoardIter::new(our_neighbors | their_neighbors) {
+                let check_result = self.check_hexes(neighbor.trailing_zeros() as usize / 3);
+                remove_count += check_result.0;
+                fields |= check_result.1;
             }
+
+            // Add in the opponent's neighbors, excluding those on hexes that have been removed
+            fields |= their_neighbors;
+            fields &= self.hexes;
         }
         (remove_count, fields)
     }
