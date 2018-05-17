@@ -206,9 +206,6 @@ impl FieldCoord {
         };
         Self::new(hex % 5 - 2, hex / 5 - 2, f as u8)
     }
-    pub fn to_index(&self) -> usize {
-        self.to_bitboard().trailing_zeros() as usize
-    }
     pub fn to_hex(&self) -> HexCoord {
         HexCoord {
             x: self.x,

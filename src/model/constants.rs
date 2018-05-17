@@ -56,6 +56,77 @@ impl Iterator for BitBoardIter {
     }
 }
 
+pub struct NeighborLookup {
+    neighbors: ColorMap<Vec<BitBoard>>,
+}
+
+impl NeighborLookup {
+    pub fn new_edge() -> Self {
+        let gen_neighbors = |color| {
+            (0..57)
+                .map(|index| {
+                    let coord = OptionFieldCoord::from_index(index, color);
+                    fold_coords(&[coord.flip(), coord.shift_f(1), coord.shift_f(-1)])
+                })
+                .collect()
+        };
+        Self {
+            neighbors: ColorMap::new(gen_neighbors(Color::White), gen_neighbors(Color::Black)),
+        }
+    }
+    pub fn new_vertex() -> Self {
+        let gen_neighbors = |color| {
+            (0..57)
+                .map(|index| {
+                    let coord = OptionFieldCoord::from_index(index, color);
+                    fold_coords(&[
+                        coord.flip().shift_f(1),
+                        coord.flip().shift_f(-1),
+                        coord.shift_f(1).flip(),
+                        coord.shift_f(-1).flip(),
+                        coord.shift_f(2),
+                        coord.shift_f(-2),
+                    ])
+                })
+                .collect()
+        };
+        Self {
+            neighbors: ColorMap::new(gen_neighbors(Color::White), gen_neighbors(Color::Black)),
+        }
+    }
+    pub fn new_hex_field() -> Self {
+        let field_neighbor = |hex, f| OptionFieldCoord::from_hex_f(hex, f).flip();
+        let gen_neighbors = |color| {
+            (0..19)
+                .map(|hex| {
+                    fold_coords(&match color {
+                        Color::White => [
+                            field_neighbor(hex, 0),
+                            field_neighbor(hex, 2),
+                            field_neighbor(hex, 4),
+                        ],
+                        Color::Black => [
+                            field_neighbor(hex, 1),
+                            field_neighbor(hex, 3),
+                            field_neighbor(hex, 5),
+                        ],
+                    })
+                })
+                .collect()
+        };
+        Self {
+            neighbors: ColorMap::new(gen_neighbors(Color::White), gen_neighbors(Color::Black)),
+        }
+    }
+
+    pub fn bb_get(&self, bb: BitBoard, color: Color) -> BitBoard {
+        self.neighbors.get_ref(color)[bb.trailing_zeros() as usize]
+    }
+    pub fn index_get(&self, index: usize, color: Color) -> BitBoard {
+        self.neighbors.get_ref(color)[index]
+    }
+}
+
 #[cfg_attr(rustfmt, rustfmt_skip)]
 /// Generate the Laurentius starting position.
 pub fn generate_laurentius() -> ColorMap<BitBoard> {
@@ -98,34 +169,6 @@ pub fn generate_laurentius() -> ColorMap<BitBoard> {
     ColorMap::new(white, black)
 }
 
-pub fn generate_edge_neighbors(color: Color) -> [BitBoard; 57] {
-    let mut neighbors = [0; 57];
-
-    for index in 0..57 {
-        let coord = OptionFieldCoord::from_index(index, color);
-        neighbors[index as usize] =
-            fold_coords(&[coord.flip(), coord.shift_f(1), coord.shift_f(-1)]);
-    }
-    neighbors
-}
-
-pub fn generate_vertex_neighbors(color: Color) -> [BitBoard; 57] {
-    let mut neighbors = [0; 57];
-
-    for index in 0..57 {
-        let coord = OptionFieldCoord::from_index(index, color);
-        neighbors[index as usize] = fold_coords(&[
-            coord.flip().shift_f(1),
-            coord.flip().shift_f(-1),
-            coord.shift_f(1).flip(),
-            coord.shift_f(-1).flip(),
-            coord.shift_f(2),
-            coord.shift_f(-2),
-        ]);
-    }
-    neighbors
-}
-
 pub fn generate_hex_mask() -> [BitBoard; 19] {
     let mut masks = [0; 19];
     let mut mask = 0b111;
@@ -135,28 +178,6 @@ pub fn generate_hex_mask() -> [BitBoard; 19] {
         mask <<= 3;
     }
     masks
-}
-
-pub fn generate_hex_field_neighbors(color: Color) -> [BitBoard; 19] {
-    let mut neighbors = [0; 19];
-
-    let field_neighbor = |hex, f| OptionFieldCoord::from_hex_f(hex, f).flip();
-
-    for hex in 0..19 {
-        neighbors[hex as usize] = fold_coords(&match color {
-            Color::White => [
-                field_neighbor(hex, 0),
-                field_neighbor(hex, 2),
-                field_neighbor(hex, 4),
-            ],
-            Color::Black => [
-                field_neighbor(hex, 1),
-                field_neighbor(hex, 3),
-                field_neighbor(hex, 5),
-            ],
-        });
-    }
-    neighbors
 }
 
 pub fn generate_removable_hex_combs() -> [BitBoard; 342] {

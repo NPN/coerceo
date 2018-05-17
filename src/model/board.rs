@@ -99,19 +99,10 @@ pub enum Outcome {
 }
 
 lazy_static! {
-    static ref EDGE_NEIGHBORS: ColorMap<[BitBoard; 57]> = ColorMap::new(
-        generate_edge_neighbors(Color::White),
-        generate_edge_neighbors(Color::Black),
-    );
-    static ref VERTEX_NEIGHBORS: ColorMap<[BitBoard; 57]> = ColorMap::new(
-        generate_vertex_neighbors(Color::White),
-        generate_vertex_neighbors(Color::Black),
-    );
+    static ref EDGE_NEIGHBORS: NeighborLookup = NeighborLookup::new_edge();
+    static ref VERTEX_NEIGHBORS: NeighborLookup = NeighborLookup::new_vertex();
+    static ref HEX_FIELD_NEIGHBORS: NeighborLookup = NeighborLookup::new_hex_field();
     static ref HEX_MASK: [BitBoard; 19] = generate_hex_mask();
-    static ref HEX_FIELD_NEIGHBORS: ColorMap<[BitBoard; 19]> = ColorMap::new(
-        generate_hex_field_neighbors(Color::White),
-        generate_hex_field_neighbors(Color::Black),
-    );
     static ref REMOVABLE_HEX_COMBS: [BitBoard; 342] = generate_removable_hex_combs();
 }
 
@@ -137,11 +128,10 @@ impl Board {
 
                 let (capture_count, mut fields_to_check) =
                     self.check_hexes(from.trailing_zeros() as usize / 3);
-                fields_to_check |= EDGE_NEIGHBORS.get_ref(color)[to.trailing_zeros() as usize];
+                fields_to_check |= EDGE_NEIGHBORS.bb_get(to, color);
                 self.check_captures(fields_to_check);
 
                 self.vitals.get_mut(self.turn).hexes += capture_count;
-                self.turn = self.turn.switch();
             }
             Move::Exchange(bb, color) => {
                 self.remove_piece(bb, color);
@@ -150,16 +140,15 @@ impl Board {
                 // Players don't collect hexes removed due to an exchange
                 let (_, fields_to_check) = self.check_hexes(bb.trailing_zeros() as usize / 3);
                 self.check_captures(fields_to_check);
-                self.turn = self.turn.switch();
             }
         }
+        self.turn = self.turn.switch();
         self.update_outcome();
     }
     pub fn can_apply_move(&self, mv: &Move) -> bool {
         match *mv {
             Move::Move(from, to, color) => {
-                let vertex_neighbors =
-                    VERTEX_NEIGHBORS.get_ref(color)[from.trailing_zeros() as usize];
+                let vertex_neighbors = VERTEX_NEIGHBORS.bb_get(from, color);
                 color == self.turn && (to & vertex_neighbors != 0)
                     && self.is_piece_on_bitboard(from, color)
                     && !self.is_piece_on_bitboard(to, color)
@@ -188,8 +177,7 @@ impl Board {
 
         let fields = *self.fields.get_ref(turn);
         for origin in BitBoardIter::new(fields) {
-            let mut vertex_neighbors =
-                VERTEX_NEIGHBORS.get_ref(turn)[origin.trailing_zeros() as usize];
+            let mut vertex_neighbors = VERTEX_NEIGHBORS.bb_get(origin, turn);
             vertex_neighbors &= !fields & self.hexes;
 
             for dest in BitBoardIter::new(vertex_neighbors) {
@@ -208,7 +196,7 @@ impl Board {
     pub fn available_moves_for_piece(&self, field: &FieldCoord) -> Vec<FieldCoord> {
         if self.is_piece_on_field(field) {
             let color = field.color();
-            let vertex_neighbors = self.hexes & VERTEX_NEIGHBORS.get_ref(color)[field.to_index()];
+            let vertex_neighbors = self.hexes & VERTEX_NEIGHBORS.bb_get(field.to_bitboard(), color);
             let mut moves = Vec::with_capacity(3);
 
             for dest in BitBoardIter::new(vertex_neighbors) {
@@ -308,8 +296,7 @@ impl Board {
         }
 
         for bb in BitBoardIter::new(*self.fields.get_ref(self.turn)) {
-            let vertex_neighbors =
-                VERTEX_NEIGHBORS.get_ref(self.turn)[bb.trailing_zeros() as usize];
+            let vertex_neighbors = VERTEX_NEIGHBORS.bb_get(bb, self.turn);
             if vertex_neighbors & self.fields.get_ref(self.turn) != vertex_neighbors {
                 return true;
             }
@@ -344,7 +331,7 @@ impl Board {
         let them = us.switch();
         fields_to_check &= self.hexes & self.fields.get_ref(them);
         for bb in BitBoardIter::new(fields_to_check) {
-            let neighbors = self.hexes & EDGE_NEIGHBORS.get_ref(them)[bb.trailing_zeros() as usize];
+            let neighbors = self.hexes & EDGE_NEIGHBORS.bb_get(bb, them);
             if !self.fields.get_ref(us) & neighbors == 0 {
                 self.remove_piece(bb, them);
             }
@@ -363,8 +350,9 @@ impl Board {
         }
 
         // Combining colors here is okay because there won't be overlaps
-        let hex =
-            self.hexes & (HEX_FIELD_NEIGHBORS.white[index] | HEX_FIELD_NEIGHBORS.black[index]);
+        let hex = self.hexes
+            & (HEX_FIELD_NEIGHBORS.index_get(index, Color::White)
+                | HEX_FIELD_NEIGHBORS.index_get(index, Color::Black));
         // There are 18 combinations to check for each hex
         REMOVABLE_HEX_COMBS
             .iter()
@@ -396,9 +384,9 @@ impl Board {
         if self.remove_hex(index) {
             remove_count += 1;
 
-            let our_neighbors = self.hexes & HEX_FIELD_NEIGHBORS.get_ref(self.turn)[index];
+            let our_neighbors = self.hexes & HEX_FIELD_NEIGHBORS.index_get(index, self.turn);
             let their_neighbors =
-                self.hexes & HEX_FIELD_NEIGHBORS.get_ref(self.turn.switch())[index];
+                self.hexes & HEX_FIELD_NEIGHBORS.index_get(index, self.turn.switch());
 
             for neighbor in BitBoardIter::new(our_neighbors | their_neighbors) {
                 let check_result = self.check_hexes(neighbor.trailing_zeros() as usize / 3);

@@ -17,7 +17,7 @@
 
 #![cfg(test)]
 
-use model::{Board, Color, FieldCoord};
+use model::Board;
 
 fn perft(board: &Board, depth: u8) -> u32 {
     if depth == 0 {
@@ -55,16 +55,5 @@ fn perft_depth_5() {
 
     for (i, &count) in counts.iter().enumerate() {
         assert_eq!(count, perft(&board, i as u8 + 1));
-    }
-}
-
-#[test]
-fn fieldcoord_index_reflextivity() {
-    for index in 0..57 {
-        let white = FieldCoord::from_index(index as u8, Color::White);
-        assert_eq!(index, white.to_index());
-
-        let black = FieldCoord::from_index(index as u8, Color::Black);
-        assert_eq!(index, black.to_index());
     }
 }
