@@ -42,10 +42,6 @@ pub fn update(model: &mut Model, event: Option<Event>) -> bool {
             }
         }
         Player::Computer => {
-            if model.ai.is_idle() {
-                model.ai.think(model.board, 6);
-            }
-
             if let Some(event) = event {
                 match event {
                     Click(_) | Exchange => {}
@@ -57,9 +53,14 @@ pub fn update(model: &mut Model, event: Option<Event>) -> bool {
                 }
             }
 
-            if let Some(mv) = model.ai.try_recv() {
-                model.board.apply_move(&mv);
-                model.last_move = Some(mv);
+            if !model.is_game_over() {
+                if model.ai.is_idle() {
+                    model.ai.think(model.board, 6);
+                }
+                if let Some(mv) = model.ai.try_recv() {
+                    model.board.apply_move(&mv);
+                    model.last_move = Some(mv);
+                }
             }
         }
     }
