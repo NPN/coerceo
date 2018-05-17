@@ -123,8 +123,7 @@ impl Board {
         assert!(self.can_apply_move(mv), "Cannot apply {:?}", mv);
         match *mv {
             Move::Move(from, to, color) => {
-                self.toggle_field(from, color);
-                self.toggle_field(to, color);
+                self.toggle_field(from | to, color);
 
                 let (capture_count, mut fields_to_check) =
                     self.check_hexes(from.trailing_zeros() as usize / 3);
@@ -308,10 +307,10 @@ impl Board {
 // Field and piece methods
 impl Board {
     fn toggle_field(&mut self, bb: BitBoard, color: Color) {
-        assert!(
-            bb & self.hexes != 0,
-            "Cannot set field {:?}. Hex was removed.",
-            FieldCoord::from_bitboard(bb, color),
+        assert_ne!(
+            bb & self.hexes,
+            0,
+            "Trying to toggle field(s) on removed hex(es)"
         );
 
         *self.fields.get_mut(color) ^= bb;
