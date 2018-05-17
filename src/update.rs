@@ -92,7 +92,6 @@ fn handle_click(model: &mut Model, clicked: FieldCoord) {
             if clicked.color() != model.board.turn() || selected == clicked {
                 model.clear_selection();
             } else if model.board.is_piece_on_field(&clicked) {
-                model.available_moves = Some(model.board.available_moves_for_piece(&clicked));
                 model.selected_piece = Some(clicked);
             } else {
                 try_move(model, Move::move_from_field(&selected, &clicked));
@@ -105,7 +104,6 @@ fn handle_click(model: &mut Model, clicked: FieldCoord) {
             } else if !model.exchanging && clicked.color() == model.board.turn()
                 && model.board.is_piece_on_field(&clicked)
             {
-                model.available_moves = Some(model.board.available_moves_for_piece(&clicked));
                 model.selected_piece = Some(clicked);
             }
         }

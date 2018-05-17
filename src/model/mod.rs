@@ -28,7 +28,6 @@ pub struct Model {
     pub players: ColorMap<Player>,
     pub last_move: Option<Move>,
     pub selected_piece: Option<FieldCoord>,
-    pub available_moves: Option<Vec<FieldCoord>>,
     pub exchanging: bool,
     pub ai: AI,
     undo_stack: Vec<(Board, Option<Move>)>,
@@ -76,7 +75,6 @@ impl Model {
     }
     pub fn clear_selection(&mut self) {
         self.selected_piece = None;
-        self.available_moves = None;
     }
     pub fn current_player(&self) -> Player {
         *self.players.get_ref(self.board.turn())
@@ -93,7 +91,6 @@ impl Default for Model {
             players: ColorMap::new(Player::Human, Player::Human),
             selected_piece: None,
             last_move: None,
-            available_moves: None,
             exchanging: false,
             ai: AI::new(),
             undo_stack: vec![],

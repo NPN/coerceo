@@ -79,11 +79,8 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
 
     if let Some(ref coord) = model.selected_piece {
         highlight_field(SELECT_HIGHLIGHT, coord, origin, side_len);
-    }
-
-    if let Some(ref coords) = model.available_moves {
-        for coord in coords {
-            highlight_field_dot(SELECT_HIGHLIGHT, coord, origin, side_len);
+        for coord in model.board.available_moves_for_piece(coord) {
+            highlight_field_dot(SELECT_HIGHLIGHT, &coord, origin, side_len);
         }
     }
 
