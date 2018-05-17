@@ -21,7 +21,7 @@ mod board;
 mod constants;
 
 pub use self::board::{Board, Outcome};
-use ai::AIHandle;
+use ai::AI;
 
 pub struct Model {
     pub board: Board,
@@ -30,7 +30,7 @@ pub struct Model {
     pub selected_piece: Option<FieldCoord>,
     pub available_moves: Option<Vec<FieldCoord>>,
     pub exchanging: bool,
-    pub ai_handle: Option<AIHandle>,
+    pub ai: AI,
     undo_stack: Vec<(Board, Option<Move>)>,
     redo_stack: Vec<(Board, Option<Move>)>,
 }
@@ -78,8 +78,8 @@ impl Model {
         self.selected_piece = None;
         self.available_moves = None;
     }
-    pub fn is_ai_turn(&self) -> bool {
-        self.players.get_ref(self.board.turn()) == &Player::Computer
+    pub fn current_player(&self) -> Player {
+        *self.players.get_ref(self.board.turn())
     }
     pub fn is_game_over(&self) -> bool {
         self.board.outcome() != Outcome::InProgress
@@ -95,7 +95,7 @@ impl Default for Model {
             last_move: None,
             available_moves: None,
             exchanging: false,
-            ai_handle: None,
+            ai: AI::new(),
             undo_stack: vec![],
             redo_stack: vec![],
         }
@@ -104,7 +104,7 @@ impl Default for Model {
 
 pub type BitBoard = u64;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Player {
     Human,
     Computer,

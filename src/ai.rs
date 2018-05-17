@@ -15,7 +15,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::mem;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::{self, Receiver, TryRecvError};
+use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 
 use model::{Board, Move, Outcome};
@@ -25,66 +28,119 @@ const NEG_INFINITY: i16 = -0x7FFF;
 const LOSE: i16 = -0x4000;
 const DRAW: i16 = 0;
 
-pub struct AIHandle {
-    pub move_receiver: Receiver<Option<Move>>,
-    pub stop_sender: Sender<()>,
-    handle: JoinHandle<()>,
+pub enum AI {
+    Idle,
+    // Either the AI thread is running, or there is a move waiting to be received
+    Thinking {
+        move_recv: Receiver<Move>,
+        // We store and load this atomic with Ordering::Relaxed. It *should* be fine because it
+        // doesn't interact with any other atomics--all we want to do is tell the AI thread to stop
+        // searching for a move
+        stop_signal: Arc<AtomicBool>,
+        handle: JoinHandle<()>,
+    },
 }
 
-pub fn ai_move(board: Board, depth: u8, prev_handle: Option<AIHandle>) -> AIHandle {
-    assert!(depth != 0);
+impl AI {
+    pub fn new() -> AI {
+        AI::Idle
+    }
 
-    let (move_sender, move_receiver) = mpsc::channel();
-    let (stop_sender, stop_receiver) = mpsc::channel();
-
-    let handle = thread::spawn(move || {
-        if let Some(prev_handle) = prev_handle {
-            // If send returns an error, the other thread has already terminated
-            if prev_handle.stop_sender.send(()).is_ok() {
-                prev_handle.handle.join().expect(
-                    "Previous AI thread panicked while new AI thread was waiting for it to finish",
-                );
-            }
+    pub fn is_idle(&self) -> bool {
+        match self {
+            AI::Idle => true,
+            AI::Thinking { .. } => false,
         }
+    }
 
-        // 2-ply iterative deepening
-        let mut moves: Vec<(Move, i16)> = board
-            .generate_moves()
-            .into_iter()
-            .map(|mv| {
+    pub fn stop(&mut self) {
+        if let AI::Thinking { stop_signal, .. } = self {
+            stop_signal.store(true, Ordering::Relaxed);
+            *self = AI::Idle;
+        }
+    }
+
+    pub fn try_recv(&mut self) -> Option<Move> {
+        use self::TryRecvError::*;
+
+        match self {
+            AI::Idle => None,
+            AI::Thinking { move_recv, .. } => match move_recv.try_recv() {
+                Ok(mv) => {
+                    *self = AI::Idle;
+                    Some(mv)
+                }
+                Err(Empty) => None,
+                Err(Disconnected) => panic!("Tried to receive move from disconnected sender"),
+            },
+        }
+    }
+
+    pub fn think(&mut self, board: Board, depth: u8) {
+        assert_ne!(depth, 0);
+
+        let prev_ai = mem::replace(self, AI::Idle);
+
+        let (move_sender, move_recv) = mpsc::channel();
+        let stop_signal = Arc::new(AtomicBool::new(false));
+        let stop_signal_clone = stop_signal.clone();
+
+        let handle = thread::spawn(move || {
+            if let AI::Thinking {
+                stop_signal,
+                handle,
+                ..
+            } = prev_ai
+            {
+                stop_signal.store(true, Ordering::Relaxed);
+                handle
+                    .join()
+                    .expect("Old AI thread panicked when new AI thread joined on it");
+            }
+
+            // 2-ply iterative deepening
+            let mut moves: Vec<(Move, i16)> = board
+                .generate_moves()
+                .into_iter()
+                .map(|mv| {
+                    let mut new_board = board;
+                    new_board.apply_move(&mv);
+
+                    let score = -alphabeta_negamax(&new_board, NEG_INFINITY, INFINITY, 1);
+                    (mv, score)
+                })
+                .collect();
+
+            moves.sort_by(|&(_, a), &(_, b)| b.cmp(&a));
+
+            let mut max_score = NEG_INFINITY;
+            let mut best_move = None;
+            for (mv, _) in moves {
+                if stop_signal_clone.load(Ordering::Relaxed) {
+                    return;
+                }
+
                 let mut new_board = board;
                 new_board.apply_move(&mv);
 
-                let score = -alphabeta_negamax(&new_board, NEG_INFINITY, INFINITY, 1);
-                (mv, score)
-            })
-            .collect();
-
-        moves.sort_by(|&(_, a), &(_, b)| b.cmp(&a));
-
-        let mut max_score = NEG_INFINITY;
-        let mut best_move = None;
-        for (mv, _) in moves {
-            if stop_receiver.try_recv().is_ok() {
-                return;
+                let score = -alphabeta_negamax(&new_board, NEG_INFINITY, -max_score, depth - 1);
+                if score > max_score {
+                    max_score = score;
+                    best_move = Some(mv);
+                }
             }
 
-            let mut new_board = board;
-            new_board.apply_move(&mv);
-
-            let score = -alphabeta_negamax(&new_board, NEG_INFINITY, -max_score, depth - 1);
-            if score > max_score {
-                max_score = score;
-                best_move = Some(mv);
+            match best_move {
+                Some(mv) => move_sender.send(mv).expect("AI failed to send Move"),
+                None => panic!("AI failed to find a move"),
             }
+        });
+
+        *self = AI::Thinking {
+            move_recv,
+            stop_signal,
+            handle,
         }
-        move_sender.send(best_move).expect("AI failed to send Move");
-    });
-
-    AIHandle {
-        move_receiver,
-        stop_sender,
-        handle,
     }
 }
 
@@ -92,11 +148,11 @@ fn alphabeta_negamax(board: &Board, mut alpha: i16, beta: i16, depth: u8) -> i16
     match board.outcome() {
         Outcome::Draw => return DRAW,
         Outcome::Win(color) => {
-            assert!(color != board.turn());
+            assert_ne!(color, board.turn());
             // TODO: weight by depth to encourage shorter wins
             return LOSE;
         }
-        _ => {}
+        Outcome::InProgress => {}
     }
 
     if depth == 0 {

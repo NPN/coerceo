@@ -15,41 +15,51 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use ai::ai_move;
-use model::{FieldCoord, Model, Move};
-use view::Event;
+use model::{ColorMap, FieldCoord, Model, Move, Player};
+
+use self::Event::*;
+
+#[derive(PartialEq)]
+pub enum Event {
+    Click(FieldCoord),
+    Exchange,
+    NewGame(ColorMap<Player>),
+    Resign,
+    Undo,
+    Redo,
+    Quit,
+}
 
 pub fn update(model: &mut Model, event: Option<Event>) -> bool {
-    let ai_should_move = |model: &Model| model.is_ai_turn() && !model.is_game_over();
+    if event == Some(Quit) {
+        return false;
+    }
 
-    if let Some(event) = event {
-        if event == Event::Quit {
-            return false;
-        }
-
-        if ai_should_move(model) {
-            use view::Event::*;
-            match event {
-                Click(_) | Exchange => return true,
-                _ => {
-                    let _ = model.ai_handle.as_ref().unwrap().stop_sender.send(());
-                }
+    match model.current_player() {
+        Player::Human => {
+            if let Some(event) = event {
+                handle_event(model, event);
             }
         }
+        Player::Computer => {
+            if model.ai.is_idle() {
+                model.ai.think(model.board, 6);
+            }
 
-        handle_event(model, event);
+            if let Some(event) = event {
+                match event {
+                    Click(_) | Exchange => {}
+                    _ => {
+                        model.ai.stop();
+                        handle_event(model, event);
+                        return true;
+                    }
+                }
+            }
 
-        if ai_should_move(model) {
-            model.ai_handle = Some(ai_move(model.board, 6, model.ai_handle.take()));
-        }
-    } else if ai_should_move(model) {
-        if let Ok(mv) = model.ai_handle.as_ref().unwrap().move_receiver.try_recv() {
-            if let Some(mv) = mv {
-                model.ai_handle = None;
+            if let Some(mv) = model.ai.try_recv() {
                 model.board.apply_move(&mv);
                 model.last_move = Some(mv);
-            } else {
-                unimplemented!("AI couldn't find a move");
             }
         }
     }
@@ -57,7 +67,6 @@ pub fn update(model: &mut Model, event: Option<Event>) -> bool {
 }
 
 fn handle_event(model: &mut Model, event: Event) {
-    use view::Event::*;
     match event {
         Click(clicked) => if !model.is_game_over() {
             handle_click(model, clicked);

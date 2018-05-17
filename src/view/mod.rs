@@ -24,19 +24,9 @@ use imgui_sys;
 
 use self::board::board;
 pub use self::sys::run;
-use model::{Color, ColorMap, FieldCoord, Model, Player};
+use model::{Color, ColorMap, Model, Player};
+use update::Event;
 use vec2::Vec2;
-
-#[derive(PartialEq)]
-pub enum Event {
-    Click(FieldCoord),
-    Exchange,
-    NewGame(ColorMap<Player>),
-    Resign,
-    Undo,
-    Redo,
-    Quit,
-}
 
 pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
     unsafe {
@@ -140,7 +130,8 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                         vec![
                             (true, im_str!("Resign"), Event::Resign),
                             (
-                                model.board.can_exchange() && !model.is_ai_turn(),
+                                model.board.can_exchange()
+                                    && model.current_player() == Player::Human,
                                 if model.exchanging {
                                     im_str!("Stop Exchanging")
                                 } else {
