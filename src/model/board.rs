@@ -156,40 +156,32 @@ impl Board {
             }
         }
     }
-    pub fn generate_moves(&self) -> Vec<Move> {
-        let turn = self.turn;
-        // A player with no pieces cannot make any moves, including exchange moves
-        if self.pieces(turn) == 0 {
-            return vec![];
-        }
+    pub fn generate_moves(&self) -> impl Iterator<Item = Move> {
+        assert_ne!(self.pieces(self.turn), 0);
 
-        let can_exchange = self.can_exchange();
-        let mut moves = Vec::with_capacity(
-            // 3 moves per piece is an untested guess
-            self.pieces(turn) as usize * 3 + if can_exchange {
-                self.pieces(turn.switch()) as usize
-            } else {
-                0
-            },
-        );
+        let hexes = self.hexes;
+        let turn = self.turn;
+        let opp_color = turn.switch();
 
         let fields = *self.fields.get_ref(turn);
-        for origin in BitBoardIter::new(fields) {
-            let mut vertex_neighbors = VERTEX_NEIGHBORS.bb_get(origin, turn);
-            vertex_neighbors &= !fields & self.hexes;
+        let opp_fields = if self.can_exchange() {
+            *self.fields.get_ref(opp_color)
+        } else {
+            // impl Trait requires that we return a single, concrete type. So, if there are no
+            // fields to exchange, we create an empty BitBoardIter and chain it on anyways. This
+            // way, the type of the resulting iterator is always Chain.
+            0
+        };
 
-            for dest in BitBoardIter::new(vertex_neighbors) {
-                moves.push(Move::Move(origin, dest, turn));
-            }
-        }
-
-        if can_exchange {
-            let opp_color = turn.switch();
-            for exchanged in BitBoardIter::new(*self.fields.get_ref(opp_color)) {
-                moves.push(Move::Exchange(exchanged, opp_color));
-            }
-        }
-        moves
+        BitBoardIter::new(fields)
+            .flat_map(move |origin| {
+                let vertex_neighbors = VERTEX_NEIGHBORS.bb_get(origin, turn) & (!fields & hexes);
+                BitBoardIter::new(vertex_neighbors).map(move |dest| Move::Move(origin, dest, turn))
+            })
+            .chain(
+                BitBoardIter::new(opp_fields)
+                    .map(move |exchanged| Move::Exchange(exchanged, opp_color)),
+            )
     }
     pub fn available_moves_for_piece(&self, field: &FieldCoord) -> Vec<FieldCoord> {
         if self.is_piece_on_field(field) {
