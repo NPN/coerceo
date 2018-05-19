@@ -100,9 +100,6 @@ pub enum Outcome {
 }
 
 lazy_static! {
-    static ref EDGE_NEIGHBORS: NeighborLookup = NeighborLookup::new_edge();
-    static ref VERTEX_NEIGHBORS: NeighborLookup = NeighborLookup::new_vertex();
-    static ref HEX_FIELD_NEIGHBORS: NeighborLookup = NeighborLookup::new_hex_field();
     static ref HEX_MASK: [BitBoard; 19] = generate_hex_mask();
     static ref REMOVABLE_HEX_COMBS: [BitBoard; 342] = generate_removable_hex_combs();
 }
