@@ -15,9 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::iter::Iterator;
-
-use model::{BitBoard, Color, ColorMap, FieldCoord};
+use model::bitboard::BitBoard;
+use model::{Color, ColorMap, FieldCoord};
 
 use self::OptionFieldCoord::*;
 
@@ -30,31 +29,6 @@ enum OptionFieldCoord {
 
 // 19 hexes * 3 bits per hex = 57 set bits
 pub const HEX_STARTING_POSITION: BitBoard = 0x1FF_FFFF_FFFF_FFFF;
-
-pub struct BitBoardIter {
-    bb: BitBoard,
-}
-
-impl BitBoardIter {
-    pub fn new(bb: BitBoard) -> Self {
-        Self { bb }
-    }
-}
-
-impl Iterator for BitBoardIter {
-    type Item = BitBoard;
-    // Pop the least significant set bit
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.bb != 0 {
-            // (1 + !self.bb) is a two's complement negation for u64
-            let bit = self.bb & (1 + !self.bb);
-            self.bb ^= bit;
-            Option::Some(bit)
-        } else {
-            Option::None
-        }
-    }
-}
 
 pub struct NeighborLookup {
     neighbors: ColorMap<Vec<BitBoard>>,

@@ -17,9 +17,11 @@
 
 use std::mem;
 
+mod bitboard;
 mod board;
 mod constants;
 
+use self::bitboard::BitBoard;
 pub use self::board::{Board, Outcome};
 use ai::AI;
 
@@ -98,8 +100,6 @@ impl Default for Model {
         }
     }
 }
-
-pub type BitBoard = u64;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Player {

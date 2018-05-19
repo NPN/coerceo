@@ -17,8 +17,9 @@
 
 use std::cmp;
 
+use model::bitboard::{BitBoard, BitBoardIter};
 use model::constants::*;
-use model::{BitBoard, Color, ColorMap, FieldCoord, HexCoord, Move};
+use model::{Color, ColorMap, FieldCoord, HexCoord, Move};
 
 #[derive(Clone, Copy)]
 pub struct Board {
