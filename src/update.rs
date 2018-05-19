@@ -102,7 +102,8 @@ fn handle_click(model: &mut Model, clicked: FieldCoord) {
         None => {
             if model.exchanging && try_move(model, Move::exchange_from_field(&clicked)) {
                 model.exchanging = false;
-            } else if !model.exchanging && clicked.color() == model.board.turn()
+            } else if !model.exchanging
+                && clicked.color() == model.board.turn()
                 && model.board.is_piece_on_field(&clicked)
             {
                 model.selected_piece = Some(clicked);

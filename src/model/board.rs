@@ -146,7 +146,8 @@ impl Board {
         match *mv {
             Move::Move(from, to, color) => {
                 let vertex_neighbors = VERTEX_NEIGHBORS.bb_get(from, color);
-                color == self.turn && (to & vertex_neighbors != 0)
+                color == self.turn
+                    && (to & vertex_neighbors != 0)
                     && self.is_piece_on_bitboard(from, color)
                     && !self.is_piece_on_bitboard(to, color)
             }

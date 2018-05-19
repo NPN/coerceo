@@ -92,7 +92,8 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
         hover_field = None;
     }
     if let Some(ref coord) = hover_field {
-        if model.exchanging && coord.color() != model.board.turn()
+        if model.exchanging
+            && coord.color() != model.board.turn()
             && model.board.is_piece_on_field(coord)
         {
             highlight_field(EXCHANGE_HIGHLIGHT, coord, origin, side_len);
