@@ -334,8 +334,9 @@ impl Board {
     /// A hex is removable (and must be removed) if it is empty and is "attached to the board by 3
     /// or less adjacent sides."
     fn is_hex_removable(&self, index: usize) -> bool {
-        let is_hex_empty = (self.fields.white | self.fields.black) & HEX_MASK[index] == 0;
-        if !self.is_hex_extant(index) || !is_hex_empty {
+        debug_assert!(self.is_hex_extant(index));
+
+        if (self.fields.white | self.fields.black) & HEX_MASK[index] != 0 {
             return false;
         }
 
