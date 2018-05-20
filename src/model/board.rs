@@ -157,13 +157,13 @@ impl Board {
         }
     }
     pub fn generate_moves(&self) -> impl Iterator<Item = Move> {
-        assert_ne!(self.pieces(self.turn), 0);
+        let turn = self.turn;
+        let fields = *self.fields.get_ref(turn);
+
+        assert_ne!(fields, 0);
 
         let hexes = self.hexes;
-        let turn = self.turn;
         let opp_color = turn.switch();
-
-        let fields = *self.fields.get_ref(turn);
         let opp_fields = if self.can_exchange() {
             *self.fields.get_ref(opp_color)
         } else {
