@@ -158,14 +158,14 @@ impl Board {
     }
     pub fn generate_moves(&self) -> impl Iterator<Item = Move> {
         let turn = self.turn;
-        let fields = *self.fields.get_ref(turn);
+        let fields = self.fields.get(turn);
 
         assert_ne!(fields, 0);
 
         let hexes = self.hexes;
         let opp_color = turn.switch();
         let opp_fields = if self.can_exchange() {
-            *self.fields.get_ref(opp_color)
+            self.fields.get(opp_color)
         } else {
             // impl Trait requires that we return a single, concrete type. So, if there are no
             // fields to exchange, we create an empty BitBoardIter and chain it on anyways. This
@@ -198,7 +198,7 @@ impl Board {
         }
     }
     pub fn can_exchange(&self) -> bool {
-        self.vitals.get_ref(self.turn).hexes >= 2
+        self.vitals.get(self.turn).hexes >= 2
     }
     pub fn is_piece_on_field(&self, coord: &FieldCoord) -> bool {
         self.is_piece_on_bitboard(coord.to_bitboard(), coord.color())
@@ -210,7 +210,7 @@ impl Board {
             FieldCoord::from_bitboard(bb, color),
         );
 
-        bb & self.fields.get_ref(color) != 0
+        bb & self.fields.get(color) != 0
     }
     /// > extant (adj.): Still in existence; not destroyed, lost, or extinct (The Free Dictionary)
     ///
@@ -249,10 +249,10 @@ impl Board {
         self.turn
     }
     pub fn pieces(&self, color: Color) -> u8 {
-        self.vitals.get_ref(color).pieces
+        self.vitals.get(color).pieces
     }
     pub fn hexes(&self, color: Color) -> u8 {
-        self.vitals.get_ref(color).hexes
+        self.vitals.get(color).hexes
     }
     pub fn outcome(&self) -> Outcome {
         self.outcome
@@ -285,9 +285,9 @@ impl Board {
             return true;
         }
 
-        for bb in BitBoardIter::new(*self.fields.get_ref(self.turn)) {
+        for bb in BitBoardIter::new(self.fields.get(self.turn)) {
             let vertex_neighbors = VERTEX_NEIGHBORS.bb_get(bb, self.turn);
-            if vertex_neighbors & self.fields.get_ref(self.turn) != vertex_neighbors {
+            if vertex_neighbors & self.fields.get(self.turn) != vertex_neighbors {
                 return true;
             }
         }
@@ -319,10 +319,10 @@ impl Board {
         // fields_to_check must be a BitBoard for the opponent player (i.e. opposite of current turn)
         let us = self.turn;
         let them = us.switch();
-        fields_to_check &= self.hexes & self.fields.get_ref(them);
+        fields_to_check &= self.hexes & self.fields.get(them);
         for bb in BitBoardIter::new(fields_to_check) {
             let neighbors = self.hexes & EDGE_NEIGHBORS.bb_get(bb, them);
-            if !self.fields.get_ref(us) & neighbors == 0 {
+            if !self.fields.get(us) & neighbors == 0 {
                 self.remove_piece(bb, them);
             }
         }

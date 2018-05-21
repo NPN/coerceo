@@ -79,7 +79,7 @@ impl Model {
         self.selected_piece = None;
     }
     pub fn current_player(&self) -> Player {
-        *self.players.get_ref(self.board.turn())
+        self.players.get(self.board.turn())
     }
     pub fn is_game_over(&self) -> bool {
         self.board.outcome() != Outcome::InProgress
@@ -144,6 +144,15 @@ impl<T> ColorMap<T> {
         match color {
             Color::White => &mut self.white,
             Color::Black => &mut self.black,
+        }
+    }
+}
+
+impl<T: Copy> ColorMap<T> {
+    pub fn get(&self, color: Color) -> T {
+        match color {
+            Color::White => self.white,
+            Color::Black => self.black,
         }
     }
 }
