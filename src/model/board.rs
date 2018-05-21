@@ -262,9 +262,13 @@ impl Board {
 impl Board {
     // TODO: check for threefold repetition
     fn update_outcome(&mut self) {
-        if self.pieces(self.turn) == 0 {
+        let fields = self.fields.get(self.turn);
+
+        if fields == 0 {
+            // No more pieces left
             self.outcome = Outcome::Win(self.turn.switch());
-        } else if !self.can_move() {
+        } else if fields == self.hexes || !self.can_exchange() {
+            // There are no empty fields to move to and we can't exchange
             self.outcome = Outcome::Draw;
         } else {
             use model::Color::*;
@@ -279,19 +283,6 @@ impl Board {
                 self.outcome = Outcome::Draw;
             }
         }
-    }
-    fn can_move(&self) -> bool {
-        if self.can_exchange() {
-            return true;
-        }
-
-        for bb in BitBoardIter::new(self.fields.get(self.turn)) {
-            let vertex_neighbors = VERTEX_NEIGHBORS.bb_get(bb, self.turn);
-            if vertex_neighbors & self.fields.get(self.turn) != vertex_neighbors {
-                return true;
-            }
-        }
-        false
     }
 }
 
