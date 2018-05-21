@@ -20,8 +20,6 @@ extern crate glium;
 extern crate imgui;
 extern crate imgui_glium_renderer;
 extern crate imgui_sys;
-#[macro_use]
-extern crate lazy_static;
 
 mod ai;
 mod model;

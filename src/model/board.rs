@@ -99,11 +99,6 @@ pub enum Outcome {
     Draw,
 }
 
-lazy_static! {
-    static ref HEX_MASK: [BitBoard; 19] = generate_hex_mask();
-    static ref REMOVABLE_HEX_COMBS: [BitBoard; 342] = generate_removable_hex_combs();
-}
-
 // Public methods
 impl Board {
     /// Create a new board with the "Laurentius" starting position.

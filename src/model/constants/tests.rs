@@ -15,8 +15,76 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#![cfg(test)]
+
+use model::bitboard::BitBoard;
 use model::constants::*;
-use model::Color;
+use model::{Color, FieldCoord};
+
+use self::OptionFieldCoord::*;
+
+/// A wrapper enum representing a `FieldCoord` which may be invalid (i.e. one that is off the board).
+/// Useful for keeping lookup table generation clean.
+enum OptionFieldCoord {
+    Some(FieldCoord),
+    None,
+}
+
+impl OptionFieldCoord {
+    fn from_index(index: u8, color: Color) -> Self {
+        Some(FieldCoord::from_index(index, color))
+    }
+    fn from_hex_f(hex: u8, f: u8) -> Self {
+        Some(FieldCoord::from_hex_f(hex, f))
+    }
+    fn shift_f(&self, n: i8) -> Self {
+        assert!(-6 < n && n < 6);
+
+        match *self {
+            Some(coord) => Some(FieldCoord::new(
+                coord.x,
+                coord.y,
+                (coord.f + (n + 6) as u8) % 6,
+            )),
+            None => None,
+        }
+    }
+    /// Return the edge neighbor of this field that does not share its hex, i.e. "flip" this field
+    /// over the boundary of its hex.
+    fn flip(&self) -> Self {
+        match *self {
+            Some(coord) => {
+                let (x, y) = match coord.f {
+                    0 => (coord.x, coord.y + 1),
+                    1 => (coord.x + 1, coord.y),
+                    2 => (coord.x + 1, coord.y - 1),
+                    3 => (coord.x, coord.y - 1),
+                    4 => (coord.x - 1, coord.y),
+                    5 => (coord.x - 1, coord.y + 1),
+                    _ => unreachable!(),
+                };
+                let f = (coord.f + 3) % 6;
+
+                if FieldCoord::is_valid_coord(x, y, f) {
+                    Some(FieldCoord::new(x, y, f))
+                } else {
+                    None
+                }
+            }
+            None => None,
+        }
+    }
+    fn to_bitboard(&self) -> BitBoard {
+        match *self {
+            Some(coord) => coord.to_bitboard(),
+            None => 0,
+        }
+    }
+}
+
+fn fold_coords(coords: &[OptionFieldCoord]) -> BitBoard {
+    coords.iter().fold(0, |acc, c| acc | c.to_bitboard())
+}
 
 #[test]
 #[ignore]
@@ -118,4 +186,54 @@ fn hex_field_neighbors() {
             .map(|&x| x)
             .eq(neighbors(Color::Black))
     );
+}
+
+#[test]
+#[ignore]
+fn hex_mask() {
+    let mut mask = 0b111;
+
+    for hex in 0..19 {
+        assert_eq!(HEX_MASK[hex], mask);
+        mask <<= 3;
+    }
+}
+
+#[test]
+#[ignore]
+fn removable_hex_combs() {
+    let mut table = [0; 342];
+
+    let bb_neighbor = |hex, f| OptionFieldCoord::from_hex_f(hex, f).flip().to_bitboard();
+
+    for hex in 0..19 {
+        let neighbors = [
+            bb_neighbor(hex, 0),
+            bb_neighbor(hex, 1),
+            bb_neighbor(hex, 2),
+            bb_neighbor(hex, 3),
+            bb_neighbor(hex, 4),
+            bb_neighbor(hex, 5),
+        ];
+
+        // This bitwise or combines bitboards of different "colors." However, since each neighbor is
+        // on a different hex (i.e. in a different block of three bits), bits can never overlap each
+        // other. Also, this is compared against the extant hex bitboard, so color doesn't matter.
+        let mut triple = neighbors[0] | neighbors[1] | neighbors[2];
+        let mut double = neighbors[0] | neighbors[1];
+        let mut single = neighbors[0];
+
+        for f in 0..6 {
+            let index = hex as usize * 18 + f;
+            table[index] = triple;
+            table[index + 6] = double;
+            table[index + 12] = single;
+
+            triple ^= neighbors[f] | neighbors[(f + 3) % 6];
+            double ^= neighbors[f] | neighbors[(f + 2) % 6];
+            single ^= neighbors[f] | neighbors[(f + 1) % 6];
+        }
+    }
+
+    assert!(table.iter().eq(REMOVABLE_HEX_COMBS.iter()));
 }
