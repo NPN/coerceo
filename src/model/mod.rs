@@ -15,11 +15,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::mem;
-
 mod bitboard;
 mod board;
 mod constants;
+
+use std::mem;
 
 use self::bitboard::BitBoard;
 pub use self::board::{Board, Outcome};
