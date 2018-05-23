@@ -15,11 +15,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+mod zobrist;
+
 use std::cmp;
 
 use model::bitboard::{BitBoard, BitBoardIter};
 use model::constants::*;
 use model::{Color, ColorMap, FieldCoord, HexCoord, Move};
+
+use self::zobrist::ZobristHash;
 
 #[derive(Clone, Copy)]
 pub struct Board {
@@ -70,6 +74,7 @@ pub struct Board {
     turn: Color,
     vitals: ColorMap<PlayerVitals>,
     outcome: Outcome,
+    zobrist: ZobristHash,
 }
 
 /// A struct tracking a player's piece and captured hex count. So named because these two numbers are
@@ -103,13 +108,16 @@ pub enum Outcome {
 impl Board {
     /// Create a new board with the "Laurentius" starting position.
     pub fn new() -> Self {
+        let fields = generate_laurentius();
+
         Self {
-            fields: generate_laurentius(),
+            fields,
             hexes: HEX_STARTING_POSITION,
             extant_hex_count: 19,
             turn: Color::White,
             vitals: ColorMap::new(PlayerVitals::new(), PlayerVitals::new()),
             outcome: Outcome::InProgress,
+            zobrist: ZobristHash::new(fields, ColorMap::new(0, 0), Color::White),
         }
     }
     pub fn apply_move(&mut self, mv: &Move) {
@@ -118,16 +126,30 @@ impl Board {
             Move::Move(from, to, color) => {
                 self.toggle_field(from | to, color);
 
+                self.zobrist.toggle_field(from, color);
+                self.zobrist.toggle_field(to, color);
+
                 let (capture_count, mut fields_to_check) =
                     self.check_hexes(from.trailing_zeros() as usize / 3);
                 fields_to_check |= EDGE_NEIGHBORS.bb_get(to, color);
                 self.check_captures(fields_to_check);
 
-                self.vitals.get_mut(self.turn).hexes += capture_count;
+                if capture_count != 0 {
+                    let vitals = self.vitals.get_mut(self.turn);
+                    self.zobrist
+                        .set_hex_count(vitals.hexes, vitals.hexes + capture_count, color);
+                    vitals.hexes += capture_count;
+                }
             }
             Move::Exchange(bb, color) => {
                 self.remove_piece(bb, color);
-                self.vitals.get_mut(self.turn).hexes -= 2;
+
+                {
+                    let vitals = self.vitals.get_mut(self.turn);
+                    self.zobrist
+                        .set_hex_count(vitals.hexes, vitals.hexes - 2, color);
+                    vitals.hexes -= 2;
+                }
 
                 // Players don't collect hexes removed due to an exchange
                 let (_, fields_to_check) = self.check_hexes(bb.trailing_zeros() as usize / 3);
@@ -135,6 +157,7 @@ impl Board {
             }
         }
         self.turn = self.turn.switch();
+        self.zobrist.switch_turn();
         self.update_outcome();
     }
     pub fn can_apply_move(&self, mv: &Move) -> bool {
