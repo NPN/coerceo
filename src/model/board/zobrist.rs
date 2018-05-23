@@ -18,7 +18,7 @@
 use model::bitboard::{BitBoard, BitBoardIter};
 use model::{Color, ColorMap};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct ZobristHash {
     hash: u64,
 }

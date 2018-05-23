@@ -25,7 +25,7 @@ use model::{Color, ColorMap, FieldCoord, HexCoord, Move};
 
 use self::zobrist::ZobristHash;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Board {
     /*
     Board layout:
@@ -79,7 +79,7 @@ pub struct Board {
 
 /// A struct tracking a player's piece and captured hex count. So named because these two numbers are
 /// essential to a player's survival (i.e. vital signs).
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 struct PlayerVitals {
     pieces: u8,
     hexes: u8,
