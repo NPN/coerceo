@@ -285,7 +285,7 @@ impl Board {
         if fields == 0 {
             // No more pieces left
             self.outcome = Outcome::Win(self.turn.switch());
-        } else if fields == self.hexes || !self.can_exchange() {
+        } else if fields == self.hexes && !self.can_exchange() {
             // There are no empty fields to move to and we can't exchange
             self.outcome = Outcome::Draw;
         } else {
