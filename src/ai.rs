@@ -28,6 +28,11 @@ const NEG_INFINITY: i16 = -0x7FFF;
 const LOSE: i16 = -0x4000;
 const DRAW: i16 = 0;
 
+struct MoveList<'a> {
+    mv: &'a Move,
+    prev: Option<&'a MoveList<'a>>,
+}
+
 pub enum AI {
     Idle,
     // Either the AI thread is running, or there is a move waiting to be received
@@ -106,7 +111,13 @@ impl AI {
                     let mut new_board = board;
                     new_board.apply_move(&mv);
 
-                    let score = -alphabeta_negamax(&new_board, NEG_INFINITY, INFINITY, 1);
+                    let move_list = MoveList {
+                        mv: &mv,
+                        prev: None,
+                    };
+
+                    let score =
+                        -alphabeta_negamax(&new_board, &move_list, NEG_INFINITY, INFINITY, 1);
                     (mv, score)
                 })
                 .collect();
@@ -123,7 +134,13 @@ impl AI {
                 let mut new_board = board;
                 new_board.apply_move(&mv);
 
-                let score = -alphabeta_negamax(&new_board, NEG_INFINITY, -max_score, depth - 1);
+                let move_list = MoveList {
+                    mv: &mv,
+                    prev: None,
+                };
+
+                let score =
+                    -alphabeta_negamax(&new_board, &move_list, NEG_INFINITY, -max_score, depth - 1);
                 if score > max_score {
                     max_score = score;
                     best_move = Some(mv);
@@ -144,7 +161,13 @@ impl AI {
     }
 }
 
-fn alphabeta_negamax(board: &Board, mut alpha: i16, beta: i16, depth: u8) -> i16 {
+fn alphabeta_negamax(
+    board: &Board,
+    move_list: &MoveList,
+    mut alpha: i16,
+    beta: i16,
+    depth: u8,
+) -> i16 {
     match board.outcome() {
         Outcome::Draw => return DRAW,
         Outcome::Win(color) => {
@@ -163,7 +186,12 @@ fn alphabeta_negamax(board: &Board, mut alpha: i16, beta: i16, depth: u8) -> i16
             let mut new_board = *board;
             new_board.apply_move(&mv);
 
-            let score = -alphabeta_negamax(&new_board, -beta, -alpha, depth - 1);
+            let next_move_list = MoveList {
+                mv: &mv,
+                prev: Some(move_list),
+            };
+
+            let score = -alphabeta_negamax(&new_board, &next_move_list, -beta, -alpha, depth - 1);
             if score >= beta {
                 return beta;
             } else if score > alpha {
