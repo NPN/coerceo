@@ -15,15 +15,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod zobrist;
-
 use std::cmp;
 
 use model::bitboard::{BitBoard, BitBoardIter};
 use model::constants::*;
+use model::zobrist::ZobristHash;
 use model::{Color, ColorMap, FieldCoord, HexCoord, Move};
-
-use self::zobrist::ZobristHash;
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct Board {

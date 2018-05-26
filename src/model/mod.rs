@@ -18,6 +18,7 @@
 mod bitboard;
 mod board;
 mod constants;
+mod zobrist;
 
 use std::mem;
 
