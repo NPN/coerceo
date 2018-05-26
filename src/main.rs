@@ -25,7 +25,6 @@ mod ai;
 mod model;
 mod tests;
 mod update;
-mod vec2;
 mod view;
 
 use imgui::Ui;

@@ -18,15 +18,16 @@
 mod board;
 mod board_parts;
 mod sys;
+mod vec2;
 
 use imgui::{ImGuiCond, ImStr, ImVec2, Ui};
 use imgui_sys;
 
 use self::board::board;
 pub use self::sys::run;
+use self::vec2::Vec2;
 use model::{Color, ColorMap, Model, Player};
 use update::Event;
-use vec2::Vec2;
 
 pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
     unsafe {

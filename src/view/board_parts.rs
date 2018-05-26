@@ -18,7 +18,7 @@
 use imgui_sys::{self, ImVec4};
 
 use model::{Color, FieldCoord, HexCoord};
-use vec2::Vec2;
+use view::vec2::Vec2;
 
 const SQRT_3: f32 = 1.732_050_807_568_877_f32;
 
