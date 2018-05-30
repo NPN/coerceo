@@ -189,9 +189,12 @@ fn alphabeta_negamax(
         }
         Outcome::Win(color) => {
             assert_ne!(color, board.turn());
-            // TODO: weight by depth to encourage shorter wins
-            set_ttable(EvalType::Exact, LOSE);
-            return LOSE;
+            // Weight score by depth to encourage shorter wins. The shorter the win, the greater
+            // `depth` will be, and so the larger the score will be. This also encourages the AI to
+            // prolong a loss.
+            let score = LOSE - depth as i16;
+            set_ttable(EvalType::Exact, score);
+            return score;
         }
         Outcome::InProgress => {}
     }
