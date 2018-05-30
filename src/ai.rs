@@ -15,12 +15,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::cmp;
 use std::mem;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, TryRecvError};
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 
+use model::ttable::{Entry, EvalType, TTable};
 use model::{Board, Move, Outcome};
 
 const INFINITY: i16 = 0x7FFF;
@@ -164,22 +166,63 @@ fn alphabeta_negamax(
     // This list does not include the current board
     mut board_list: &mut Vec<Board>,
     mut alpha: i16,
-    beta: i16,
+    mut beta: i16,
     depth: u8,
 ) -> i16 {
+    let set_ttable = |eval_type, score| {
+        TTable::set(
+            board.zobrist(),
+            Entry {
+                eval_type,
+                depth,
+                score,
+                board: *board,
+            },
+        );
+    };
+
     match board.outcome() {
-        Outcome::Draw => return DRAW,
+        Outcome::Draw => {
+            // This only works because the draw Outcome does not consider draw by repetition
+            set_ttable(EvalType::Exact, DRAW);
+            return DRAW;
+        }
         Outcome::Win(color) => {
             assert_ne!(color, board.turn());
             // TODO: weight by depth to encourage shorter wins
+            set_ttable(EvalType::Exact, LOSE);
             return LOSE;
         }
         Outcome::InProgress => {}
     }
 
+    if let Some(entry) = TTable::get(board.zobrist()) {
+        if board_list.len() >= 8 {
+            if board_list.iter().filter(|&&b| b == *board).count() >= 2 {
+                return DRAW;
+            }
+        }
+
+        if entry.board == *board && entry.depth >= depth {
+            match entry.eval_type {
+                EvalType::Exact => {
+                    return entry.score;
+                }
+                EvalType::Beta => {
+                    if entry.score >= beta {
+                        return entry.score;
+                    }
+                    beta = entry.score;
+                }
+            }
+        }
+    }
+
     if depth == 0 {
         evaluate(board)
     } else {
+        let mut best_score = NEG_INFINITY;
+
         let moves = board.generate_moves();
         for mv in moves {
             let mut new_board = *board;
@@ -189,12 +232,16 @@ fn alphabeta_negamax(
             let score = -alphabeta_negamax(&new_board, &mut board_list, -beta, -alpha, depth - 1);
             board_list.pop();
 
+            best_score = cmp::max(score, best_score);
+
             if score >= beta {
+                set_ttable(EvalType::Beta, score);
                 return beta;
             } else if score > alpha {
                 alpha = score;
             }
         }
+        set_ttable(EvalType::Exact, best_score);
         alpha
     }
 }

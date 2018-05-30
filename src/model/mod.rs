@@ -18,6 +18,7 @@
 mod bitboard;
 mod board;
 mod constants;
+pub mod ttable;
 mod zobrist;
 
 use std::mem;

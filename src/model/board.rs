@@ -275,6 +275,9 @@ impl Board {
     pub fn outcome(&self) -> Outcome {
         self.outcome
     }
+    pub fn zobrist(&self) -> ZobristHash {
+        self.zobrist
+    }
 }
 
 impl Board {
