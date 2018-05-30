@@ -28,7 +28,8 @@ use model::{Board, Move, Outcome};
 const INFINITY: i16 = 0x7FFF;
 const NEG_INFINITY: i16 = -0x7FFF;
 const LOSE: i16 = -0x4000;
-const DRAW: i16 = 0;
+// Small contempt factor to discourage draws
+const DRAW: i16 = 1;
 
 pub enum AI {
     Idle,
