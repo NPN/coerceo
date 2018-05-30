@@ -77,7 +77,7 @@ pub struct Board {
 /// A struct tracking a player's piece and captured hex count. So named because these two numbers are
 /// essential to a player's survival (i.e. vital signs).
 #[derive(Clone, Copy, PartialEq)]
-struct PlayerVitals {
+pub struct PlayerVitals {
     pieces: u8,
     hexes: u8,
 }
@@ -268,6 +268,9 @@ impl Board {
     }
     pub fn hexes(&self, color: Color) -> u8 {
         self.vitals.get(color).hexes
+    }
+    pub fn vitals(&self) -> ColorMap<PlayerVitals> {
+        self.vitals
     }
     pub fn outcome(&self) -> Outcome {
         self.outcome

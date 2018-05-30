@@ -76,6 +76,11 @@ impl Model {
             self.exchanging = false;
         }
     }
+    pub fn board_list(&self) -> Vec<Board> {
+        let mut board_list: Vec<_> = self.undo_stack.iter().map(|&(b, _)| b).collect();
+        board_list.push(self.board);
+        board_list
+    }
     pub fn clear_selection(&mut self) {
         self.selected_piece = None;
     }

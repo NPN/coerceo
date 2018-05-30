@@ -55,7 +55,8 @@ pub fn update(model: &mut Model, event: Option<Event>) -> bool {
 
             if !model.is_game_over() {
                 if model.ai.is_idle() {
-                    model.ai.think(model.board, 6);
+                    let board_list = model.board_list();
+                    model.ai.think(model.board, board_list, 6);
                 }
                 if let Some(mv) = model.ai.try_recv() {
                     model.board.apply_move(&mv);

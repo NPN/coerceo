@@ -28,11 +28,6 @@ const NEG_INFINITY: i16 = -0x7FFF;
 const LOSE: i16 = -0x4000;
 const DRAW: i16 = 0;
 
-struct MoveList<'a> {
-    mv: &'a Move,
-    prev: Option<&'a MoveList<'a>>,
-}
-
 pub enum AI {
     Idle,
     // Either the AI thread is running, or there is a move waiting to be received
@@ -81,7 +76,7 @@ impl AI {
         }
     }
 
-    pub fn think(&mut self, board: Board, depth: u8) {
+    pub fn think(&mut self, board: Board, board_list: Vec<Board>, depth: u8) {
         assert_ne!(depth, 0);
 
         let prev_ai = mem::replace(self, AI::Idle);
@@ -103,6 +98,14 @@ impl AI {
                     .expect("Old AI thread panicked when new AI thread joined on it");
             }
 
+            // Only take positions after the last irreversible move
+            let mut board_list: Vec<_> = board_list
+                .into_iter()
+                .rev()
+                .take_while(|b| b.vitals() == board.vitals())
+                .collect();
+            board_list.reverse();
+
             // 2-ply iterative deepening
             let mut moves: Vec<(Move, i16)> = board
                 .generate_moves()
@@ -111,13 +114,8 @@ impl AI {
                     let mut new_board = board;
                     new_board.apply_move(&mv);
 
-                    let move_list = MoveList {
-                        mv: &mv,
-                        prev: None,
-                    };
-
                     let score =
-                        -alphabeta_negamax(&new_board, &move_list, NEG_INFINITY, INFINITY, 1);
+                        -alphabeta_negamax(&new_board, &mut board_list, NEG_INFINITY, INFINITY, 1);
                     (mv, score)
                 })
                 .collect();
@@ -134,13 +132,13 @@ impl AI {
                 let mut new_board = board;
                 new_board.apply_move(&mv);
 
-                let move_list = MoveList {
-                    mv: &mv,
-                    prev: None,
-                };
-
-                let score =
-                    -alphabeta_negamax(&new_board, &move_list, NEG_INFINITY, -max_score, depth - 1);
+                let score = -alphabeta_negamax(
+                    &new_board,
+                    &mut board_list,
+                    NEG_INFINITY,
+                    -max_score,
+                    depth - 1,
+                );
                 if score > max_score {
                     max_score = score;
                     best_move = Some(mv);
@@ -163,7 +161,8 @@ impl AI {
 
 fn alphabeta_negamax(
     board: &Board,
-    move_list: &MoveList,
+    // This list does not include the current board
+    mut board_list: &mut Vec<Board>,
     mut alpha: i16,
     beta: i16,
     depth: u8,
@@ -186,12 +185,10 @@ fn alphabeta_negamax(
             let mut new_board = *board;
             new_board.apply_move(&mv);
 
-            let next_move_list = MoveList {
-                mv: &mv,
-                prev: Some(move_list),
-            };
+            board_list.push(*board);
+            let score = -alphabeta_negamax(&new_board, &mut board_list, -beta, -alpha, depth - 1);
+            board_list.pop();
 
-            let score = -alphabeta_negamax(&new_board, &next_move_list, -beta, -alpha, depth - 1);
             if score >= beta {
                 return beta;
             } else if score > alpha {
