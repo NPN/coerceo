@@ -67,18 +67,16 @@ pub fn generate_laurentius() -> ColorMap<BitBoard> {
 
 pub struct LookupTable<T>(ColorMap<T>);
 
-// This macro is a substitute for const generics
-macro_rules! lookup_table_impl {
-    ($len:expr) => {
-        impl LookupTable<[BitBoard; $len]> {
-            pub fn bb_get(&self, bb: BitBoard, color: Color) -> BitBoard {
-                self.0.get_ref(color)[bb.trailing_zeros() as usize]
-            }
-            pub fn index_get(&self, index: usize, color: Color) -> BitBoard {
-                self.0.get_ref(color)[index]
-            }
-        }
-    };
+impl LookupTable<[BitBoard; 57]> {
+    pub fn bb_get(&self, bb: BitBoard, color: Color) -> BitBoard {
+        self.0.get_ref(color)[bb.trailing_zeros() as usize]
+    }
+}
+
+impl LookupTable<[BitBoard; 19]> {
+    pub fn index_get(&self, index: usize, color: Color) -> BitBoard {
+        self.0.get_ref(color)[index]
+    }
 }
 
 macro_rules! lookup_table {
@@ -89,9 +87,6 @@ macro_rules! lookup_table {
         });
     };
 }
-
-lookup_table_impl!(19);
-lookup_table_impl!(57);
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 lookup_table!(
