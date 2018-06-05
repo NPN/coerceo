@@ -171,13 +171,14 @@ fn alphabeta_negamax(
     depth: u8,
 ) -> i16 {
     let set_ttable = |eval_type, score| {
+        let zobrist = board.zobrist();
         TTable::set(
-            board.zobrist(),
+            zobrist,
             Entry {
                 eval_type,
                 depth,
                 score,
-                board: *board,
+                zobrist,
             },
         );
     };
@@ -207,7 +208,7 @@ fn alphabeta_negamax(
             }
         }
 
-        if entry.board == *board && entry.depth >= depth {
+        if entry.zobrist == board.zobrist() && entry.depth >= depth {
             match entry.eval_type {
                 EvalType::Exact => {
                     return entry.score;

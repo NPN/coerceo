@@ -15,7 +15,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use model::board::Board;
 use model::zobrist::ZobristHash;
 
 const TABLE_SIZE: usize = 1 << 20;
@@ -55,6 +54,5 @@ pub struct Entry {
     pub eval_type: EvalType,
     pub depth: u8,
     pub score: i16,
-    // Adding a board to each entry lets us prevent key collisions at a large memory cost
-    pub board: Board,
+    pub zobrist: ZobristHash,
 }
