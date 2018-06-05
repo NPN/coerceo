@@ -25,7 +25,6 @@ use std::thread::{self, JoinHandle};
 use model::ttable::{Entry, EvalType, TTable};
 use model::{Board, Move, Outcome};
 
-const INFINITY: i16 = 0x7FFF;
 const NEG_INFINITY: i16 = -0x7FFF;
 const LOSE: i16 = -0x4000;
 // Small contempt factor to discourage draws
@@ -136,56 +135,42 @@ impl AI {
                 .collect();
             board_list.reverse();
 
-            // 2-ply iterative deepening
             let mut moves: Vec<(Move, i16)> = board
                 .generate_moves()
-                .into_iter()
-                .map(|mv| {
-                    let mut new_board = board;
-                    new_board.apply_move(&mv);
-
-                    let score = -alphabeta_negamax(
-                        &new_board,
-                        &mut board_list,
-                        NEG_INFINITY,
-                        INFINITY,
-                        1,
-                        &mut ttable,
-                    );
-                    (mv, score)
-                })
+                .map(|mv| (mv, NEG_INFINITY))
                 .collect();
+            if moves.len() == 0 {
+                panic!("AI has no moves");
+            }
 
-            moves.sort_by(|&(_, a), &(_, b)| b.cmp(&a));
-
-            let mut max_score = NEG_INFINITY;
-            let mut best_move = None;
-            for (mv, _) in moves {
+            for depth in 0..depth {
                 if stop_signal_clone.load(Ordering::Relaxed) {
                     return;
                 }
+                let max_score = moves[0].1;
+                // TODO: use the scores here are a kind of aspiration window?
+                moves = moves
+                    .into_iter()
+                    .map(|(mv, _)| {
+                        let mut new_board = board;
+                        new_board.apply_move(&mv);
 
-                let mut new_board = board;
-                new_board.apply_move(&mv);
-
-                let score = -alphabeta_negamax(
-                    &new_board,
-                    &mut board_list,
-                    NEG_INFINITY,
-                    -max_score,
-                    depth - 1,
-                    &mut ttable,
-                );
-                if score > max_score {
-                    max_score = score;
-                    best_move = Some(mv);
-                }
+                        let score = -alphabeta_negamax(
+                            &new_board,
+                            &mut board_list,
+                            NEG_INFINITY,
+                            -max_score,
+                            depth,
+                            &mut ttable,
+                        );
+                        (mv, score)
+                    })
+                    .collect();
+                moves.sort_by(|&(_, a), &(_, b)| b.cmp(&a));
             }
-
-            match best_move {
-                Some(mv) => move_sender.send(mv).expect("AI failed to send Move"),
-                None => panic!("AI failed to find a move"),
-            }
+            move_sender
+                .send(moves[0].0)
+                .expect("AI failed to send Move");
         });
 
         self.status = Status::Thinking {
