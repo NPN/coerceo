@@ -194,7 +194,7 @@ fn alphabeta_negamax(
             // Weight score by depth to encourage shorter wins. The shorter the win, the greater
             // `depth` will be, and so the larger the score will be. This also encourages the AI to
             // prolong a loss.
-            let score = LOSE - depth as i16;
+            let score = LOSE - i16::from(depth);
             set_ttable(EvalType::Exact, score);
             return score;
         }
