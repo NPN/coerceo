@@ -31,7 +31,11 @@ const LOSE: i16 = -0x4000;
 // Small contempt factor to discourage draws
 const DRAW: i16 = 1;
 
-pub enum AI {
+pub struct AI {
+    status: Status,
+}
+
+enum Status {
     Idle,
     // Either the AI thread is running, or there is a move waiting to be received
     Thinking {
@@ -45,55 +49,65 @@ pub enum AI {
 }
 
 impl AI {
-    pub fn new() -> AI {
-        AI::Idle
+    pub fn new() -> Self {
+        Self {
+            status: Status::Idle,
+        }
     }
 
     pub fn is_idle(&self) -> bool {
-        match self {
-            AI::Idle => true,
-            AI::Thinking { .. } => false,
+        match self.status {
+            Status::Idle => true,
+            Status::Thinking { .. } => false,
         }
     }
 
     pub fn stop(&mut self) {
-        if let AI::Thinking { stop_signal, .. } = self {
+        if let Status::Thinking {
+            ref stop_signal, ..
+        } = self.status
+        {
             stop_signal.store(true, Ordering::Relaxed);
-            *self = AI::Idle;
         }
+        // Unconditionally assign because without NLL, we can't put this in the if let block above
+        self.status = Status::Idle;
     }
 
     pub fn try_recv(&mut self) -> Option<Move> {
         use self::TryRecvError::*;
 
-        match self {
-            AI::Idle => None,
-            AI::Thinking { move_recv, .. } => match move_recv.try_recv() {
-                Ok(mv) => {
-                    *self = AI::Idle;
-                    Some(mv)
-                }
-                Err(Empty) => None,
+        let result;
+        match self.status {
+            Status::Idle => result = None,
+            Status::Thinking { ref move_recv, .. } => match move_recv.try_recv() {
+                Ok(mv) => result = Some(mv),
+                Err(Empty) => result = None,
                 Err(Disconnected) => panic!("Tried to receive move from disconnected sender"),
             },
         }
+
+        // We can't set status in the Ok(mv) arm above without NLL
+        if let Some(_) = result {
+            self.status = Status::Idle;
+        }
+        result
     }
 
     pub fn think(&mut self, board: Board, board_list: Vec<Board>, depth: u8) {
         assert_ne!(depth, 0);
 
-        let prev_ai = mem::replace(self, AI::Idle);
+        let prev_status = mem::replace(&mut self.status, Status::Idle);
 
         let (move_sender, move_recv) = mpsc::channel();
         let stop_signal = Arc::new(AtomicBool::new(false));
         let stop_signal_clone = stop_signal.clone();
 
         let handle = thread::spawn(move || {
-            if let AI::Thinking {
+            if let Status::Thinking {
                 stop_signal,
                 handle,
                 ..
-            } = prev_ai
+            } = prev_status
             {
                 stop_signal.store(true, Ordering::Relaxed);
                 handle
@@ -154,7 +168,7 @@ impl AI {
             }
         });
 
-        *self = AI::Thinking {
+        self.status = Status::Thinking {
             move_recv,
             stop_signal,
             handle,
