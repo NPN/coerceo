@@ -19,7 +19,7 @@ use std::cmp;
 use std::mem;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, TryRecvError};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 
 use model::ttable::{Entry, EvalType, TTable};
@@ -33,6 +33,7 @@ const DRAW: i16 = 1;
 
 pub struct AI {
     status: Status,
+    ttable: Arc<Mutex<TTable>>,
 }
 
 enum Status {
@@ -52,6 +53,7 @@ impl AI {
     pub fn new() -> Self {
         Self {
             status: Status::Idle,
+            ttable: Arc::new(Mutex::new(TTable::new())),
         }
     }
 
@@ -102,6 +104,8 @@ impl AI {
         let stop_signal = Arc::new(AtomicBool::new(false));
         let stop_signal_clone = stop_signal.clone();
 
+        let ttable_mutex = self.ttable.clone();
+
         let handle = thread::spawn(move || {
             if let Status::Thinking {
                 stop_signal,
@@ -114,6 +118,15 @@ impl AI {
                     .join()
                     .expect("Old AI thread panicked when new AI thread joined on it");
             }
+
+            use std::sync::TryLockError::*;
+            let mut ttable = match ttable_mutex.try_lock() {
+                Ok(table) => table,
+                Err(Poisoned(_)) => panic!("Transposition table mutex is poisoned"),
+                Err(WouldBlock) => {
+                    panic!("Couldn't lock transposition table, is another AI thread still running?")
+                }
+            };
 
             // Only take positions after the last irreversible move
             let mut board_list: Vec<_> = board_list
@@ -131,8 +144,14 @@ impl AI {
                     let mut new_board = board;
                     new_board.apply_move(&mv);
 
-                    let score =
-                        -alphabeta_negamax(&new_board, &mut board_list, NEG_INFINITY, INFINITY, 1);
+                    let score = -alphabeta_negamax(
+                        &new_board,
+                        &mut board_list,
+                        NEG_INFINITY,
+                        INFINITY,
+                        1,
+                        &mut ttable,
+                    );
                     (mv, score)
                 })
                 .collect();
@@ -155,6 +174,7 @@ impl AI {
                     NEG_INFINITY,
                     -max_score,
                     depth - 1,
+                    &mut ttable,
                 );
                 if score > max_score {
                     max_score = score;
@@ -183,10 +203,11 @@ fn alphabeta_negamax(
     mut alpha: i16,
     mut beta: i16,
     depth: u8,
+    ttable: &mut TTable,
 ) -> i16 {
-    let set_ttable = |eval_type, score| {
+    let set_ttable = |ttable: &mut TTable, eval_type, score| {
         let zobrist = board.zobrist();
-        TTable::set(
+        ttable.set(
             zobrist,
             Entry {
                 eval_type,
@@ -200,7 +221,7 @@ fn alphabeta_negamax(
     match board.outcome() {
         Outcome::Draw => {
             // This only works because the draw Outcome does not consider draw by repetition
-            set_ttable(EvalType::Exact, DRAW);
+            set_ttable(ttable, EvalType::Exact, DRAW);
             return DRAW;
         }
         Outcome::Win(color) => {
@@ -209,13 +230,13 @@ fn alphabeta_negamax(
             // `depth` will be, and so the larger the score will be. This also encourages the AI to
             // prolong a loss.
             let score = LOSE - i16::from(depth);
-            set_ttable(EvalType::Exact, score);
+            set_ttable(ttable, EvalType::Exact, score);
             return score;
         }
         Outcome::InProgress => {}
     }
 
-    if let Some(entry) = TTable::get(board.zobrist()) {
+    if let Some(entry) = ttable.get(board.zobrist()) {
         if board_list.len() >= 8 && board_list.iter().filter(|&&b| b == *board).count() >= 2 {
             return DRAW;
         }
@@ -246,19 +267,26 @@ fn alphabeta_negamax(
             new_board.apply_move(&mv);
 
             board_list.push(*board);
-            let score = -alphabeta_negamax(&new_board, &mut board_list, -beta, -alpha, depth - 1);
+            let score = -alphabeta_negamax(
+                &new_board,
+                &mut board_list,
+                -beta,
+                -alpha,
+                depth - 1,
+                ttable,
+            );
             board_list.pop();
 
             best_score = cmp::max(score, best_score);
 
             if score >= beta {
-                set_ttable(EvalType::Beta, score);
+                set_ttable(ttable, EvalType::Beta, score);
                 return beta;
             } else if score > alpha {
                 alpha = score;
             }
         }
-        set_ttable(EvalType::Exact, best_score);
+        set_ttable(ttable, EvalType::Exact, best_score);
         alpha
     }
 }

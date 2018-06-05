@@ -20,25 +20,22 @@ use model::zobrist::ZobristHash;
 const TABLE_SIZE: usize = 1 << 20;
 const TABLE_MASK: u64 = TABLE_SIZE as u64 - 1;
 
-// No locks, only use with one thread at a time
-static mut TRANSPOSITION_TABLE: [Option<Entry>; TABLE_SIZE] = [None; TABLE_SIZE];
-
-// TODO: Don't use a global mutable array?
-pub struct TTable;
+// This could just by an array, but because arrays are allocated on the stack (even when
+// doing Box::new(array)), we need to use a Vec
+pub struct TTable(Vec<Option<Entry>>);
 
 impl TTable {
-    pub fn get(zobrist: ZobristHash) -> &'static Option<Entry> {
+    pub fn new() -> Self {
+        TTable(vec![None; TABLE_SIZE])
+    }
+    pub fn get(&self, zobrist: ZobristHash) -> &Option<Entry> {
         let hash = zobrist.get() & TABLE_MASK;
-
-        unsafe { &TRANSPOSITION_TABLE[hash as usize] }
+        &self.0[hash as usize]
     }
     // TODO: Use more sophisticated replacement strategy
-    pub fn set(zobrist: ZobristHash, entry: Entry) {
+    pub fn set(&mut self, zobrist: ZobristHash, entry: Entry) {
         let hash = zobrist.get() & TABLE_MASK;
-
-        unsafe {
-            TRANSPOSITION_TABLE[hash as usize] = Some(entry);
-        }
+        self.0[hash as usize] = Some(entry);
     }
 }
 
