@@ -15,6 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#![cfg_attr(feature = "cargo-clippy", allow(unreadable_literal))]
+
 use model::bitboard::{BitBoard, BitBoardIter};
 use model::{Color, ColorMap};
 
