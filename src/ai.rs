@@ -202,10 +202,8 @@ fn alphabeta_negamax(
     }
 
     if let Some(entry) = TTable::get(board.zobrist()) {
-        if board_list.len() >= 8 {
-            if board_list.iter().filter(|&&b| b == *board).count() >= 2 {
-                return DRAW;
-            }
+        if board_list.len() >= 8 && board_list.iter().filter(|&&b| b == *board).count() >= 2 {
+            return DRAW;
         }
 
         if entry.zobrist == board.zobrist() && entry.depth >= depth {
