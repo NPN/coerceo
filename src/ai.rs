@@ -147,7 +147,7 @@ impl AI {
                 if stop_signal_clone.load(Ordering::Relaxed) {
                     return;
                 }
-                let max_score = moves[0].1;
+                let mut max_score = NEG_INFINITY;
                 // TODO: use the scores here are a kind of aspiration window?
                 moves = moves
                     .into_iter()
@@ -163,6 +163,10 @@ impl AI {
                             depth,
                             &mut ttable,
                         );
+
+                        if score > max_score {
+                            max_score = score;
+                        }
                         (mv, score)
                     })
                     .collect();
