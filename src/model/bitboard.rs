@@ -45,3 +45,11 @@ impl Iterator for BitBoardIter {
         (n, Some(n))
     }
 }
+
+pub fn is_one_bit_set(bb: BitBoard) -> bool {
+    (bb != 0) && (bb & (bb - 1) == 0)
+}
+
+pub fn to_index(bb: BitBoard) -> usize {
+    bb.trailing_zeros() as usize / 3
+}

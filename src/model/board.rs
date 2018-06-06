@@ -17,7 +17,7 @@
 
 use std::cmp;
 
-use model::bitboard::{BitBoard, BitBoardIter};
+use model::bitboard::{self, BitBoard, BitBoardIter};
 use model::constants::*;
 use model::zobrist::ZobristHash;
 use model::{Color, ColorMap, FieldCoord, HexCoord, Move};
@@ -200,6 +200,81 @@ impl Board {
                     .map(move |exchanged| Move::Exchange(exchanged, opp_color)),
             )
     }
+    pub fn generate_captures(&self) -> impl Iterator<Item = Move> {
+        let hexes = self.hexes;
+        let can_exchange = self.can_exchange();
+
+        let our_color = self.turn;
+        let our_fields = self.fields.get(our_color);
+
+        let opp_color = self.turn.switch();
+        let opp_fields = self.fields.get(opp_color);
+
+        // Each entry represents a (origin, destinations) bitboard pair. If we make these moves, they
+        // will cause us to capture a hex.
+        let mut hex_capture_moves = [(0, 0); 19];
+
+        // By exchanging these pieces, we also remove a hex, which causes another opponent piece to
+        // be captured.
+        let mut exchange_captures = [0; 19];
+
+        for i in 0..18 {
+            if self.is_hex_extant(i) && self.is_hex_maybe_removable(i) {
+                let hex = HEX_MASK[i];
+
+                let opp_piece = opp_fields & hex;
+                if can_exchange && bitboard::is_one_bit_set(opp_piece) {
+                    exchange_captures[i] = opp_piece;
+                }
+
+                let our_piece = our_fields & hex;
+                if bitboard::is_one_bit_set(our_piece) {
+                    let vertex_neighbors = VERTEX_NEIGHBORS.bb_get(our_piece, our_color)
+                        & (!hex & !our_fields & hexes);
+                    hex_capture_moves[i] = (our_piece, vertex_neighbors);
+                }
+            }
+        }
+
+        // TODO: Is this iterator madness actually efficient?
+        BitBoardIter::new(opp_fields)
+            .flat_map(move |opp_piece| {
+                let empty_edge_neighbor =
+                    EDGE_NEIGHBORS.bb_get(opp_piece, opp_color) & (!our_fields & hexes);
+
+                let mut exchange_piece = 0;
+                let vertex_neighbors = if bitboard::is_one_bit_set(empty_edge_neighbor) {
+                    // Get the exchange capture for this hexagon, if there is one.
+                    // Duplicate moves might be searched here if the opponent has two pieces which can
+                    // be captured by removing this one hex.
+                    exchange_piece = exchange_captures[bitboard::to_index(empty_edge_neighbor)];
+
+                    VERTEX_NEIGHBORS.bb_get(empty_edge_neighbor, our_color) & our_fields
+                } else {
+                    0
+                };
+                BitBoardIter::new(vertex_neighbors)
+                // These are plain "surround a piece" capture moves
+                .map(move |bb| Move::Move(bb, empty_edge_neighbor, our_color))
+                .chain(
+                    BitBoardIter::new(exchange_piece)
+                        .map(move |bb| Move::Exchange(bb, opp_color))
+                )
+            })
+            .chain(
+                // Stupid trick to capture hex_capture_moves in a closure. We can't write
+                // hex_capture_moves.iter()... because the iterator will outlive the array. We store
+                // the captures in an array to begin with because we want to be efficient and not iterate
+                // over the extant/maybe_removable hexes again.
+                (0..18)
+                    .into_iter()
+                    .map(move |i| hex_capture_moves[i])
+                    .flat_map(move |(origin, dests)| {
+                        BitBoardIter::new(dests)
+                            .map(move |dest| Move::Move(origin, dest, our_color))
+                    }),
+            )
+    }
     pub fn available_moves_for_piece(&self, field: &FieldCoord) -> Vec<FieldCoord> {
         if self.is_piece_on_field(field) {
             let color = field.color();
@@ -353,7 +428,10 @@ impl Board {
         if (self.fields.white | self.fields.black) & HEX_MASK[index] != 0 {
             return false;
         }
-
+        self.is_hex_maybe_removable(index)
+    }
+    /// Assuming this hex is empty, would it be removable?
+    fn is_hex_maybe_removable(&self, index: usize) -> bool {
         // Combining colors here is okay because there won't be overlaps
         let hex = self.hexes
             & (HEX_FIELD_NEIGHBORS.index_get(index, Color::White)

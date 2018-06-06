@@ -242,7 +242,7 @@ fn alphabeta_negamax(
     }
 
     if depth == 0 {
-        evaluate(board)
+        quiescence_search(board, alpha, beta)
     } else {
         let mut best_score = NEG_INFINITY;
 
@@ -274,6 +274,30 @@ fn alphabeta_negamax(
         set_ttable(ttable, EvalType::Exact, best_score);
         alpha
     }
+}
+
+// TODO: use ttable here?
+fn quiescence_search(board: &Board, mut alpha: i16, beta: i16) -> i16 {
+    let stand_pat = evaluate(board);
+    if stand_pat >= beta {
+        return beta;
+    } else if alpha < stand_pat {
+        alpha = stand_pat;
+    }
+
+    for mv in board.generate_captures() {
+        let mut new_board = *board;
+        new_board.apply_move(&mv);
+
+        let score = quiescence_search(&new_board, -beta, -alpha);
+
+        if score >= beta {
+            return beta;
+        } else if score > alpha {
+            alpha = score;
+        }
+    }
+    return alpha;
 }
 
 fn evaluate(board: &Board) -> i16 {
