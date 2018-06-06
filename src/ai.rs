@@ -149,27 +149,24 @@ impl AI {
                 }
                 let mut max_score = NEG_INFINITY;
                 // TODO: use the scores here are a kind of aspiration window?
-                moves = moves
-                    .into_iter()
-                    .map(|(mv, _)| {
-                        let mut new_board = board;
-                        new_board.apply_move(&mv);
+                for pair in &mut moves {
+                    let mut new_board = board;
+                    new_board.apply_move(&pair.0);
 
-                        let score = -alphabeta_negamax(
-                            &new_board,
-                            &mut board_list,
-                            NEG_INFINITY,
-                            -max_score,
-                            depth,
-                            &mut ttable,
-                        );
+                    let score = -alphabeta_negamax(
+                        &new_board,
+                        &mut board_list,
+                        NEG_INFINITY,
+                        -max_score,
+                        depth,
+                        &mut ttable,
+                    );
 
-                        if score > max_score {
-                            max_score = score;
-                        }
-                        (mv, score)
-                    })
-                    .collect();
+                    if score > max_score {
+                        max_score = score;
+                    }
+                    pair.1 = score;
+                }
                 moves.sort_by(|&(_, a), &(_, b)| b.cmp(&a));
             }
             move_sender
