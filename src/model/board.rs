@@ -190,8 +190,10 @@ impl Board {
 
         BitBoardIter::new(fields)
             .flat_map(move |origin| {
-                let vertex_neighbors = VERTEX_NEIGHBORS.bb_get(origin, turn) & (!fields & hexes);
-                BitBoardIter::new(vertex_neighbors).map(move |dest| Move::Move(origin, dest, turn))
+                let empty_vertex_neighbors =
+                    VERTEX_NEIGHBORS.bb_get(origin, turn) & (!fields & hexes);
+                BitBoardIter::new(empty_vertex_neighbors)
+                    .map(move |dest| Move::Move(origin, dest, turn))
             })
             .chain(
                 BitBoardIter::new(opp_fields)
