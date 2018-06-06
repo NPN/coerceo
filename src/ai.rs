@@ -88,7 +88,7 @@ impl AI {
         }
 
         // We can't set status in the Ok(mv) arm above without NLL
-        if let Some(_) = result {
+        if result.is_some() {
             self.status = Status::Idle;
         }
         result
@@ -139,7 +139,7 @@ impl AI {
                 .generate_moves()
                 .map(|mv| (mv, NEG_INFINITY))
                 .collect();
-            if moves.len() == 0 {
+            if moves.is_empty() {
                 panic!("AI has no moves");
             }
 
@@ -298,7 +298,7 @@ fn quiescence_search(board: &Board, mut alpha: i16, beta: i16) -> i16 {
             alpha = score;
         }
     }
-    return alpha;
+    alpha
 }
 
 fn evaluate(board: &Board) -> i16 {
