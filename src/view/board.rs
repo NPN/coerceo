@@ -40,7 +40,16 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
     let cursor_pos = Vec2::from(cursor_pos);
     let mouse_pos = Vec2::from(mouse_pos);
 
-    let side_len = (size.x / 8.0).min(size.y / (5.0 * SQRT_3));
+    let side_len = {
+        // hex_spacing  =          m * side_len + b
+        // board_width  =          8 * side_len + 6 * SQRT_3 * hex_spacing
+        // board_height = 5 * SQRT_3 * side_len +          4 * hex_spacing
+        let (m, b) = HEX_SPACING_COEFF;
+        let width = (size.x - 6.0 * SQRT_3 * b) / (8.0 + 6.0 * SQRT_3 * m);
+        let height = (size.y - 4.0 * b) / (5.0 * SQRT_3 + 4.0 * m);
+
+        width.min(height)
+    };
     let origin = cursor_pos + size / 2.0;
 
     let extant_hexes = model.board.extant_hexes();

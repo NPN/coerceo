@@ -22,6 +22,9 @@ use view::vec2::Vec2;
 
 const SQRT_3: f32 = 1.732_050_807_568_877_f32;
 
+// Slope and y-intercept
+pub const HEX_SPACING_COEFF: (f32, f32) = (0.0331, 1.45);
+
 // Color format is 0xaa_bb_gg_rr
 const FIELD_WHITE: u32 = 0xff_cf_e4_f3;
 const FIELD_BLACK: u32 = 0xff_78_85_99;
@@ -138,6 +141,11 @@ fn field_vertexes(coord: &FieldCoord, origin: Vec2, size: f32) -> (Vec2, Vec2, V
     (center, center + v1, center + v2)
 }
 
+fn hex_spacing(size: f32) -> f32 {
+    // Again, equation derived from human judgment and linear regression
+    HEX_SPACING_COEFF.0 * size + HEX_SPACING_COEFF.1
+}
+
 // Algorithm based on http://www.redblobgames.com/grids/hexagons/#hex-to-pixel
 fn hex_to_pixel(coord: &HexCoord, origin: Vec2, size: f32) -> Vec2 {
     let x = f32::from(coord.x());
@@ -145,83 +153,94 @@ fn hex_to_pixel(coord: &HexCoord, origin: Vec2, size: f32) -> Vec2 {
 
     let p = Vec2::new(size * (3.0 / 2.0) * x, size * -SQRT_3 * (x / 2.0 + y));
 
-    origin + p
+    origin + p * (1.0 + hex_spacing(size) / (size * SQRT_3))
 }
 
 // Algorithm based on http://www.redblobgames.com/grids/hexagons/#pixel-to-hex
 pub fn pixel_to_field(p: Vec2, origin: Vec2, size: f32) -> Option<FieldCoord> {
-    let v = p - origin;
+    // Finding the hex is tricky because the hexes have gaps between them.
+    // First, we find the rounded hex coordinate with a scaled up size that accounts for the gap.
 
-    let q = v.x * (2.0 / 3.0) / size;
-    let r = (-v.x - SQRT_3 * v.y) / (size * 3.0);
+    let larger_size = size + hex_spacing(size) / SQRT_3;
+    round_hex_coord(p - origin, larger_size)
+        .and_then(|hex| {
+            // This gives us the correct hex--if each hex was big enough to close the gaps. But since
+            // there are gaps, we need to exclude pixels which lie in those gaps. We do this by finding
+            // the rounded hex coordinate again with the correct size. If the pixel is still in the right
+            // hex, then we know we are not in a gap.
 
-    round_hex_coord(q, r).and_then(|hex| {
-        /*
-           To find the field, we subtract the converted hex coordinates (q, r) from the rounded hex
-           coordinates (hex) to get the fractional part of the coordinates. Here is a diagram of a
-           single hex, with the fractional coordinates of each of its vertexes in the hex coordinate
-           system:
+            let pixel_offset = p - hex_to_pixel(&hex, origin, size);
+            if HexCoord::try_new(0, 0) == round_hex_coord(pixel_offset, size) {
+                Some((hex, pixel_to_hex_uniform(pixel_offset, size)))
+            } else {
+                None
+            }
+        })
+        .and_then(|(hex, frac_hex)| {
+            /*
+               To find the field, we start with the fractional coordinates. Here is a diagram of a single
+               hex, with the fractional coordinates of each of its vertexes in the hex coordinate system:
 
-                (-1/3, 2/3) _______ (1/3, 1/3)
-                           /\     /\
-                          /  \   /  \
-                         /    \ /    \
-            (-2/3, 1/3) (----(0,0)----) (2/3, -1/3)
-                         \    / \    /
-                          \  /   \  /
-              (-1/3, -1/3) \/_____\/ (1/3, -2/3)
+                    (-1/3, 2/3) _______ (1/3, 1/3)
+                               /\     /\
+                              /  \   /  \
+                             /    \ /    \
+                (-2/3, 1/3) (----(0,0)----) (2/3, -1/3)
+                             \    / \    /
+                              \  /   \  /
+                  (-1/3, -1/3) \/_____\/ (1/3, -2/3)
 
-           Suppose our converted coordinates were (q, r) = (1.333, 0.583). Our rounded coordinates
-           are hex = (1, 1), and so our fractional coordinates are (0.333, -0.417).
+               Suppose our converted coordinates were (q, r) = (1.333, 0.583). Our rounded coordinates
+               are hex = (1, 1), and so our fractional coordinates are (0.333, -0.417).
 
-           We now define three linear equations that will split this hexagon into its six fields:
+               We now define three linear equations that will split this hexagon into its six fields:
 
-                            _______ y = x (/)
-                           /\     /\
-                          /  \   /  \
-                         /    \ /    \
-                        (------X------) y = -x/2 (-)
-                         \    / \    /
-                          \  /   \  /
-                           \/_____\/ y = -2x (\)
+                                _______ y = x (/)
+                               /\     /\
+                              /  \   /  \
+                             /    \ /    \
+                            (------X------) y = -x/2 (-)
+                             \    / \    /
+                              \  /   \  /
+                               \/_____\/ y = -2x (\)
 
-           Using these three equations as linear inequalities, we can check any pair of fractional
-           coordinates and find which field it is in. (As a reminder, fields are numbered clockwise
-           starting from 0 at the top.)
+               Using these three equations as linear inequalities, we can check any pair of fractional
+               coordinates and find which field it is in. (As a reminder, fields are numbered clockwise
+               starting from 0 at the top.)
 
-           For our example (0.333, -0.417), we see that:
-               y + x/2 >= 0, so our field is above (-), and is either 5, 0, or 1.
-               y +  2x >= 0, so our field is to the right of (\), and is either 0 or 1.
-               y -   x <  0, so our field is to the right of (/), and is 1.
-        */
-        let x_diff = q - f32::from(hex.x());
-        let y_diff = r - f32::from(hex.y());
-        let mut i = 0;
+               For our example (0.333, -0.417), we see that:
+                   y + x/2 >= 0, so our field is above (-), and is either 5, 0, or 1.
+                   y +  2x >= 0, so our field is to the right of (\), and is either 0 or 1.
+                   y -   x <  0, so our field is to the right of (/), and is 1.
+            */
+            let Vec2 { x, y } = frac_hex;
+            let mut i = 0;
 
-        if y_diff + x_diff / 2.0 >= 0.0 {
-            i |= 0b100;
-        }
-        if y_diff + x_diff * 2.0 >= 0.0 {
-            i |= 0b010;
-        }
-        if y_diff - x_diff >= 0.0 {
-            i |= 0b001;
-        }
+            if y + x / 2.0 >= 0.0 {
+                i |= 0b100;
+            }
+            if y + x * 2.0 >= 0.0 {
+                i |= 0b010;
+            }
+            if y - x >= 0.0 {
+                i |= 0b001;
+            }
 
-        Some(hex.to_field(match i {
-            0 => 3,
-            1 => 4,
-            2 => 2,
-            5 => 5,
-            6 => 1,
-            7 => 0,
-            _ => unreachable!(),
-        }))
-    })
+            Some(hex.to_field(match i {
+                0 => 3,
+                1 => 4,
+                2 => 2,
+                5 => 5,
+                6 => 1,
+                7 => 0,
+                _ => unreachable!(),
+            }))
+        })
 }
 
 // Algorithm from http://www.redblobgames.com/grids/hexagons/#rounding
-fn round_hex_coord(x: f32, y: f32) -> Option<HexCoord> {
+fn round_hex_coord(v: Vec2, size: f32) -> Option<HexCoord> {
+    let Vec2 { x, y } = pixel_to_hex_uniform(v, size);
     let z = -x - y;
 
     let mut rx = x.round();
@@ -239,4 +258,12 @@ fn round_hex_coord(x: f32, y: f32) -> Option<HexCoord> {
     }
 
     HexCoord::try_new(rx as i8, ry as i8)
+}
+
+// This function does not take into account gaps. It is only a helper for the other functions.
+fn pixel_to_hex_uniform(v: Vec2, size: f32) -> Vec2 {
+    Vec2 {
+        x: v.x * (2.0 / 3.0) / size,
+        y: (-v.x - SQRT_3 * v.y) / (size * 3.0),
+    }
 }
