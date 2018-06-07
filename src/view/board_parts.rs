@@ -126,37 +126,16 @@ fn field_vertexes(coord: &FieldCoord, origin: Vec2, size: f32) -> (Vec2, Vec2, V
     let northeast = Vec2::new(size / 2.0, -height);
     let southeast = Vec2::new(size / 2.0, height);
 
-    let v1;
-    let v2;
-    match coord.f() {
-        0 => {
-            v1 = center + northwest;
-            v2 = center + northeast;
-        }
-        1 => {
-            v1 = center + northeast;
-            v2 = center + east;
-        }
-        2 => {
-            v1 = center + east;
-            v2 = center + southeast;
-        }
-        3 => {
-            v1 = center + southeast;
-            v2 = center + southwest;
-        }
-        4 => {
-            v1 = center + southwest;
-            v2 = center + west;
-        }
-        5 => {
-            v1 = center + west;
-            v2 = center + northwest;
-        }
+    let (v1, v2) = match coord.f() {
+        0 => (northwest, northeast),
+        1 => (northeast, east),
+        2 => (east, southeast),
+        3 => (southeast, southwest),
+        4 => (southwest, west),
+        5 => (west, northwest),
         _ => unreachable!(),
     };
-
-    (center, v1, v2)
+    (center, center + v1, center + v2)
 }
 
 // Algorithm based on http://www.redblobgames.com/grids/hexagons/#hex-to-pixel
