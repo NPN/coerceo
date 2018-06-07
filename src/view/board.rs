@@ -24,12 +24,9 @@ use view::Event;
 
 const SQRT_3: f32 = 1.732_050_807_568_877_f32;
 
-// #f7b102
-const SELECT_HIGHLIGHT: [f32; 4] = [0.9686, 0.6941, 0.0078, 0.8];
-// #ffff00
-const LAST_MOVE_HIGHLIGHT: [f32; 4] = [1.0, 1.0, 0.0, 0.8];
-// #ff0000
-const EXCHANGE_HIGHLIGHT: [f32; 4] = [1.0, 0.0, 0.0, 0.8];
+const SELECT_HIGHLIGHT: u32 = 0xcc_02_b1_f7;
+const LAST_MOVE_HIGHLIGHT: u32 = 0xcc_00_ff_ff;
+const EXCHANGE_HIGHLIGHT: u32 = 0xcc_00_00_ff;
 
 pub fn board(model: &Model, size: Vec2) -> Option<Event> {
     let mouse_click;

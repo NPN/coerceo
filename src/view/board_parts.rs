@@ -15,29 +15,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use imgui_sys::{self, ImVec4};
+use imgui_sys;
 
 use model::{Color, FieldCoord, HexCoord};
 use view::vec2::Vec2;
 
 const SQRT_3: f32 = 1.732_050_807_568_877_f32;
 
-// #f3e4cf
-const FIELD_WHITE: [f32; 4] = [0.9529, 0.8941, 0.8118, 1.0];
-// #998578
-const FIELD_BLACK: [f32; 4] = [0.6, 0.5216, 0.4706, 1.0];
-// #ffffff
-const PIECE_WHITE: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
-// #000000
-const PIECE_OUTLINE: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
-// #757575
-const PIECE_BLACK: [f32; 4] = [0.4588, 0.4588, 0.4588, 1.0];
-
-macro_rules! im_color {
-    ($v:expr) => {
-        imgui_sys::igColorConvertFloat4ToU32(ImVec4::from($v))
-    };
-}
+// Color format is 0xaa_bb_gg_rr
+const FIELD_WHITE: u32 = 0xff_cf_e4_f3;
+const FIELD_BLACK: u32 = 0xff_78_85_99;
+const PIECE_WHITE: u32 = 0xff_ff_ff_ff;
+const PIECE_BLACK: u32 = 0xff_75_75_75;
+const PIECE_OUTLINE: u32 = 0xff_00_00_00;
 
 pub fn draw_hex(coord: &HexCoord, origin: Vec2, size: f32) {
     for i in 0..6 {
@@ -49,8 +39,8 @@ fn draw_field(coord: &FieldCoord, origin: Vec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     unsafe {
         let color = match coord.color() {
-            Color::White => im_color!(FIELD_WHITE),
-            Color::Black => im_color!(FIELD_BLACK),
+            Color::White => FIELD_WHITE,
+            Color::Black => FIELD_BLACK,
         };
 
         let draw_list = imgui_sys::igGetWindowDrawList();
@@ -58,33 +48,23 @@ fn draw_field(coord: &FieldCoord, origin: Vec2, size: f32) {
     }
 }
 
-pub fn highlight_field(color: [f32; 4], coord: &FieldCoord, origin: Vec2, size: f32) {
+pub fn highlight_field(color: u32, coord: &FieldCoord, origin: Vec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     unsafe {
-        let highlight = im_color!(color);
-
         let draw_list = imgui_sys::igGetWindowDrawList();
-        imgui_sys::ImDrawList_AddTriangleFilled(
-            draw_list,
-            v1.into(),
-            v2.into(),
-            v3.into(),
-            highlight,
-        );
+        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1.into(), v2.into(), v3.into(), color);
     }
 }
 
-pub fn highlight_field_dot(color: [f32; 4], coord: &FieldCoord, origin: Vec2, size: f32) {
+pub fn highlight_field_dot(color: u32, coord: &FieldCoord, origin: Vec2, size: f32) {
     let center = field_center(coord, origin, size);
     unsafe {
-        let highlight = im_color!(color);
-
         let draw_list = imgui_sys::igGetWindowDrawList();
         imgui_sys::ImDrawList_AddCircleFilled(
             draw_list,
             center.into(),
             size / (4.0 * SQRT_3),
-            highlight,
+            color,
             15,
         );
     }
@@ -105,8 +85,8 @@ pub fn draw_piece(coord: &FieldCoord, origin: Vec2, size: f32) {
 
     unsafe {
         let color = match coord.color() {
-            Color::White => im_color!(PIECE_WHITE),
-            Color::Black => im_color!(PIECE_BLACK),
+            Color::White => PIECE_WHITE,
+            Color::Black => PIECE_BLACK,
         };
 
         let draw_list = imgui_sys::igGetWindowDrawList();
@@ -116,7 +96,7 @@ pub fn draw_piece(coord: &FieldCoord, origin: Vec2, size: f32) {
             v1.into(),
             v2.into(),
             v3.into(),
-            im_color!(PIECE_OUTLINE),
+            PIECE_OUTLINE,
             outline_size,
         );
     }
