@@ -17,7 +17,7 @@
 
 use imgui_sys;
 
-use model::{Color, FieldCoord, HexCoord};
+use model::{Color, ColorMap, FieldCoord, HexCoord};
 use view::vec2::Vec2;
 
 const SQRT_3: f32 = 1.732_050_807_568_877_f32;
@@ -26,11 +26,25 @@ const SQRT_3: f32 = 1.732_050_807_568_877_f32;
 pub const HEX_SPACING_COEFF: (f32, f32) = (0.0331, 1.45);
 
 // Color format is 0xaa_bb_gg_rr
-const FIELD_WHITE: u32 = 0xff_cf_e4_f3;
-const FIELD_BLACK: u32 = 0xff_78_85_99;
-const PIECE_WHITE: u32 = 0xff_ff_ff_ff;
-const PIECE_BLACK: u32 = 0xff_75_75_75;
-const PIECE_OUTLINE: u32 = 0xff_00_00_00;
+const FIELD_COLORS: ColorMap<u32> = ColorMap {
+    white: 0xff_e9_ef_f3,
+    black: 0xff_78_99_83,
+};
+const PIECE_OUTLINE: u32 = 0xff_23_23_23;
+const PIECE_COLORS: ColorMap<[u32; 3]> = ColorMap {
+    white: [
+        // Light, medium, and dark colors
+        0xff_f8_f8_f8,
+        0xff_e0_e0_e0,
+        0xff_bd_bd_bd,
+    ],
+    black: [
+        // Medium, light, and dark colors
+        0xff_68_68_68,
+        0xff_88_88_88,
+        0xff_58_58_58,
+    ],
+};
 
 pub fn draw_hex(coord: &HexCoord, origin: Vec2, size: f32) {
     for i in 0..6 {
@@ -41,13 +55,14 @@ pub fn draw_hex(coord: &HexCoord, origin: Vec2, size: f32) {
 fn draw_field(coord: &FieldCoord, origin: Vec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     unsafe {
-        let color = match coord.color() {
-            Color::White => FIELD_WHITE,
-            Color::Black => FIELD_BLACK,
-        };
-
         let draw_list = imgui_sys::igGetWindowDrawList();
-        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1.into(), v2.into(), v3.into(), color);
+        imgui_sys::ImDrawList_AddTriangleFilled(
+            draw_list,
+            v1.into(),
+            v2.into(),
+            v3.into(),
+            FIELD_COLORS.get(coord.color()),
+        );
     }
 }
 
@@ -77,31 +92,25 @@ pub fn draw_piece(coord: &FieldCoord, origin: Vec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     let center = field_center(coord, origin, size);
 
-    const SCALE: f32 = 0.7;
+    const SCALE: f32 = 0.75;
 
-    let v1 = center + (v1 - center) * SCALE;
-    let v2 = center + (v2 - center) * SCALE;
-    let v3 = center + (v3 - center) * SCALE;
+    let v1 = (center + (v1 - center) * SCALE).into();
+    let v2 = (center + (v2 - center) * SCALE).into();
+    let v3 = (center + (v3 - center) * SCALE).into();
+    let center = center.into();
 
     // Linear equation derived by human testing and regression
-    let outline_size = 0.032 * size - 0.335;
+    let outline_size = 0.032 * size - 0.535;
 
     unsafe {
-        let color = match coord.color() {
-            Color::White => PIECE_WHITE,
-            Color::Black => PIECE_BLACK,
-        };
-
         let draw_list = imgui_sys::igGetWindowDrawList();
-        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1.into(), v2.into(), v3.into(), color);
-        imgui_sys::ImDrawList_AddTriangle(
-            draw_list,
-            v1.into(),
-            v2.into(),
-            v3.into(),
-            PIECE_OUTLINE,
-            outline_size,
-        );
+
+        let colors = PIECE_COLORS.get_ref(coord.color());
+        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, center, colors[0]);
+        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v2, v3, center, colors[1]);
+        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v3, v1, center, colors[2]);
+
+        imgui_sys::ImDrawList_AddTriangle(draw_list, v1, v2, v3, PIECE_OUTLINE, outline_size);
     }
 }
 
@@ -121,24 +130,24 @@ fn field_vertexes(coord: &FieldCoord, origin: Vec2, size: f32) -> (Vec2, Vec2, V
     let center = hex_to_pixel(&coord.to_hex(), origin, size);
     let height = size * SQRT_3 / 2.0;
 
-    let west = Vec2::new(-size, 0.0);
-    let east = Vec2::new(size, 0.0);
+    let west = center + Vec2::new(-size, 0.0);
+    let east = center + Vec2::new(size, 0.0);
 
-    let northwest = Vec2::new(-size / 2.0, -height);
-    let southwest = Vec2::new(-size / 2.0, height);
-    let northeast = Vec2::new(size / 2.0, -height);
-    let southeast = Vec2::new(size / 2.0, height);
+    let northwest = center + Vec2::new(-size / 2.0, -height);
+    let southwest = center + Vec2::new(-size / 2.0, height);
+    let northeast = center + Vec2::new(size / 2.0, -height);
+    let southeast = center + Vec2::new(size / 2.0, height);
 
-    let (v1, v2) = match coord.f() {
-        0 => (northwest, northeast),
-        1 => (northeast, east),
-        2 => (east, southeast),
-        3 => (southeast, southwest),
-        4 => (southwest, west),
-        5 => (west, northwest),
+    // Vertexes are ordered clockwise for draw_piece to shade the sides.
+    match coord.f() {
+        0 => (center, northwest, northeast),
+        1 => (center, northeast, east),
+        2 => (southeast, center, east),
+        3 => (southwest, center, southeast),
+        4 => (southwest, west, center),
+        5 => (west, northwest, center),
         _ => unreachable!(),
-    };
-    (center, center + v1, center + v2)
+    }
 }
 
 fn hex_spacing(size: f32) -> f32 {
