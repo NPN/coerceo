@@ -286,6 +286,6 @@ impl HexCoord {
         }
     }
     fn is_valid_coord(x: i8, y: i8) -> bool {
-        (x + y).abs() <= 2 && x.abs() <= 2 && y.abs() <= 2
+        x.abs() <= 2 && y.abs() <= 2 && (x + y).abs() <= 2
     }
 }
