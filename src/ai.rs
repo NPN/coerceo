@@ -22,7 +22,7 @@ use std::sync::mpsc::{self, Receiver, TryRecvError};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 
-use model::ttable::{Entry, EvalType, TTable};
+use model::ttable::{EvalType, TTable};
 use model::{Board, Move, Outcome};
 
 const NEG_INFINITY: i16 = -0x7FFF;
@@ -126,6 +126,7 @@ impl AI {
                     panic!("Couldn't lock transposition table, is another AI thread still running?")
                 }
             };
+            ttable.inc_age();
 
             // Only take positions after the last irreversible move
             let mut board_list: Vec<_> = board_list
@@ -216,15 +217,7 @@ fn alphabeta_negamax(
 
     let set_ttable = |ttable: &mut TTable, eval_type, score| {
         let zobrist = board.zobrist();
-        ttable.set(
-            zobrist,
-            Entry {
-                eval_type,
-                depth,
-                score,
-                zobrist,
-            },
-        );
+        ttable.set(zobrist, eval_type, depth, score);
     };
 
     match board.outcome() {
@@ -253,7 +246,7 @@ fn alphabeta_negamax(
             return DRAW;
         }
 
-        if entry.zobrist == board.zobrist() && entry.depth >= depth {
+        if entry.zobrist == board.zobrist() && entry.depth == depth {
             match entry.eval_type {
                 EvalType::Exact => {
                     // This will cut the PV short
