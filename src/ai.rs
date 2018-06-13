@@ -118,13 +118,12 @@ impl AI {
                     .expect("Old AI thread panicked when new AI thread joined on it");
             }
 
-            use std::sync::TryLockError::*;
-            let mut ttable = match ttable_mutex.try_lock() {
+            // If the previous AI thread was sent the stop signal, but hasn't received it yet, we
+            // will block here until it finishes. We won't have joined on its handle above because
+            // stop throws away its Status enum.
+            let mut ttable = match ttable_mutex.lock() {
                 Ok(table) => table,
-                Err(Poisoned(_)) => panic!("Transposition table mutex is poisoned"),
-                Err(WouldBlock) => {
-                    panic!("Couldn't lock transposition table, is another AI thread still running?")
-                }
+                Err(_) => panic!("Transposition table mutex is poisoned"),
             };
             ttable.inc_age();
 
