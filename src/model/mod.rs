@@ -25,7 +25,7 @@ use std::fmt;
 use std::mem;
 
 use self::bitboard::BitBoard;
-pub use self::board::{Board, Outcome};
+pub use self::board::Board;
 use ai::AI;
 
 pub struct Model {
@@ -35,8 +35,9 @@ pub struct Model {
     pub selected_piece: Option<FieldCoord>,
     pub exchanging: bool,
     pub ai: AI,
-    undo_stack: Vec<(Board, Option<Move>)>,
-    redo_stack: Vec<(Board, Option<Move>)>,
+    pub outcome: Outcome,
+    undo_stack: Vec<(Board, Option<Move>, Outcome)>,
+    redo_stack: Vec<(Board, Option<Move>, Outcome)>,
 }
 
 impl Model {
@@ -53,14 +54,16 @@ impl Model {
         !self.redo_stack.is_empty()
     }
     pub fn push_undo_state(&mut self) {
-        self.undo_stack.push((self.board, self.last_move));
+        self.undo_stack
+            .push((self.board, self.last_move, self.outcome));
         self.redo_stack.clear();
     }
     pub fn undo_move(&mut self) {
-        while let Some((board, last_move)) = self.undo_stack.pop() {
+        while let Some((board, last_move, outcome)) = self.undo_stack.pop() {
             self.redo_stack.push((
                 mem::replace(&mut self.board, board),
                 mem::replace(&mut self.last_move, last_move),
+                mem::replace(&mut self.outcome, outcome),
             ));
 
             self.clear_selection();
@@ -72,10 +75,11 @@ impl Model {
         }
     }
     pub fn redo_move(&mut self) {
-        while let Some((board, last_move)) = self.redo_stack.pop() {
+        while let Some((board, last_move, outcome)) = self.redo_stack.pop() {
             self.undo_stack.push((
                 mem::replace(&mut self.board, board),
                 mem::replace(&mut self.last_move, last_move),
+                mem::replace(&mut self.outcome, outcome),
             ));
 
             self.clear_selection();
@@ -87,7 +91,7 @@ impl Model {
         }
     }
     pub fn board_list(&self) -> Vec<Board> {
-        let mut board_list: Vec<_> = self.undo_stack.iter().map(|&(b, _)| b).collect();
+        let mut board_list: Vec<_> = self.undo_stack.iter().map(|&t| t.0).collect();
         board_list.push(self.board);
         board_list
     }
@@ -97,8 +101,31 @@ impl Model {
     pub fn current_player(&self) -> Player {
         self.players.get(self.board.turn())
     }
+    pub fn update_outcome(&mut self) {
+        if self.outcome == Outcome::InProgress {
+            // Only take positions after the last irreversible move
+            let board_list: Vec<_> = self
+                .board_list()
+                .into_iter()
+                .rev()
+                .skip(1)
+                .take_while(|b| b.vitals() == self.board.vitals())
+                .collect();
+
+            if board_list.len() >= 8 && board_list.iter().filter(|&&b| b == self.board).count() >= 2
+            {
+                self.outcome = Outcome::Draw;
+            } else {
+                self.outcome = self.board.outcome();
+            }
+        }
+    }
     pub fn is_game_over(&self) -> bool {
-        self.board.outcome() != Outcome::InProgress
+        self.outcome != Outcome::InProgress
+    }
+    pub fn resign(&mut self) {
+        assert_eq!(self.outcome, Outcome::InProgress);
+        self.outcome = Outcome::Win(self.board.turn().switch());
     }
 }
 
@@ -111,10 +138,21 @@ impl Default for Model {
             last_move: None,
             exchanging: false,
             ai: AI::new(),
+            outcome: Outcome::InProgress,
             undo_stack: vec![],
             redo_stack: vec![],
         }
     }
+}
+
+/// The outcome of a game. This includes being in progress; a win/loss by capturing all of an
+/// opponent's pieces; and a draw by stalemate (no legal moves left), insufficient material, or
+/// threefold repetition.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Outcome {
+    InProgress,
+    Win(Color),
+    Draw,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

@@ -98,7 +98,7 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
 
             let button_size = Vec2::new(120.0, 20.0);
             use model::Outcome::*;
-            match model.board.outcome() {
+            match model.outcome {
                 Win(color) => {
                     ui.text(format!("{:?} wins!", color));
                     display_vitals();

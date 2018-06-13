@@ -62,6 +62,7 @@ pub fn update(model: &mut Model, event: Option<Event>) -> bool {
                     model.push_undo_state();
                     model.board.apply_move(&mv);
                     model.last_move = Some(mv);
+                    model.update_outcome();
                 }
             }
         }
@@ -81,7 +82,7 @@ fn handle_event(model: &mut Model, event: Event) {
         NewGame(players) => *model = Model::new(players),
         Resign => {
             model.push_undo_state();
-            model.board.resign();
+            model.resign();
         }
         Undo => model.undo_move(),
         Redo => model.redo_move(),
@@ -119,6 +120,7 @@ fn try_move(model: &mut Model, mv: Move) -> bool {
         model.push_undo_state();
         model.board.apply_move(&mv);
         model.last_move = Some(mv);
+        model.update_outcome();
         true
     } else {
         false

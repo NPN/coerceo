@@ -20,7 +20,7 @@ use std::cmp;
 use model::bitboard::{self, BitBoard, BitBoardIter};
 use model::constants::*;
 use model::zobrist::ZobristHash;
-use model::{Color, ColorMap, FieldCoord, HexCoord, Move};
+use model::{Color, ColorMap, FieldCoord, HexCoord, Move, Outcome};
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct Board {
@@ -70,7 +70,6 @@ pub struct Board {
     extant_hex_count: u8,
     turn: Color,
     vitals: ColorMap<PlayerVitals>,
-    outcome: Outcome,
     zobrist: ZobristHash,
 }
 
@@ -91,16 +90,6 @@ impl PlayerVitals {
     }
 }
 
-/// The outcome of a game. Wins or draws caused by a resignation or an offered and accepted draw are
-/// not differentiated from wins and draws by capturing all of an opponent's pieces, running out of
-/// moves, being unable to capture any of the opponent's pieces, or reaching threefold repetition.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum Outcome {
-    InProgress,
-    Win(Color),
-    Draw,
-}
-
 // Public methods
 impl Board {
     /// Create a new board with the "Laurentius" starting position.
@@ -113,7 +102,6 @@ impl Board {
             extant_hex_count: 19,
             turn: Color::White,
             vitals: ColorMap::new(PlayerVitals::new(), PlayerVitals::new()),
-            outcome: Outcome::InProgress,
             zobrist: ZobristHash::new(fields, ColorMap::new(0, 0), Color::White),
         }
     }
@@ -155,7 +143,6 @@ impl Board {
         }
         self.turn = self.turn.switch();
         self.zobrist.switch_turn();
-        self.update_outcome();
     }
     pub fn can_apply_move(&self, mv: &Move) -> bool {
         match *mv {
@@ -333,10 +320,6 @@ impl Board {
     pub fn is_hex_extant(&self, index: usize) -> bool {
         self.hexes & HEX_MASK[index] != 0
     }
-    pub fn resign(&mut self) {
-        assert_eq!(self.outcome, Outcome::InProgress);
-        self.outcome = Outcome::Win(self.turn.switch());
-    }
     pub fn turn(&self) -> Color {
         self.turn
     }
@@ -349,25 +332,20 @@ impl Board {
     pub fn vitals(&self) -> ColorMap<PlayerVitals> {
         self.vitals
     }
-    pub fn outcome(&self) -> Outcome {
-        self.outcome
-    }
     pub fn zobrist(&self) -> ZobristHash {
         self.zobrist
     }
-}
-
-impl Board {
-    // TODO: check for threefold repetition
-    fn update_outcome(&mut self) {
+    // This function does NOT consider draw by threefold repetition because move history is not the
+    // concern of Board. See Model or AI for that.
+    pub fn outcome(&self) -> Outcome {
         let fields = self.fields.get(self.turn);
 
         if fields == 0 {
             // No more pieces left
-            self.outcome = Outcome::Win(self.turn.switch());
+            Outcome::Win(self.turn.switch())
         } else if fields == self.hexes && !self.can_exchange() {
             // There are no empty fields to move to and we can't exchange
-            self.outcome = Outcome::Draw;
+            Outcome::Draw
         } else {
             use model::Color::*;
 
@@ -378,7 +356,9 @@ impl Board {
 
             // If neither side can capture the other's pieces, the game is drawn
             if wp == 1 && bp == 1 && (self.extant_hex_count + cmp::max(wh, bh) - 1 < 2) {
-                self.outcome = Outcome::Draw;
+                Outcome::Draw
+            } else {
+                Outcome::InProgress
             }
         }
     }
