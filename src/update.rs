@@ -59,6 +59,7 @@ pub fn update(model: &mut Model, event: Option<Event>) -> bool {
                     model.ai.think(model.board, board_list, 6);
                 }
                 if let Some(mv) = model.ai.try_recv() {
+                    model.push_undo_state();
                     model.board.apply_move(&mv);
                     model.last_move = Some(mv);
                 }
@@ -79,7 +80,7 @@ fn handle_event(model: &mut Model, event: Event) {
         },
         NewGame(players) => *model = Model::new(players),
         Resign => {
-            model.commit_state();
+            model.push_undo_state();
             model.board.resign();
         }
         Undo => model.undo_move(),
@@ -115,7 +116,7 @@ fn handle_click(model: &mut Model, clicked: FieldCoord) {
 
 fn try_move(model: &mut Model, mv: Move) -> bool {
     if model.board.can_apply_move(&mv) {
-        model.commit_state();
+        model.push_undo_state();
         model.board.apply_move(&mv);
         model.last_move = Some(mv);
         true

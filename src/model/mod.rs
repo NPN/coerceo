@@ -52,12 +52,12 @@ impl Model {
     pub fn can_redo(&self) -> bool {
         !self.redo_stack.is_empty()
     }
-    pub fn commit_state(&mut self) {
+    pub fn push_undo_state(&mut self) {
         self.undo_stack.push((self.board, self.last_move));
         self.redo_stack.clear();
     }
     pub fn undo_move(&mut self) {
-        if let Some((board, last_move)) = self.undo_stack.pop() {
+        while let Some((board, last_move)) = self.undo_stack.pop() {
             self.redo_stack.push((
                 mem::replace(&mut self.board, board),
                 mem::replace(&mut self.last_move, last_move),
@@ -65,10 +65,14 @@ impl Model {
 
             self.clear_selection();
             self.exchanging = false;
+
+            if Player::Human == self.players.get(board.turn()) {
+                break;
+            }
         }
     }
     pub fn redo_move(&mut self) {
-        if let Some((board, last_move)) = self.redo_stack.pop() {
+        while let Some((board, last_move)) = self.redo_stack.pop() {
             self.undo_stack.push((
                 mem::replace(&mut self.board, board),
                 mem::replace(&mut self.last_move, last_move),
@@ -76,6 +80,10 @@ impl Model {
 
             self.clear_selection();
             self.exchanging = false;
+
+            if Player::Human == self.players.get(board.turn()) {
+                break;
+            }
         }
     }
     pub fn board_list(&self) -> Vec<Board> {
