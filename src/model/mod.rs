@@ -21,6 +21,7 @@ mod constants;
 pub mod ttable;
 mod zobrist;
 
+use std::fmt;
 use std::mem;
 
 use self::bitboard::BitBoard;
@@ -176,6 +177,26 @@ impl Move {
     }
     pub fn exchange_from_field(field: &FieldCoord) -> Self {
         Move::Exchange(field.to_bitboard(), field.color())
+    }
+}
+
+impl fmt::Display for Move {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Move::Move(from, to, color) => write!(
+                f,
+                "Move::Move({}, {}, {:?})",
+                FieldCoord::from_bitboard(from, color).to_notation(),
+                FieldCoord::from_bitboard(to, color).to_notation(),
+                color
+            ),
+            Move::Exchange(bb, color) => write!(
+                f,
+                "Move::Exchange({}, {:?})",
+                FieldCoord::from_bitboard(bb, color).to_notation(),
+                color
+            ),
+        }
     }
 }
 

@@ -139,10 +139,12 @@ impl AI {
                 .generate_moves()
                 .map(|mv| (mv, NEG_INFINITY))
                 .collect();
+
             if moves.is_empty() {
                 panic!("AI has no moves");
             }
 
+            let mut pv = None;
             for depth in 0..depth {
                 if stop_signal_clone.load(Ordering::Relaxed) {
                     return;
@@ -153,9 +155,12 @@ impl AI {
                     let mut new_board = board;
                     new_board.apply_move(&pair.0);
 
+                    let mut new_pv = vec![];
+
                     let score = -alphabeta_negamax(
                         &new_board,
                         &mut board_list,
+                        &mut new_pv,
                         NEG_INFINITY,
                         -max_score,
                         depth,
@@ -164,11 +169,22 @@ impl AI {
 
                     if score > max_score {
                         max_score = score;
+                        pv = Some(new_pv);
                     }
                     pair.1 = score;
                 }
                 moves.sort_by(|&(_, a), &(_, b)| b.cmp(&a));
+                println!();
+                println!("Depth {}: {:>6}", depth, moves[0].1);
+                if let Some(ref mut pv) = pv {
+                    pv.push(moves[0].0);
+                    for mv in pv.iter().rev() {
+                        println!("    {}", mv);
+                    }
+                }
             }
+            println!();
+            println!("---------------------");
             move_sender
                 .send(moves[0].0)
                 .expect("AI failed to send Move");
@@ -186,11 +202,18 @@ fn alphabeta_negamax(
     board: &Board,
     // This list does not include the current board
     mut board_list: &mut Vec<Board>,
+    pv: &mut Vec<Move>,
     mut alpha: i16,
     mut beta: i16,
     depth: u8,
     ttable: &mut TTable,
 ) -> i16 {
+    let mut set_pv = move |score, new_pv| {
+        if score > alpha && score < beta {
+            *pv = new_pv;
+        }
+    };
+
     let set_ttable = |ttable: &mut TTable, eval_type, score| {
         let zobrist = board.zobrist();
         ttable.set(
@@ -208,6 +231,7 @@ fn alphabeta_negamax(
         Outcome::Draw => {
             // This only works because the draw Outcome does not consider draw by repetition
             set_ttable(ttable, EvalType::Exact, DRAW);
+            set_pv(DRAW, vec![]);
             return DRAW;
         }
         Outcome::Win(color) => {
@@ -217,6 +241,7 @@ fn alphabeta_negamax(
             // prolong a loss.
             let score = LOSE - i16::from(depth);
             set_ttable(ttable, EvalType::Exact, score);
+            set_pv(score, vec![]);
             return score;
         }
         Outcome::InProgress => {}
@@ -224,12 +249,16 @@ fn alphabeta_negamax(
 
     if let Some(entry) = ttable.get(board.zobrist()) {
         if board_list.len() >= 8 && board_list.iter().filter(|&&b| b == *board).count() >= 2 {
+            set_pv(DRAW, vec![]);
             return DRAW;
         }
 
         if entry.zobrist == board.zobrist() && entry.depth >= depth {
             match entry.eval_type {
                 EvalType::Exact => {
+                    // This will cut the PV short
+                    // TODO: Store the best move in the table and get the PV from that?
+                    set_pv(entry.score, vec![]);
                     return entry.score;
                 }
                 EvalType::Beta => {
@@ -243,10 +272,14 @@ fn alphabeta_negamax(
     }
 
     if depth == 0 {
-        quiescence_search(board, alpha, beta)
+        let score = quiescence_search(board, alpha, beta);
+        set_pv(score, vec![]);
+        score
     } else {
         let mut best_score = NEG_INFINITY;
+        let mut best_move = None;
 
+        let mut new_pv = vec![];
         let moves = board.generate_moves();
         for mv in moves {
             let mut new_board = *board;
@@ -256,6 +289,7 @@ fn alphabeta_negamax(
             let score = -alphabeta_negamax(
                 &new_board,
                 &mut board_list,
+                &mut new_pv,
                 -beta,
                 -alpha,
                 depth - 1,
@@ -270,9 +304,14 @@ fn alphabeta_negamax(
                 return beta;
             } else if score > alpha {
                 alpha = score;
+                best_move = Some(mv);
             }
         }
         set_ttable(ttable, EvalType::Exact, best_score);
+        if let Some(mv) = best_move {
+            new_pv.push(mv);
+            set_pv(alpha, new_pv);
+        }
         alpha
     }
 }
