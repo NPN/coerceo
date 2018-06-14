@@ -114,7 +114,7 @@ impl Model {
 
             if board_list.len() >= 8 && board_list.iter().filter(|&&b| b == self.board).count() >= 2
             {
-                self.outcome = Outcome::Draw;
+                self.outcome = Outcome::DrawThreefoldRepetition;
             } else {
                 self.outcome = self.board.outcome();
             }
@@ -151,8 +151,10 @@ impl Default for Model {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Outcome {
     InProgress,
+    DrawStalemate,
+    DrawInsufficientMaterial,
+    DrawThreefoldRepetition,
     Win(Color),
-    Draw,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

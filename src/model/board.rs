@@ -345,7 +345,7 @@ impl Board {
             Outcome::Win(self.turn.switch())
         } else if fields == self.hexes && !self.can_exchange() {
             // There are no empty fields to move to and we can't exchange
-            Outcome::Draw
+            Outcome::DrawStalemate
         } else {
             use model::Color::*;
 
@@ -356,7 +356,7 @@ impl Board {
 
             // If neither side can capture the other's pieces, the game is drawn
             if wp == 1 && bp == 1 && (self.extant_hex_count + cmp::max(wh, bh) - 1 < 2) {
-                Outcome::Draw
+                Outcome::DrawInsufficientMaterial
             } else {
                 Outcome::InProgress
             }

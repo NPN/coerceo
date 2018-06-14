@@ -219,14 +219,15 @@ fn alphabeta_negamax(
         ttable.set(zobrist, eval_type, depth, score);
     };
 
+    use self::Outcome::*;
     match board.outcome() {
-        Outcome::Draw => {
-            // This only works because the draw Outcome does not consider draw by repetition
+        DrawStalemate | DrawInsufficientMaterial => {
+            // This is safe to do because Board does not detect draws by threefold repetition
             set_ttable(ttable, EvalType::Exact, DRAW);
             set_pv(DRAW, vec![]);
             return DRAW;
         }
-        Outcome::Win(color) => {
+        Win(color) => {
             assert_ne!(color, board.turn());
             // Weight score by depth to encourage shorter wins. The shorter the win, the greater
             // `depth` will be, and so the larger the score will be. This also encourages the AI to
@@ -236,7 +237,8 @@ fn alphabeta_negamax(
             set_pv(score, vec![]);
             return score;
         }
-        Outcome::InProgress => {}
+        InProgress => {}
+        DrawThreefoldRepetition => unreachable!(),
     }
 
     if let Some(entry) = ttable.get(board.zobrist()) {

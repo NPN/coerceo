@@ -106,13 +106,6 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                         insert_if_empty(&mut event, Event::Undo);
                     }
                 }
-                Draw => {
-                    ui.text("It's a draw!");
-                    display_vitals();
-                    if model.can_undo() && ui.button(im_str!("Undo"), button_size) {
-                        insert_if_empty(&mut event, Event::Undo);
-                    }
-                }
                 InProgress => {
                     ui.text(format!("It's {:?}'s turn.", model.board.turn()));
                     display_vitals();
@@ -144,6 +137,20 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                         &button_size,
                         &mut event,
                     );
+                }
+                // Draw cases
+                _ => {
+                    let message = match model.outcome {
+                        DrawStalemate => "It's a draw by stalemate!",
+                        DrawThreefoldRepetition => "It's a draw by threefold repetition!",
+                        DrawInsufficientMaterial => "It's a draw by insufficient material!",
+                        _ => unreachable!(),
+                    };
+                    ui.text(message);
+                    display_vitals();
+                    if model.can_undo() && ui.button(im_str!("Undo"), button_size) {
+                        insert_if_empty(&mut event, Event::Undo);
+                    }
                 }
             }
         });
