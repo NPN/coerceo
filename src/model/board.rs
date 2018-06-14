@@ -67,7 +67,6 @@ pub struct Board {
     */
     fields: ColorMap<BitBoard>,
     hexes: BitBoard,
-    extant_hex_count: u8,
     pub turn: Color,
     pub vitals: ColorMap<PlayerVitals>,
     pub zobrist: ZobristHash,
@@ -99,7 +98,6 @@ impl Board {
         Self {
             fields,
             hexes: HEX_STARTING_POSITION,
-            extant_hex_count: 19,
             turn: Color::White,
             vitals: ColorMap::new(PlayerVitals::new(), PlayerVitals::new()),
             zobrist: zobrist::new(fields, ColorMap::new(0, 0), Color::White),
@@ -351,7 +349,8 @@ impl Board {
             let bh = self.hexes(Black);
 
             // If neither side can capture the other's pieces, the game is drawn
-            if wp == 1 && bp == 1 && (self.extant_hex_count + cmp::max(wh, bh) - 1 < 2) {
+            if wp == 1 && bp == 1 && (self.hexes.count_ones() as u8 / 3 + cmp::max(wh, bh) - 1 < 2)
+            {
                 Outcome::DrawInsufficientMaterial
             } else {
                 Outcome::InProgress
@@ -424,7 +423,6 @@ impl Board {
 
         if removable {
             self.hexes &= !HEX_MASK[index];
-            self.extant_hex_count -= 1;
         }
         removable
     }
