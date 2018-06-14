@@ -322,7 +322,7 @@ fn quiescence_search(board: &Board, mut alpha: i16, beta: i16) -> i16 {
         let mut new_board = *board;
         new_board.apply_move(&mv);
 
-        let score = quiescence_search(&new_board, -beta, -alpha);
+        let score = -quiescence_search(&new_board, -beta, -alpha);
 
         if score >= beta {
             return beta;
