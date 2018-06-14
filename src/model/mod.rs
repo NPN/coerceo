@@ -69,7 +69,7 @@ impl Model {
             self.clear_selection();
             self.exchanging = false;
 
-            if Player::Human == self.players.get(board.turn()) {
+            if Player::Human == self.players.get(board.turn) {
                 break;
             }
         }
@@ -85,7 +85,7 @@ impl Model {
             self.clear_selection();
             self.exchanging = false;
 
-            if Player::Human == self.players.get(board.turn()) {
+            if Player::Human == self.players.get(board.turn) {
                 break;
             }
         }
@@ -99,7 +99,7 @@ impl Model {
         self.selected_piece = None;
     }
     pub fn current_player(&self) -> Player {
-        self.players.get(self.board.turn())
+        self.players.get(self.board.turn)
     }
     pub fn update_outcome(&mut self) {
         if self.outcome == Outcome::InProgress {
@@ -109,7 +109,7 @@ impl Model {
                 .into_iter()
                 .rev()
                 .skip(1)
-                .take_while(|b| b.vitals() == self.board.vitals())
+                .take_while(|b| b.vitals == self.board.vitals)
                 .collect();
 
             if board_list.len() >= 8 && board_list.iter().filter(|&&b| b == self.board).count() >= 2
@@ -125,7 +125,7 @@ impl Model {
     }
     pub fn resign(&mut self) {
         assert_eq!(self.outcome, Outcome::InProgress);
-        self.outcome = Outcome::Win(self.board.turn().switch());
+        self.outcome = Outcome::Win(self.board.turn.switch());
     }
 }
 

@@ -68,9 +68,9 @@ pub struct Board {
     fields: ColorMap<BitBoard>,
     hexes: BitBoard,
     extant_hex_count: u8,
-    turn: Color,
-    vitals: ColorMap<PlayerVitals>,
-    zobrist: ZobristHash,
+    pub turn: Color,
+    pub vitals: ColorMap<PlayerVitals>,
+    pub zobrist: ZobristHash,
 }
 
 /// A struct tracking a player's piece and captured hex count. So named because these two numbers are
@@ -320,20 +320,11 @@ impl Board {
     pub fn is_hex_extant(&self, index: usize) -> bool {
         self.hexes & HEX_MASK[index] != 0
     }
-    pub fn turn(&self) -> Color {
-        self.turn
-    }
     pub fn pieces(&self, color: Color) -> u8 {
         self.vitals.get(color).pieces
     }
     pub fn hexes(&self, color: Color) -> u8 {
         self.vitals.get(color).hexes
-    }
-    pub fn vitals(&self) -> ColorMap<PlayerVitals> {
-        self.vitals
-    }
-    pub fn zobrist(&self) -> ZobristHash {
-        self.zobrist
     }
     // This function does NOT consider draw by threefold repetition because move history is not the
     // concern of Board. See Model or AI for that.

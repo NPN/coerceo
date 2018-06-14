@@ -131,7 +131,7 @@ impl AI {
             let mut board_list: Vec<_> = board_list
                 .into_iter()
                 .rev()
-                .take_while(|b| b.vitals() == board.vitals())
+                .take_while(|b| b.vitals == board.vitals)
                 .collect();
             board_list.reverse();
 
@@ -215,8 +215,7 @@ fn alphabeta_negamax(
     };
 
     let set_ttable = |ttable: &mut TTable, eval_type, score| {
-        let zobrist = board.zobrist();
-        ttable.set(zobrist, eval_type, depth, score);
+        ttable.set(board.zobrist, eval_type, depth, score);
     };
 
     use self::Outcome::*;
@@ -228,7 +227,7 @@ fn alphabeta_negamax(
             return DRAW;
         }
         Win(color) => {
-            assert_ne!(color, board.turn());
+            assert_ne!(color, board.turn);
             // Weight score by depth to encourage shorter wins. The shorter the win, the greater
             // `depth` will be, and so the larger the score will be. This also encourages the AI to
             // prolong a loss.
@@ -241,13 +240,13 @@ fn alphabeta_negamax(
         DrawThreefoldRepetition => unreachable!(),
     }
 
-    if let Some(entry) = ttable.get(board.zobrist()) {
+    if let Some(entry) = ttable.get(board.zobrist) {
         if board_list.len() >= 8 && board_list.iter().filter(|&&b| b == *board).count() >= 2 {
             set_pv(DRAW, vec![]);
             return DRAW;
         }
 
-        if entry.zobrist == board.zobrist() && entry.depth == depth {
+        if entry.zobrist == board.zobrist && entry.depth == depth {
             match entry.eval_type {
                 EvalType::Exact => {
                     // This will cut the PV short
@@ -342,7 +341,7 @@ fn evaluate(board: &Board) -> i16 {
     let wh = 50 * i16::from(board.hexes(White));
     let bh = 50 * i16::from(board.hexes(Black));
 
-    match board.turn() {
+    match board.turn {
         White => (wp + wh) - (bp + bh),
         Black => (bp + bh) - (wp + wh),
     }
