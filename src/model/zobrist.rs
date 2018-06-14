@@ -20,46 +20,45 @@
 use model::bitboard::{BitBoard, BitBoardIter};
 use model::{Color, ColorMap};
 
-#[derive(Clone, Copy, PartialEq)]
-pub struct ZobristHash {
-    hash: u64,
+pub type ZobristHash = u64;
+
+pub fn new(fields: ColorMap<BitBoard>, hex_count: ColorMap<u8>, turn: Color) -> ZobristHash {
+    let mut hash = 0;
+
+    for (w, b) in BitBoardIter::new(fields.white).zip(BitBoardIter::new(fields.black)) {
+        hash ^= PIECE_FIELD.white[w.trailing_zeros() as usize];
+        hash ^= PIECE_FIELD.black[b.trailing_zeros() as usize];
+    }
+
+    hash ^= HEX_COUNT.white[hex_count.white as usize];
+    hash ^= HEX_COUNT.black[hex_count.black as usize];
+
+    if turn == Color::White {
+        hash ^= WHITE_TO_MOVE;
+    }
+
+    hash
 }
 
-impl ZobristHash {
-    pub fn new(fields: ColorMap<BitBoard>, hex_count: ColorMap<u8>, turn: Color) -> Self {
-        let mut hash = 0;
+pub trait ZobristExt {
+    fn toggle_field(&mut self, bb: BitBoard, color: Color);
+    fn set_hex_count(&mut self, old: u8, new: u8, color: Color);
+    fn switch_turn(&mut self);
+}
 
-        for (w, b) in BitBoardIter::new(fields.white).zip(BitBoardIter::new(fields.black)) {
-            hash ^= PIECE_FIELD.white[w.trailing_zeros() as usize];
-            hash ^= PIECE_FIELD.black[b.trailing_zeros() as usize];
-        }
-
-        hash ^= HEX_COUNT.white[hex_count.white as usize];
-        hash ^= HEX_COUNT.black[hex_count.black as usize];
-
-        if turn == Color::White {
-            hash ^= WHITE_TO_MOVE;
-        }
-
-        Self { hash }
+impl ZobristExt for ZobristHash {
+    fn toggle_field(&mut self, bb: BitBoard, color: Color) {
+        *self ^= PIECE_FIELD.get_ref(color)[bb.trailing_zeros() as usize];
     }
 
-    pub fn toggle_field(&mut self, bb: BitBoard, color: Color) {
-        self.hash ^= PIECE_FIELD.get_ref(color)[bb.trailing_zeros() as usize];
-    }
-
-    pub fn set_hex_count(&mut self, old: u8, new: u8, color: Color) {
+    fn set_hex_count(&mut self, old: u8, new: u8, color: Color) {
         let hex_count = HEX_COUNT.get(color);
-        self.hash ^= hex_count[old as usize];
-        self.hash ^= hex_count[new as usize];
+        *self ^= hex_count[old as usize];
+        *self ^= hex_count[new as usize];
     }
 
-    pub fn switch_turn(&mut self) {
-        self.hash ^= WHITE_TO_MOVE;
-    }
-
-    pub fn get(&self) -> u64 {
-        self.hash
+    fn switch_turn(&mut self) {
+        *self ^= WHITE_TO_MOVE;
     }
 }
 

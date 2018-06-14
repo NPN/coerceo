@@ -19,7 +19,7 @@ use std::cmp;
 
 use model::bitboard::{self, BitBoard, BitBoardIter};
 use model::constants::*;
-use model::zobrist::ZobristHash;
+use model::zobrist::{self, ZobristExt, ZobristHash};
 use model::{Color, ColorMap, FieldCoord, HexCoord, Move, Outcome};
 
 #[derive(Clone, Copy, PartialEq)]
@@ -102,7 +102,7 @@ impl Board {
             extant_hex_count: 19,
             turn: Color::White,
             vitals: ColorMap::new(PlayerVitals::new(), PlayerVitals::new()),
-            zobrist: ZobristHash::new(fields, ColorMap::new(0, 0), Color::White),
+            zobrist: zobrist::new(fields, ColorMap::new(0, 0), Color::White),
         }
     }
     pub fn apply_move(&mut self, mv: &Move) {

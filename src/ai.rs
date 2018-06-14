@@ -240,12 +240,13 @@ fn alphabeta_negamax(
         DrawThreefoldRepetition => unreachable!(),
     }
 
-    if let Some(entry) = ttable.get(board.zobrist) {
-        if board_list.len() >= 8 && board_list.iter().filter(|&&b| b == *board).count() >= 2 {
-            set_pv(DRAW, vec![]);
-            return DRAW;
-        }
+    if board_list.len() >= 8 && board_list.iter().filter(|&&b| b == *board).count() >= 2 {
+        set_pv(DRAW, vec![]);
+        return DRAW;
+    }
 
+    {
+        let entry = ttable.get(board.zobrist);
         if entry.zobrist == board.zobrist && entry.depth == depth {
             match entry.eval_type {
                 EvalType::Exact => {
@@ -310,7 +311,8 @@ fn alphabeta_negamax(
 }
 
 fn quiescence_search(board: &Board, ttable: &mut TTable, mut alpha: i16, mut beta: i16) -> i16 {
-    if let Some(entry) = ttable.get(board.zobrist) {
+    {
+        let entry = ttable.get(board.zobrist);
         // All quiescence entries in the TTable are marked with a depth of 0
         if entry.zobrist == board.zobrist && entry.depth == 0 {
             match entry.eval_type {
