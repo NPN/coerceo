@@ -213,7 +213,6 @@ fn alphabeta_negamax(
             *pv = new_pv;
         }
     };
-
     let set_ttable = |ttable: &mut TTable, eval_type, score| {
         ttable.set(board.zobrist, eval_type, depth, score);
     };
@@ -245,6 +244,12 @@ fn alphabeta_negamax(
         return DRAW;
     }
 
+    if depth == 0 {
+        let score = quiescence_search(board, ttable, alpha, beta);
+        set_pv(score, vec![]);
+        return score;
+    }
+
     {
         let entry = ttable.get(board.zobrist);
         if entry.zobrist == board.zobrist && entry.depth == depth {
@@ -265,49 +270,43 @@ fn alphabeta_negamax(
         }
     }
 
-    if depth == 0 {
-        let score = quiescence_search(board, ttable, alpha, beta);
-        set_pv(score, vec![]);
-        score
-    } else {
-        let mut best_score = NEG_INFINITY;
-        let mut best_move = None;
+    let mut best_score = NEG_INFINITY;
+    let mut best_move = None;
 
-        let mut new_pv = vec![];
-        let moves = board.generate_moves();
-        for mv in moves {
-            let mut new_board = *board;
-            new_board.apply_move(&mv);
+    let mut new_pv = vec![];
+    let moves = board.generate_moves();
+    for mv in moves {
+        let mut new_board = *board;
+        new_board.apply_move(&mv);
 
-            board_list.push(*board);
-            let score = -alphabeta_negamax(
-                &new_board,
-                &mut board_list,
-                &mut new_pv,
-                -beta,
-                -alpha,
-                depth - 1,
-                ttable,
-            );
-            board_list.pop();
+        board_list.push(*board);
+        let score = -alphabeta_negamax(
+            &new_board,
+            &mut board_list,
+            &mut new_pv,
+            -beta,
+            -alpha,
+            depth - 1,
+            ttable,
+        );
+        board_list.pop();
 
-            best_score = cmp::max(score, best_score);
+        best_score = cmp::max(score, best_score);
 
-            if score >= beta {
-                set_ttable(ttable, EvalType::Beta, score);
-                return beta;
-            } else if score > alpha {
-                alpha = score;
-                best_move = Some(mv);
-            }
+        if score >= beta {
+            set_ttable(ttable, EvalType::Beta, score);
+            return beta;
+        } else if score > alpha {
+            alpha = score;
+            best_move = Some(mv);
         }
-        set_ttable(ttable, EvalType::Exact, best_score);
-        if let Some(mv) = best_move {
-            new_pv.push(mv);
-            set_pv(alpha, new_pv);
-        }
-        alpha
     }
+    set_ttable(ttable, EvalType::Exact, best_score);
+    if let Some(mv) = best_move {
+        new_pv.push(mv);
+        set_pv(alpha, new_pv);
+    }
+    alpha
 }
 
 fn quiescence_search(board: &Board, ttable: &mut TTable, mut alpha: i16, mut beta: i16) -> i16 {
