@@ -38,7 +38,7 @@ pub fn update(model: &mut Model, event: Option<Event>) -> bool {
     match model.current_player() {
         Player::Human => {
             if let Some(event) = event {
-                handle_event(model, event);
+                handle_event(model, &event);
             }
         }
         Player::Computer => {
@@ -47,7 +47,7 @@ pub fn update(model: &mut Model, event: Option<Event>) -> bool {
                     Click(_) | Exchange => {}
                     _ => {
                         model.ai.stop();
-                        handle_event(model, event);
+                        handle_event(model, &event);
                         return true;
                     }
                 }
@@ -70,16 +70,16 @@ pub fn update(model: &mut Model, event: Option<Event>) -> bool {
     true
 }
 
-fn handle_event(model: &mut Model, event: Event) {
+fn handle_event(model: &mut Model, event: &Event) {
     match event {
         Click(clicked) => if !model.is_game_over() {
-            handle_click(model, clicked);
+            handle_click(model, *clicked);
         },
         Exchange => if model.board.can_exchange() && !model.is_game_over() {
             model.exchanging = !model.exchanging;
             model.clear_selection();
         },
-        NewGame(players) => *model = Model::new(players),
+        NewGame(players) => *model = Model::new(*players),
         Resign => {
             model.push_undo_state();
             model.resign();
