@@ -265,7 +265,7 @@ fn alphabeta_negamax(
     }
 
     if depth == 0 {
-        let score = quiescence_search(board, alpha, beta);
+        let score = quiescence_search(board, ttable, alpha, beta);
         set_pv(score, vec![]);
         score
     } else {
@@ -309,10 +309,27 @@ fn alphabeta_negamax(
     }
 }
 
-// TODO: use ttable here?
-fn quiescence_search(board: &Board, mut alpha: i16, beta: i16) -> i16 {
+fn quiescence_search(board: &Board, ttable: &mut TTable, mut alpha: i16, mut beta: i16) -> i16 {
+    if let Some(entry) = ttable.get(board.zobrist) {
+        // All quiescence entries in the TTable are marked with a depth of 0
+        if entry.zobrist == board.zobrist && entry.depth == 0 {
+            match entry.eval_type {
+                EvalType::Exact => {
+                    return entry.score;
+                }
+                EvalType::Beta => {
+                    if entry.score >= beta {
+                        return entry.score;
+                    }
+                    beta = entry.score;
+                }
+            }
+        }
+    }
+
     let stand_pat = evaluate(board);
     if stand_pat >= beta {
+        ttable.set(board.zobrist, EvalType::Beta, 0, stand_pat);
         return beta;
     } else if alpha < stand_pat {
         alpha = stand_pat;
@@ -322,9 +339,10 @@ fn quiescence_search(board: &Board, mut alpha: i16, beta: i16) -> i16 {
         let mut new_board = *board;
         new_board.apply_move(&mv);
 
-        let score = -quiescence_search(&new_board, -beta, -alpha);
+        let score = -quiescence_search(&new_board, ttable, -beta, -alpha);
 
         if score >= beta {
+            ttable.set(board.zobrist, EvalType::Beta, 0, score);
             return beta;
         } else if score > alpha {
             alpha = score;
