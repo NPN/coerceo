@@ -17,7 +17,7 @@
 
 use std::cmp;
 
-use model::bitboard::{self, BitBoard, BitBoardIter};
+use model::bitboard::*;
 use model::constants::*;
 use model::zobrist::{self, ZobristExt, ZobristHash};
 use model::{Color, ColorMap, FieldCoord, HexCoord, Move, Outcome};
@@ -175,15 +175,18 @@ impl Board {
             0
         };
 
-        BitBoardIter::new(fields)
+        fields
+            .iter()
             .flat_map(move |origin| {
                 let empty_vertex_neighbors =
                     VERTEX_NEIGHBORS.bb_get(origin, turn) & (!fields & hexes);
-                BitBoardIter::new(empty_vertex_neighbors)
+                empty_vertex_neighbors
+                    .iter()
                     .map(move |dest| Move::Move(origin, dest, turn))
             })
             .chain(
-                BitBoardIter::new(opp_fields)
+                opp_fields
+                    .iter()
                     .map(move |exchanged| Move::Exchange(exchanged, opp_color)),
             )
     }
@@ -210,12 +213,12 @@ impl Board {
                 let hex = HEX_MASK[i];
 
                 let opp_piece = opp_fields & hex;
-                if can_exchange && bitboard::is_one_bit_set(opp_piece) {
+                if can_exchange && opp_piece.is_one_bit_set() {
                     exchange_captures[i] = opp_piece;
                 }
 
                 let our_piece = our_fields & hex;
-                if bitboard::is_one_bit_set(our_piece) {
+                if our_piece.is_one_bit_set() {
                     let vertex_neighbors = VERTEX_NEIGHBORS.bb_get(our_piece, our_color)
                         & (!hex & !our_fields & hexes);
                     hex_capture_moves[i] = (our_piece, vertex_neighbors);
@@ -224,27 +227,28 @@ impl Board {
         }
 
         // TODO: Is this iterator madness actually efficient?
-        BitBoardIter::new(opp_fields)
+        opp_fields
+            .iter()
             .flat_map(move |opp_piece| {
                 let empty_edge_neighbor =
                     EDGE_NEIGHBORS.bb_get(opp_piece, opp_color) & (!our_fields & hexes);
 
                 let mut exchange_piece = 0;
-                let vertex_neighbors = if bitboard::is_one_bit_set(empty_edge_neighbor) {
+                let vertex_neighbors = if empty_edge_neighbor.is_one_bit_set() {
                     // Get the exchange capture for this hexagon, if there is one.
                     // Duplicate moves might be searched here if the opponent has two pieces which can
                     // be captured by removing this one hex.
-                    exchange_piece = exchange_captures[bitboard::to_index(empty_edge_neighbor)];
+                    exchange_piece = exchange_captures[empty_edge_neighbor.to_index()];
 
                     VERTEX_NEIGHBORS.bb_get(empty_edge_neighbor, our_color) & our_fields
                 } else {
                     0
                 };
-                BitBoardIter::new(vertex_neighbors)
+                vertex_neighbors.iter()
                 // These are plain "surround a piece" capture moves
                 .map(move |bb| Move::Move(bb, empty_edge_neighbor, our_color))
                 .chain(
-                    BitBoardIter::new(exchange_piece)
+                    exchange_piece.iter()
                         .map(move |bb| Move::Exchange(bb, opp_color))
                 )
             })
@@ -257,7 +261,8 @@ impl Board {
                     .into_iter()
                     .map(move |i| hex_capture_moves[i])
                     .flat_map(move |(origin, dests)| {
-                        BitBoardIter::new(dests)
+                        dests
+                            .iter()
                             .map(move |dest| Move::Move(origin, dest, our_color))
                     }),
             )
@@ -268,7 +273,7 @@ impl Board {
             let vertex_neighbors = self.hexes & VERTEX_NEIGHBORS.bb_get(field.to_bitboard(), color);
             let mut moves = Vec::with_capacity(3);
 
-            for dest in BitBoardIter::new(vertex_neighbors) {
+            for dest in vertex_neighbors.iter() {
                 moves.push(FieldCoord::from_bitboard(dest, color));
             }
             moves
@@ -380,7 +385,7 @@ impl Board {
         let us = self.turn;
         let them = us.switch();
         fields_to_check &= self.hexes & self.fields.get(them);
-        for bb in BitBoardIter::new(fields_to_check) {
+        for bb in fields_to_check.iter() {
             let neighbors = self.hexes & EDGE_NEIGHBORS.bb_get(bb, them);
             if !self.fields.get(us) & neighbors == 0 {
                 self.remove_piece(bb, them);
@@ -442,7 +447,7 @@ impl Board {
             let their_neighbors =
                 self.hexes & HEX_FIELD_NEIGHBORS.index_get(index, self.turn.switch());
 
-            for neighbor in BitBoardIter::new(our_neighbors | their_neighbors) {
+            for neighbor in (our_neighbors | their_neighbors).iter() {
                 let check_result = self.check_hexes(neighbor.trailing_zeros() as usize / 3);
                 remove_count += check_result.0;
                 fields |= check_result.1;

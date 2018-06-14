@@ -17,7 +17,7 @@
 
 #![cfg_attr(feature = "cargo-clippy", allow(unreadable_literal))]
 
-use model::bitboard::{BitBoard, BitBoardIter};
+use model::bitboard::{BitBoard, BitBoardExt};
 use model::{Color, ColorMap};
 
 pub type ZobristHash = u64;
@@ -25,7 +25,7 @@ pub type ZobristHash = u64;
 pub fn new(fields: ColorMap<BitBoard>, hex_count: ColorMap<u8>, turn: Color) -> ZobristHash {
     let mut hash = 0;
 
-    for (w, b) in BitBoardIter::new(fields.white).zip(BitBoardIter::new(fields.black)) {
+    for (w, b) in fields.white.iter().zip(fields.black.iter()) {
         hash ^= PIECE_FIELD.white[w.trailing_zeros() as usize];
         hash ^= PIECE_FIELD.black[b.trailing_zeros() as usize];
     }

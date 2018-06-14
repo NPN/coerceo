@@ -17,6 +17,26 @@
 
 pub type BitBoard = u64;
 
+pub trait BitBoardExt {
+    fn is_one_bit_set(&self) -> bool;
+    fn to_index(&self) -> usize;
+    fn iter(&self) -> BitBoardIter;
+}
+
+impl BitBoardExt for BitBoard {
+    fn is_one_bit_set(&self) -> bool {
+        (*self != 0) && (self & (self - 1) == 0)
+    }
+
+    fn to_index(&self) -> usize {
+        self.trailing_zeros() as usize / 3
+    }
+
+    fn iter(&self) -> BitBoardIter {
+        BitBoardIter::new(*self)
+    }
+}
+
 pub struct BitBoardIter {
     bb: BitBoard,
 }
@@ -44,12 +64,4 @@ impl Iterator for BitBoardIter {
         let n = self.bb.count_ones() as usize;
         (n, Some(n))
     }
-}
-
-pub fn is_one_bit_set(bb: BitBoard) -> bool {
-    (bb != 0) && (bb & (bb - 1) == 0)
-}
-
-pub fn to_index(bb: BitBoard) -> usize {
-    bb.trailing_zeros() as usize / 3
 }
