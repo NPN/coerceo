@@ -242,15 +242,16 @@ impl Board {
             }
         }
 
-        capturing_neighbors
+        exchange_captures
             .iter()
-            .flat_map(move |empty_neighbor| {
+            .map(move |opp_piece| Move::Exchange(opp_piece, opp_color))
+            .chain(capturing_neighbors.iter().flat_map(move |empty_neighbor| {
                 let vertex_neighbors =
                     VERTEX_NEIGHBORS.bb_get(empty_neighbor, our_color) & our_fields;
                 vertex_neighbors
                     .iter()
                     .map(move |our_piece| Move::Move(our_piece, empty_neighbor, our_color))
-            })
+            }))
             .chain(hex_capture_pieces.iter().flat_map(move |origin| {
                 let hex = HEX_MASK[origin.to_index()];
                 let vertex_neighbors =
@@ -259,11 +260,6 @@ impl Board {
                     .iter()
                     .map(move |dest| Move::Move(origin, dest, our_color))
             }))
-            .chain(
-                exchange_captures
-                    .iter()
-                    .map(move |opp_piece| Move::Exchange(opp_piece, opp_color)),
-            )
     }
     pub fn available_moves_for_piece(&self, field: &FieldCoord) -> Vec<FieldCoord> {
         if self.is_piece_on_field(field) {
