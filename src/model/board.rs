@@ -201,9 +201,12 @@ impl Board {
         // A bitboard of pieces that can be moved to capture a hex.
         let mut hex_capture_pieces = 0;
 
-        // By exchanging these pieces, we also remove a hex, which causes another opponent piece to
-        // be captured.
-        let mut exchange_captures = [0; 19];
+        // By exchanging these pieces, we capture a hex, which also captures another opponent piece.
+        // This does not consider "hex capture chains" where removing the first hex doesn't capture
+        // an opponent piece, but causes another hex to be captured, which captures a piece. That
+        // would be too hard to check for and is rare. So, we ignore some potential captures, but
+        // also examine less quiescence nodes in the long run, which is (hopefully) an net gain.
+        let mut exchange_captures = 0;
 
         for i in 0..18 {
             if self.is_hex_extant(i) && self.is_hex_maybe_removable(i) {
@@ -212,7 +215,15 @@ impl Board {
                 let our_piece = our_fields & hex;
 
                 if can_exchange && our_piece == 0 && opp_piece.is_one_bit_set() {
-                    exchange_captures[i] = opp_piece;
+                    let hex_field_neighbors =
+                        HEX_FIELD_NEIGHBORS.index_get(i, opp_color) & opp_fields;
+                    for opp_piece in hex_field_neighbors.iter() {
+                        let edge_neighbors = EDGE_NEIGHBORS.bb_get(opp_piece, opp_color) & hexes;
+                        if !edge_neighbors & (our_fields | hex) == 0 {
+                            exchange_captures |= opp_piece;
+                            break;
+                        }
+                    }
                 }
 
                 if opp_piece == 0 && our_piece.is_one_bit_set() {
@@ -228,13 +239,7 @@ impl Board {
                 let empty_edge_neighbor =
                     EDGE_NEIGHBORS.bb_get(opp_piece, opp_color) & (!our_fields & hexes);
 
-                let mut exchange_piece = 0;
                 let vertex_neighbors = if empty_edge_neighbor.is_one_bit_set() {
-                    // Get the exchange capture for this hexagon, if there is one.
-                    // Duplicate moves might be searched here if the opponent has two pieces which can
-                    // be captured by removing this one hex.
-                    exchange_piece = exchange_captures[empty_edge_neighbor.to_index()];
-
                     VERTEX_NEIGHBORS.bb_get(empty_edge_neighbor, our_color) & our_fields
                 } else {
                     0
@@ -242,10 +247,6 @@ impl Board {
                 vertex_neighbors.iter()
                 // These are plain "surround a piece" capture moves
                 .map(move |bb| Move::Move(bb, empty_edge_neighbor, our_color))
-                .chain(
-                    exchange_piece.iter()
-                        .map(move |bb| Move::Exchange(bb, opp_color))
-                )
             })
             .chain(hex_capture_pieces.iter().flat_map(move |origin| {
                 let hex = HEX_MASK[origin.to_index()];
@@ -255,6 +256,11 @@ impl Board {
                     .iter()
                     .map(move |dest| Move::Move(origin, dest, our_color))
             }))
+            .chain(
+                exchange_captures
+                    .iter()
+                    .map(move |opp_piece| Move::Exchange(opp_piece, opp_color)),
+            )
     }
     pub fn available_moves_for_piece(&self, field: &FieldCoord) -> Vec<FieldCoord> {
         if self.is_piece_on_field(field) {
