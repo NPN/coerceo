@@ -198,9 +198,8 @@ impl Board {
         let opp_color = self.turn.switch();
         let opp_fields = self.fields.get(opp_color);
 
-        // Each entry represents a (origin, destinations) bitboard pair. If we make these moves, they
-        // will cause us to capture a hex.
-        let mut hex_capture_moves = [(0, 0); 19];
+        // A bitboard of pieces that can be moved to capture a hex.
+        let mut hex_capture_pieces = 0;
 
         // By exchanging these pieces, we also remove a hex, which causes another opponent piece to
         // be captured.
@@ -217,9 +216,7 @@ impl Board {
                 }
 
                 if opp_piece == 0 && our_piece.is_one_bit_set() {
-                    let vertex_neighbors = VERTEX_NEIGHBORS.bb_get(our_piece, our_color)
-                        & (!hex & !our_fields & hexes);
-                    hex_capture_moves[i] = (our_piece, vertex_neighbors);
+                    hex_capture_pieces |= our_piece;
                 }
             }
         }
@@ -250,20 +247,14 @@ impl Board {
                         .map(move |bb| Move::Exchange(bb, opp_color))
                 )
             })
-            .chain(
-                // Stupid trick to capture hex_capture_moves in a closure. We can't write
-                // hex_capture_moves.iter()... because the iterator will outlive the array. We store
-                // the captures in an array to begin with because we want to be efficient and not iterate
-                // over the extant/maybe_removable hexes again.
-                (0..18)
-                    .into_iter()
-                    .map(move |i| hex_capture_moves[i])
-                    .flat_map(move |(origin, dests)| {
-                        dests
-                            .iter()
-                            .map(move |dest| Move::Move(origin, dest, our_color))
-                    }),
-            )
+            .chain(hex_capture_pieces.iter().flat_map(move |origin| {
+                let hex = HEX_MASK[origin.to_index()];
+                let vertex_neighbors =
+                    VERTEX_NEIGHBORS.bb_get(origin, our_color) & (!hex & !our_fields & hexes);
+                vertex_neighbors
+                    .iter()
+                    .map(move |dest| Move::Move(origin, dest, our_color))
+            }))
     }
     pub fn available_moves_for_piece(&self, field: &FieldCoord) -> Vec<FieldCoord> {
         if self.is_piece_on_field(field) {
