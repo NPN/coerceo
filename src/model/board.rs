@@ -411,12 +411,14 @@ impl Board {
         let hex = self.hexes
             & (HEX_FIELD_NEIGHBORS.index_get(index, Color::White)
                 | HEX_FIELD_NEIGHBORS.index_get(index, Color::Black));
+
         // There are 18 combinations to check for each hex
-        REMOVABLE_HEX_COMBS
-            .iter()
-            .skip(index * 18)
-            .take(18)
-            .any(|&comb| hex == comb)
+        for &comb in &REMOVABLE_HEX_COMBS[index * 18..index * 18 + 18] {
+            if hex == comb {
+                return true;
+            }
+        }
+        false
     }
     fn remove_hex(&mut self, index: usize) -> bool {
         let removable = self.is_hex_removable(index);
