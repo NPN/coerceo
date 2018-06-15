@@ -232,21 +232,25 @@ impl Board {
             }
         }
 
-        // TODO: Is this iterator madness actually efficient?
-        opp_fields
-            .iter()
-            .flat_map(move |opp_piece| {
-                let empty_edge_neighbor =
-                    EDGE_NEIGHBORS.bb_get(opp_piece, opp_color) & (!our_fields & hexes);
+        // If we move a piece to one of these empty fields, we will capture an opponent piece.
+        let mut capturing_neighbors = 0;
+        for opp_piece in opp_fields.iter() {
+            let edge_neighbors = EDGE_NEIGHBORS.bb_get(opp_piece, opp_color) & hexes;
+            let neighbor = edge_neighbors & !our_fields;
+            if neighbor.is_one_bit_set() {
+                capturing_neighbors |= neighbor;
+            }
+        }
 
-                let vertex_neighbors = if empty_edge_neighbor.is_one_bit_set() {
-                    VERTEX_NEIGHBORS.bb_get(empty_edge_neighbor, our_color) & our_fields
-                } else {
-                    0
-                };
-                vertex_neighbors.iter()
-                // These are plain "surround a piece" capture moves
-                .map(move |bb| Move::Move(bb, empty_edge_neighbor, our_color))
+        // TODO: Is this iterator madness actually efficient?
+        capturing_neighbors
+            .iter()
+            .flat_map(move |empty_neighbor| {
+                let vertex_neighbors =
+                    VERTEX_NEIGHBORS.bb_get(empty_neighbor, our_color) & our_fields;
+                vertex_neighbors
+                    .iter()
+                    .map(move |our_piece| Move::Move(our_piece, empty_neighbor, our_color))
             })
             .chain(hex_capture_pieces.iter().flat_map(move |origin| {
                 let hex = HEX_MASK[origin.to_index()];
