@@ -242,7 +242,6 @@ impl Board {
             }
         }
 
-        // TODO: Is this iterator madness actually efficient?
         capturing_neighbors
             .iter()
             .flat_map(move |empty_neighbor| {
