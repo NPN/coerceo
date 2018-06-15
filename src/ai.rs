@@ -274,8 +274,7 @@ fn alphabeta_negamax(
     let mut best_move = None;
 
     let mut new_pv = vec![];
-    let moves = board.generate_moves();
-    for mv in moves {
+    for mv in board.generate_moves() {
         let mut new_board = *board;
         new_board.apply_move(&mv);
 
