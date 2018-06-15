@@ -209,14 +209,14 @@ impl Board {
         for i in 0..18 {
             if self.is_hex_extant(i) && self.is_hex_maybe_removable(i) {
                 let hex = HEX_MASK[i];
-
                 let opp_piece = opp_fields & hex;
-                if can_exchange && opp_piece.is_one_bit_set() {
+                let our_piece = our_fields & hex;
+
+                if can_exchange && our_piece == 0 && opp_piece.is_one_bit_set() {
                     exchange_captures[i] = opp_piece;
                 }
 
-                let our_piece = our_fields & hex;
-                if our_piece.is_one_bit_set() {
+                if opp_piece == 0 && our_piece.is_one_bit_set() {
                     let vertex_neighbors = VERTEX_NEIGHBORS.bb_get(our_piece, our_color)
                         & (!hex & !our_fields & hexes);
                     hex_capture_moves[i] = (our_piece, vertex_neighbors);
