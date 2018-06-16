@@ -312,6 +312,11 @@ fn quiescence_search(board: &Board, mut alpha: i16, beta: i16) -> i16 {
     let stand_pat = evaluate(board);
     if stand_pat >= beta {
         return beta;
+    } else if stand_pat + 200 < alpha {
+        // Delta pruning: we bet that no capture move will raise alpha by more than 200 centipieces
+        // We don't switch this off in the endgame because a draw by insufficient material is very
+        // unlikely (both sides must be unable to exchange and each have only 1 piece left)
+        return alpha;
     } else if alpha < stand_pat {
         alpha = stand_pat;
     }
