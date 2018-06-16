@@ -25,10 +25,11 @@ use std::thread::{self, JoinHandle};
 use model::ttable::{EvalType, TTable};
 use model::{Board, Move, Outcome};
 
-const NEG_INFINITY: i16 = -0x7FFF;
+const NEG_INFINITY: i16 = -0x7000;
 const LOSE: i16 = -0x4000;
 // Small contempt factor to discourage draws
 const DRAW: i16 = 1;
+const ASPIRATION_WIDTH: i16 = 51;
 
 pub struct AI {
     status: Status,
@@ -145,35 +146,49 @@ impl AI {
             }
 
             let mut pv = None;
+            let mut prev_iter_score = evaluate(&board);
             for depth in 0..depth {
                 if stop_signal_clone.load(Ordering::Relaxed) {
                     return;
                 }
-                let mut max_score = NEG_INFINITY;
-                // TODO: use the scores here are a kind of aspiration window?
-                for pair in &mut moves {
-                    let mut new_board = board;
-                    new_board.apply_move(&pair.0);
 
-                    let mut new_pv = vec![];
+                // Aspiration window re-search loop
+                let mut aspiration_width = ASPIRATION_WIDTH;
+                loop {
+                    let mut max_score = NEG_INFINITY;
+                    for pair in &mut moves {
+                        let mut new_board = board;
+                        new_board.apply_move(&pair.0);
 
-                    let score = -alphabeta_negamax(
-                        &new_board,
-                        &mut board_list,
-                        &mut new_pv,
-                        NEG_INFINITY,
-                        -max_score,
-                        depth,
-                        &mut ttable,
-                    );
+                        let mut new_pv = vec![];
 
-                    if score > max_score {
-                        max_score = score;
-                        pv = Some(new_pv);
+                        let score = -alphabeta_negamax(
+                            &new_board,
+                            &mut board_list,
+                            &mut new_pv,
+                            -(prev_iter_score + aspiration_width),
+                            -max_score,
+                            depth,
+                            &mut ttable,
+                        );
+
+                        if score > max_score {
+                            max_score = score;
+                            pv = Some(new_pv);
+                        }
+                        pair.1 = score;
                     }
-                    pair.1 = score;
+
+                    if max_score >= prev_iter_score + aspiration_width {
+                        // True score probably lies outside the window. Let's retry.
+                        aspiration_width *= 2;
+                    } else {
+                        break;
+                    }
                 }
+
                 moves.sort_by(|&(_, a), &(_, b)| b.cmp(&a));
+                prev_iter_score = moves[0].1;
                 println!();
                 println!("Depth {}: {:>6}", depth, moves[0].1);
                 if let Some(ref mut pv) = pv {
