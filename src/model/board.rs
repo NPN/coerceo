@@ -358,12 +358,6 @@ impl Board {
 // Field and piece methods
 impl Board {
     fn toggle_field(&mut self, bb: BitBoard, color: Color) {
-        assert_ne!(
-            bb & self.hexes,
-            0,
-            "Trying to toggle field(s) on removed hex(es)"
-        );
-
         *self.fields.get_mut(color) ^= bb;
     }
     fn remove_piece(&mut self, bb: BitBoard, color: Color) {
