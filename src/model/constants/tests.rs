@@ -204,27 +204,73 @@ fn hex_mask() {
 fn removable_hex_combs() {
     let mut table = [0; 342];
 
-    let bb_neighbor = |hex, f| OptionFieldCoord::from_hex_f(hex, f).flip().to_bitboard();
+    let neighbor = |hex, f| {
+        OptionFieldCoord::from_hex_f(hex as u8, f as u8)
+            .flip()
+            .to_bitboard()
+    };
 
-    for hex in 0..19 {
+    // The bitwise or's below combines bitboards of different "colors." However, since each neighbor
+    // is on a different hex (i.e. in a different block of three bits), bits can never overlap each
+    // other. Also, this is compared against the extant hex bitboard, so color doesn't matter.
+
+    // Corner pieces
+    for (f, &hex) in [7, 16, 18, 11, 2, 0].iter().enumerate() {
+        let a = neighbor(hex, f);
+        let b = neighbor(hex, (f + 1) % 6);
+        let c = neighbor(hex, (f + 2) % 6);
+
+        let index = hex * 18;
+
+        table[index] = a | b | c;
+
+        table[index + 1] = a | b;
+        table[index + 2] = b | c;
+
+        table[index + 3] = a;
+        table[index + 4] = b;
+        table[index + 5] = c;
+    }
+
+    // Edge pieces
+    for (f, &hex) in [12, 17, 15, 6, 1, 3].iter().enumerate() {
+        let a = neighbor(hex, f);
+        let b = neighbor(hex, (f + 1) % 6);
+        let c = neighbor(hex, (f + 2) % 6);
+        let d = neighbor(hex, (f + 3) % 6);
+
+        let index = hex * 18;
+
+        table[index] = a | b | c;
+        table[index + 1] = b | c | d;
+
+        table[index + 2] = a | b;
+        table[index + 3] = b | c;
+        table[index + 4] = c | d;
+
+        table[index + 5] = a;
+        table[index + 6] = b;
+        table[index + 7] = c;
+        table[index + 8] = d;
+    }
+
+    // Center pieces
+    for &hex in &[4, 5, 8, 9, 10, 13, 14] {
         let neighbors = [
-            bb_neighbor(hex, 0),
-            bb_neighbor(hex, 1),
-            bb_neighbor(hex, 2),
-            bb_neighbor(hex, 3),
-            bb_neighbor(hex, 4),
-            bb_neighbor(hex, 5),
+            neighbor(hex, 0),
+            neighbor(hex, 1),
+            neighbor(hex, 2),
+            neighbor(hex, 3),
+            neighbor(hex, 4),
+            neighbor(hex, 5),
         ];
 
-        // This bitwise or combines bitboards of different "colors." However, since each neighbor is
-        // on a different hex (i.e. in a different block of three bits), bits can never overlap each
-        // other. Also, this is compared against the extant hex bitboard, so color doesn't matter.
         let mut triple = neighbors[0] | neighbors[1] | neighbors[2];
         let mut double = neighbors[0] | neighbors[1];
         let mut single = neighbors[0];
 
         for f in 0..6 {
-            let index = hex as usize * 18 + f;
+            let index = hex * 18 + f;
             table[index] = triple;
             table[index + 6] = double;
             table[index + 12] = single;
