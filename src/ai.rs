@@ -22,7 +22,7 @@ use std::sync::mpsc::{self, Receiver, TryRecvError};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 
-use model::ttable::{EvalType, TTable};
+use model::ttable::{Score, TTable};
 use model::{Board, Move, Outcome};
 
 const NEG_INFINITY: i16 = -0x7000;
@@ -246,15 +246,15 @@ fn alphabeta_negamax(
             *pv = new_pv;
         }
     };
-    let set_ttable = |ttable: &mut TTable, eval_type, score| {
-        ttable.set(board.zobrist, eval_type, depth, score);
+    let set_ttable = |ttable: &mut TTable, score| {
+        ttable.set(board.zobrist, score, depth);
     };
 
     use self::Outcome::*;
     match board.outcome() {
         DrawStalemate | DrawInsufficientMaterial => {
             // This is safe to do because Board does not detect draws by threefold repetition
-            set_ttable(ttable, EvalType::Exact, DRAW);
+            set_ttable(ttable, Score::Exact(DRAW));
             set_pv(DRAW, vec![]);
             return DRAW;
         }
@@ -264,7 +264,7 @@ fn alphabeta_negamax(
             // `depth` will be, and so the larger the score will be. This also encourages the AI to
             // prolong a loss.
             let score = LOSE - i16::from(depth);
-            set_ttable(ttable, EvalType::Exact, score);
+            set_ttable(ttable, Score::Exact(score));
             set_pv(score, vec![]);
             return score;
         }
@@ -284,22 +284,20 @@ fn alphabeta_negamax(
     }
 
     {
-        let entry = ttable.get(board.zobrist);
-        if entry.zobrist == board.zobrist && entry.depth == depth {
-            match entry.eval_type {
-                EvalType::Exact => {
-                    // This will cut the PV short
-                    // TODO: Store the best move in the table and get the PV from that?
-                    set_pv(entry.score, vec![]);
-                    return entry.score;
-                }
-                EvalType::Beta => {
-                    if entry.score >= beta {
-                        return entry.score;
-                    }
-                    beta = entry.score;
-                }
+        match ttable.get(board.zobrist, depth) {
+            Some(Score::Exact(score)) => {
+                // This will cut the PV short
+                // TODO: Store the best move in the table and get the PV from that?
+                set_pv(score, vec![]);
+                return score;
             }
+            Some(Score::Beta(score)) => {
+                if score >= beta {
+                    return score;
+                }
+                beta = score;
+            }
+            None => {}
         }
     }
 
@@ -326,14 +324,14 @@ fn alphabeta_negamax(
         best_score = cmp::max(score, best_score);
 
         if score >= beta {
-            set_ttable(ttable, EvalType::Beta, score);
+            set_ttable(ttable, Score::Beta(score));
             return beta;
         } else if score > alpha {
             alpha = score;
             best_move = Some(mv);
         }
     }
-    set_ttable(ttable, EvalType::Exact, best_score);
+    set_ttable(ttable, Score::Exact(best_score));
     if let Some(mv) = best_move {
         new_pv.push(mv);
         set_pv(alpha, new_pv);

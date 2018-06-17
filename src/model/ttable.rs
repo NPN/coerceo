@@ -37,15 +37,17 @@ impl TTable {
     pub fn inc_age(&mut self) {
         self.age.wrapping_add(1);
     }
-    pub fn get(&self, zobrist: ZobristHash) -> &Entry {
+    pub fn get(&self, zobrist: ZobristHash, depth: u8) -> Option<Score> {
         let hash = (zobrist & TABLE_MASK) as usize;
         let mut entry = self.table[hash];
-        if entry.zobrist != 0 {
+        if entry.zobrist == zobrist && entry.depth == depth {
             entry.age = self.age;
+            Some(entry.score)
+        } else {
+            None
         }
-        &self.table[hash]
     }
-    pub fn set(&mut self, zobrist: ZobristHash, eval_type: EvalType, depth: u8, score: i16) {
+    pub fn set(&mut self, zobrist: ZobristHash, score: Score, depth: u8) {
         let hash = (zobrist & TABLE_MASK) as usize;
         let mut entry = self.table[hash];
         let mut replace = false;
@@ -59,39 +61,36 @@ impl TTable {
         }
 
         if replace {
-            entry.eval_type = eval_type;
+            entry.score = score;
             entry.age = self.age;
             entry.depth = depth;
-            entry.score = score;
             entry.zobrist = zobrist;
         }
     }
 }
 
 #[derive(Clone, Copy)]
-pub enum EvalType {
-    Exact,
-    Beta,
+pub enum Score {
+    Exact(i16),
+    Beta(i16),
 }
 
 // TODO: Store best move for move ordering?
 // TODO: Use lower bits of ZobristHash to save space?
 #[derive(Clone, Copy)]
 pub struct Entry {
-    pub eval_type: EvalType,
+    pub score: Score,
     pub age: u8,
     pub depth: u8,
-    pub score: i16,
     pub zobrist: ZobristHash,
 }
 
 impl Default for Entry {
     fn default() -> Self {
         Self {
-            eval_type: EvalType::Exact,
+            score: Score::Exact(0),
             age: 0,
             depth: 0,
-            score: 0,
             // The only field that matters for determining if this is an empty entry or not.
             // Assume (and hope) that no valid board ever hashes to 0.
             zobrist: 0,
