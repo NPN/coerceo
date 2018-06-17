@@ -232,23 +232,23 @@ impl Board {
             }
         }
 
-        // If we move a piece to one of these empty fields, we will capture an opponent piece.
-        let mut capturing_neighbors = 0;
-        for opp_piece in opp_fields.iter() {
-            let edge_neighbors = EDGE_NEIGHBORS.bb_get(opp_piece, opp_color) & hexes;
-            let neighbor = edge_neighbors & !our_fields;
-            if neighbor.is_one_bit_set() {
-                capturing_neighbors |= neighbor;
-            }
-        }
-
         exchange_captures
             .iter()
             .map(move |opp_piece| Move::Exchange(opp_piece, opp_color))
-            .chain(capturing_neighbors.iter().flat_map(move |empty_neighbor| {
-                let vertex_neighbors =
-                    VERTEX_NEIGHBORS.bb_get(empty_neighbor, our_color) & our_fields;
-                vertex_neighbors
+            .chain(opp_fields.iter().flat_map(move |opp_piece| {
+                let edge_neighbors = EDGE_NEIGHBORS.bb_get(opp_piece, opp_color) & hexes;
+                let empty_neighbor = edge_neighbors & !our_fields;
+
+                let origins = if empty_neighbor.is_one_bit_set() {
+                    VERTEX_NEIGHBORS.bb_get(empty_neighbor, our_color)
+                        & our_fields
+                        & !edge_neighbors
+                } else {
+                    // Again, we need to return a single, concrete iterator type
+                    0
+                };
+
+                origins
                     .iter()
                     .map(move |our_piece| Move::Move(our_piece, empty_neighbor, our_color))
             }))
