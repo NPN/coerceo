@@ -174,16 +174,16 @@ fn search_root(
     }
 
     let mut pv = None;
-    let mut prev_iter_score = evaluate(&board);
+    let mut iter_score = evaluate(&board);
     for depth in 0..depth {
         if stop_signal.load(Ordering::Relaxed) {
             return SearchResult::Stopped;
         }
 
-        // Aspiration window re-search loop
-        let mut aspiration_width = ASPIRATION_WIDTH;
+        // Aspiration window search loop
+        let mut asp_width = ASPIRATION_WIDTH;
         loop {
-            let mut max_score = NEG_INFINITY;
+            let mut max_score = iter_score - asp_width;
             for pair in &mut moves {
                 let mut new_board = board;
                 new_board.apply_move(&pair.0);
@@ -194,7 +194,7 @@ fn search_root(
                     &new_board,
                     &mut board_list,
                     &mut new_pv,
-                    -(prev_iter_score + aspiration_width),
+                    -(iter_score + asp_width),
                     -max_score,
                     depth,
                     ttable,
@@ -207,18 +207,18 @@ fn search_root(
                 pair.1 = score;
             }
 
-            if max_score >= prev_iter_score + aspiration_width {
-                // True score probably lies outside the window. Let's retry.
-                aspiration_width *= 2;
+            if max_score == iter_score + asp_width || max_score == iter_score - asp_width {
+                // True score lies outside the window, so we search this position again
+                asp_width *= 2;
             } else {
                 break;
             }
         }
 
         moves.sort_by(|&(_, a), &(_, b)| b.cmp(&a));
-        prev_iter_score = moves[0].1;
-        println!();
-        println!("Depth {}: {:>6}", depth, moves[0].1);
+        iter_score = moves[0].1;
+
+        println!("\nDepth {}: {:>6}", depth, moves[0].1);
         if let Some(ref mut pv) = pv {
             pv.push(moves[0].0);
             for mv in pv.iter().rev() {
@@ -226,8 +226,7 @@ fn search_root(
             }
         }
     }
-    println!();
-    println!("---------------------");
+    println!("\n---------------------");
 
     SearchResult::Move(moves[0].0)
 }
