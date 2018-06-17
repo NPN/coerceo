@@ -126,91 +126,110 @@ impl AI {
                 Ok(table) => table,
                 Err(_) => panic!("Transposition table mutex is poisoned"),
             };
-            ttable.inc_age();
 
-            // Only take positions after the last irreversible move
-            let mut board_list: Vec<_> = board_list
-                .into_iter()
-                .rev()
-                .take_while(|b| b.vitals == board.vitals)
-                .collect();
-            board_list.reverse();
-
-            let mut moves: Vec<(Move, i16)> = board
-                .generate_moves()
-                .map(|mv| (mv, NEG_INFINITY))
-                .collect();
-
-            if moves.is_empty() {
-                panic!("AI has no moves");
+            if let SearchResult::Move(mv) =
+                search_root(depth, board, board_list, &mut ttable, stop_signal_clone)
+            {
+                move_sender.send(mv).expect("AI failed to send Move");
             }
-
-            let mut pv = None;
-            let mut prev_iter_score = evaluate(&board);
-            for depth in 0..depth {
-                if stop_signal_clone.load(Ordering::Relaxed) {
-                    return;
-                }
-
-                // Aspiration window re-search loop
-                let mut aspiration_width = ASPIRATION_WIDTH;
-                loop {
-                    let mut max_score = NEG_INFINITY;
-                    for pair in &mut moves {
-                        let mut new_board = board;
-                        new_board.apply_move(&pair.0);
-
-                        let mut new_pv = vec![];
-
-                        let score = -alphabeta_negamax(
-                            &new_board,
-                            &mut board_list,
-                            &mut new_pv,
-                            -(prev_iter_score + aspiration_width),
-                            -max_score,
-                            depth,
-                            &mut ttable,
-                        );
-
-                        if score > max_score {
-                            max_score = score;
-                            pv = Some(new_pv);
-                        }
-                        pair.1 = score;
-                    }
-
-                    if max_score >= prev_iter_score + aspiration_width {
-                        // True score probably lies outside the window. Let's retry.
-                        aspiration_width *= 2;
-                    } else {
-                        break;
-                    }
-                }
-
-                moves.sort_by(|&(_, a), &(_, b)| b.cmp(&a));
-                prev_iter_score = moves[0].1;
-                println!();
-                println!("Depth {}: {:>6}", depth, moves[0].1);
-                if let Some(ref mut pv) = pv {
-                    pv.push(moves[0].0);
-                    for mv in pv.iter().rev() {
-                        println!("    {}", mv);
-                    }
-                }
-            }
-            println!();
-            println!("---------------------");
-            move_sender
-                .send(moves[0].0)
-                .expect("AI failed to send Move");
         });
 
         self.status = Status::Thinking {
             move_recv,
             stop_signal,
             handle,
+        };
+    }
+}
+
+enum SearchResult {
+    Move(Move),
+    Stopped,
+}
+
+fn search_root(
+    depth: u8,
+    board: Board,
+    board_list: Vec<Board>,
+    ttable: &mut TTable,
+    stop_signal: Arc<AtomicBool>,
+) -> SearchResult {
+    ttable.inc_age();
+
+    // Only take positions after the last irreversible move
+    let mut board_list: Vec<_> = board_list
+        .into_iter()
+        .rev()
+        .take_while(|b| b.vitals == board.vitals)
+        .collect();
+    board_list.reverse();
+
+    let mut moves: Vec<(Move, i16)> = board
+        .generate_moves()
+        .map(|mv| (mv, NEG_INFINITY))
+        .collect();
+
+    if moves.is_empty() {
+        panic!("AI has no moves");
+    }
+
+    let mut pv = None;
+    let mut prev_iter_score = evaluate(&board);
+    for depth in 0..depth {
+        if stop_signal.load(Ordering::Relaxed) {
+            return SearchResult::Stopped;
+        }
+
+        // Aspiration window re-search loop
+        let mut aspiration_width = ASPIRATION_WIDTH;
+        loop {
+            let mut max_score = NEG_INFINITY;
+            for pair in &mut moves {
+                let mut new_board = board;
+                new_board.apply_move(&pair.0);
+
+                let mut new_pv = vec![];
+
+                let score = -alphabeta_negamax(
+                    &new_board,
+                    &mut board_list,
+                    &mut new_pv,
+                    -(prev_iter_score + aspiration_width),
+                    -max_score,
+                    depth,
+                    ttable,
+                );
+
+                if score > max_score {
+                    max_score = score;
+                    pv = Some(new_pv);
+                }
+                pair.1 = score;
+            }
+
+            if max_score >= prev_iter_score + aspiration_width {
+                // True score probably lies outside the window. Let's retry.
+                aspiration_width *= 2;
+            } else {
+                break;
+            }
+        }
+
+        moves.sort_by(|&(_, a), &(_, b)| b.cmp(&a));
+        prev_iter_score = moves[0].1;
+        println!();
+        println!("Depth {}: {:>6}", depth, moves[0].1);
+        if let Some(ref mut pv) = pv {
+            pv.push(moves[0].0);
+            for mv in pv.iter().rev() {
+                println!("    {}", mv);
+            }
         }
     }
+    println!();
+    println!("---------------------");
+
+    SearchResult::Move(moves[0].0)
 }
 
 fn alphabeta_negamax(
