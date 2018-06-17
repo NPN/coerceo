@@ -37,23 +37,22 @@ impl TTable {
     pub fn inc_age(&mut self) {
         self.age.wrapping_add(1);
     }
-    pub fn get(&self, zobrist: ZobristHash, depth: u8) -> Option<Score> {
+    pub fn get(&self, zobrist: ZobristHash, depth: i8) -> Option<Score> {
         let hash = (zobrist & TABLE_MASK) as usize;
         let mut entry = self.table[hash];
-        if entry.zobrist == zobrist && entry.depth == depth {
+        if entry.zobrist == zobrist && entry.depth >= depth {
             entry.age = self.age;
             Some(entry.score)
         } else {
             None
         }
     }
-    pub fn set(&mut self, zobrist: ZobristHash, score: Score, depth: u8) {
+    pub fn set(&mut self, zobrist: ZobristHash, score: Score, depth: i8) {
         let hash = (zobrist & TABLE_MASK) as usize;
         let mut entry = self.table[hash];
         let mut replace = false;
         if entry.zobrist != 0 {
-            // TODO: Fine tune this score calculation?
-            if depth + self.age.wrapping_sub(entry.age) > entry.depth {
+            if self.age != entry.age || depth > entry.depth {
                 replace = true;
             }
         } else {
@@ -81,7 +80,7 @@ pub enum Score {
 pub struct Entry {
     pub score: Score,
     pub age: u8,
-    pub depth: u8,
+    pub depth: i8,
     pub zobrist: ZobristHash,
 }
 

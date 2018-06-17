@@ -247,7 +247,7 @@ fn alphabeta_negamax(
         }
     };
     let set_ttable = |ttable: &mut TTable, score| {
-        ttable.set(board.zobrist, score, depth);
+        ttable.set(board.zobrist, score, depth as i8);
     };
 
     use self::Outcome::*;
@@ -278,13 +278,13 @@ fn alphabeta_negamax(
     }
 
     if depth == 0 {
-        let score = quiescence_search(board, alpha, beta);
+        let score = quiescence_search(board, alpha, beta, depth as i8, ttable);
         set_pv(score, vec![]);
         return score;
     }
 
     {
-        match ttable.get(board.zobrist, depth) {
+        match ttable.get(board.zobrist, depth as i8) {
             Some(Score::Exact(score)) => {
                 // This will cut the PV short
                 // TODO: Store the best move in the table and get the PV from that?
@@ -339,7 +339,13 @@ fn alphabeta_negamax(
     alpha
 }
 
-fn quiescence_search(board: &Board, mut alpha: i16, beta: i16) -> i16 {
+fn quiescence_search(
+    board: &Board,
+    mut alpha: i16,
+    mut beta: i16,
+    depth: i8,
+    ttable: &mut TTable,
+) -> i16 {
     let stand_pat = evaluate(board);
     if stand_pat >= beta {
         return beta;
@@ -352,18 +358,37 @@ fn quiescence_search(board: &Board, mut alpha: i16, beta: i16) -> i16 {
         alpha = stand_pat;
     }
 
+    match ttable.get(board.zobrist, depth) {
+        Some(Score::Exact(score)) => {
+            return score;
+        }
+        Some(Score::Beta(score)) => {
+            if score >= beta {
+                return score;
+            }
+            beta = score;
+        }
+        None => {}
+    };
+
+    let set_ttable = |ttable: &mut TTable, score| {
+        ttable.set(board.zobrist, score, depth);
+    };
+
     for mv in board.generate_captures() {
         let mut new_board = *board;
         new_board.apply_move(&mv);
 
-        let score = -quiescence_search(&new_board, -beta, -alpha);
+        let score = -quiescence_search(&new_board, -beta, -alpha, depth - 1, ttable);
 
         if score >= beta {
+            set_ttable(ttable, Score::Beta(score));
             return beta;
         } else if score > alpha {
             alpha = score;
         }
     }
+    set_ttable(ttable, Score::Exact(alpha));
     alpha
 }
 
