@@ -61,6 +61,18 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                 insert_if_empty(&mut event, Event::Quit);
             }
         });
+
+        let mut depth = model.ai_search_depth as i32;
+        ui.menu(im_str!("Computer")).build(|| {
+            ui.slider_int(im_str!("Search depth"), &mut depth, 1, 7)
+                .build();
+            if ui.is_item_hovered() {
+                ui.tooltip_text("How many moves ahead the computer will search.\nFewer moves is faster and easier, while more moves is slower and more difficult.");
+            }
+        });
+        if depth as u8 != model.ai_search_depth {
+            insert_if_empty(&mut event, Event::SetAIDepth(depth as u8));
+        }
     });
 
     ui.window(im_str!("Coerceo"))
