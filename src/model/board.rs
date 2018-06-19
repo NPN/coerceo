@@ -112,8 +112,7 @@ impl Board {
                 self.zobrist.toggle_field(from, color);
                 self.zobrist.toggle_field(to, color);
 
-                let (capture_count, mut fields_to_check) =
-                    self.check_hexes(from.trailing_zeros() as usize / 3);
+                let (capture_count, mut fields_to_check) = self.check_hexes(from.to_index());
                 fields_to_check |= EDGE_NEIGHBORS.bb_get(to, color);
                 self.check_captures(fields_to_check);
 
@@ -135,7 +134,7 @@ impl Board {
                 }
 
                 // Players don't collect hexes removed due to an exchange
-                let (_, fields_to_check) = self.check_hexes(bb.trailing_zeros() as usize / 3);
+                let (_, fields_to_check) = self.check_hexes(bb.to_index());
                 self.check_captures(fields_to_check);
             }
         }
@@ -438,7 +437,7 @@ impl Board {
                 self.hexes & HEX_FIELD_NEIGHBORS.index_get(index, self.turn.switch());
 
             for neighbor in (our_neighbors | their_neighbors).iter() {
-                let check_result = self.check_hexes(neighbor.trailing_zeros() as usize / 3);
+                let check_result = self.check_hexes(neighbor.to_index());
                 remove_count += check_result.0;
                 fields |= check_result.1;
             }

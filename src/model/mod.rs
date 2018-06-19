@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod bitboard;
+pub mod bitboard;
 mod board;
 mod constants;
 pub mod ttable;
