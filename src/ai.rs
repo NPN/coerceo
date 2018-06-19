@@ -128,7 +128,7 @@ impl AI {
             };
 
             if let SearchResult::Move(mv) =
-                search_root(depth, board, board_list, &mut ttable, stop_signal_clone)
+                search_root(depth, board, board_list, &mut ttable, &stop_signal_clone)
             {
                 move_sender.send(mv).expect("AI failed to send Move");
             }
@@ -152,7 +152,7 @@ fn search_root(
     board: Board,
     board_list: Vec<Board>,
     ttable: &mut TTable,
-    stop_signal: Arc<AtomicBool>,
+    stop_signal: &Arc<AtomicBool>,
 ) -> SearchResult {
     ttable.inc_age();
 
