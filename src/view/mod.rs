@@ -137,13 +137,13 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                         &button_size,
                         &mut event,
                     );
+                    let is_human_player = model.current_player() == Player::Human;
                     horz_button_layout(
                         ui,
                         vec![
-                            (true, im_str!("Resign"), Event::Resign),
+                            (is_human_player, im_str!("Resign"), Event::Resign),
                             (
-                                model.board.can_exchange()
-                                    && model.current_player() == Player::Human,
+                                model.board.can_exchange() && is_human_player,
                                 if model.exchanging {
                                     im_str!("Stop Exchanging")
                                 } else {

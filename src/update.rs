@@ -46,6 +46,9 @@ pub fn update(model: &mut Model, event: Option<Event>) -> bool {
             if let Some(event) = event {
                 match event {
                     Click(_) | Exchange => {}
+                    SetAIDepth(_) => {
+                        handle_event(model, &event);
+                    }
                     _ => {
                         model.ai.stop();
                         handle_event(model, &event);
