@@ -59,10 +59,7 @@ pub fn update(model: &mut Model, event: Option<Event>) -> bool {
                     model.ai.think(model.board, board_list, 6);
                 }
                 if let Some(mv) = model.ai.try_recv() {
-                    model.push_undo_state();
-                    model.board.apply_move(&mv);
-                    model.last_move = Some(mv);
-                    model.update_outcome();
+                    try_move(model, mv);
                 }
             }
         }
