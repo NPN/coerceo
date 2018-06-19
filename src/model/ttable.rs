@@ -39,9 +39,8 @@ impl TTable {
     }
     pub fn get(&self, zobrist: ZobristHash, depth: i8) -> Option<Score> {
         let hash = (zobrist & TABLE_MASK) as usize;
-        let mut entry = self.table[hash];
+        let entry = self.table[hash];
         if entry.zobrist == zobrist && entry.depth >= depth {
-            entry.age = self.age;
             Some(entry.score)
         } else {
             None
