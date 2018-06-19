@@ -39,22 +39,21 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
     ui.main_menu_bar(|| {
         ui.menu(im_str!("Game")).build(|| {
             ui.menu_item(im_str!("New game")).enabled(false).build();
+
+            use self::Player::*;
             if ui.menu_item(im_str!("Human vs. Human")).build() {
-                insert_if_empty(
-                    &mut event,
-                    Event::NewGame(ColorMap::new(Player::Human, Player::Human)),
-                );
+                insert_if_empty(&mut event, Event::NewGame(ColorMap::new(Human, Human)));
             }
             if ui.menu_item(im_str!("Human vs. Computer")).build() {
-                insert_if_empty(
-                    &mut event,
-                    Event::NewGame(ColorMap::new(Player::Human, Player::Computer)),
-                );
+                insert_if_empty(&mut event, Event::NewGame(ColorMap::new(Human, Computer)));
             }
             if ui.menu_item(im_str!("Computer vs. Human")).build() {
+                insert_if_empty(&mut event, Event::NewGame(ColorMap::new(Computer, Human)));
+            }
+            if ui.menu_item(im_str!("Computer vs. Computer")).build() {
                 insert_if_empty(
                     &mut event,
-                    Event::NewGame(ColorMap::new(Player::Computer, Player::Human)),
+                    Event::NewGame(ColorMap::new(Computer, Computer)),
                 );
             }
             ui.separator();
