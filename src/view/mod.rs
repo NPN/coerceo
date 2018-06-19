@@ -118,7 +118,14 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                     }
                 }
                 InProgress => {
-                    ui.text(format!("It's {:?}'s turn.", model.board.turn));
+                    ui.text(format!(
+                        "It's {:?}'s turn. ({})",
+                        model.board.turn,
+                        match model.current_player() {
+                            Player::Computer => "Computer",
+                            Player::Human => "Human",
+                        }
+                    ));
                     display_vitals();
 
                     horz_button_layout(
