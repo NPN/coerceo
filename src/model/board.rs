@@ -432,11 +432,10 @@ impl Board {
         if self.remove_hex(index) {
             remove_count += 1;
 
-            let our_neighbors = self.hexes & HEX_FIELD_NEIGHBORS.index_get(index, self.turn);
-            let their_neighbors =
-                self.hexes & HEX_FIELD_NEIGHBORS.index_get(index, self.turn.switch());
+            let our_neighbors = HEX_FIELD_NEIGHBORS.index_get(index, self.turn);
+            let their_neighbors = HEX_FIELD_NEIGHBORS.index_get(index, self.turn.switch());
 
-            for neighbor in (our_neighbors | their_neighbors).iter() {
+            for neighbor in (self.hexes & (our_neighbors | their_neighbors)).iter() {
                 let check_result = self.check_hexes(neighbor.to_index());
                 remove_count += check_result.0;
                 fields |= check_result.1;
