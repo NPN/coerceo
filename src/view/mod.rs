@@ -61,7 +61,7 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
             }
         });
 
-        let mut depth = model.ai_search_depth as i32;
+        let mut depth = i32::from(model.ai_search_depth);
         ui.menu(im_str!("Computer")).build(|| {
             ui.slider_int(im_str!("Search depth"), &mut depth, 1, 7)
                 .build();
