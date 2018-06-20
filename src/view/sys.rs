@@ -120,6 +120,10 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
             }
         });
 
+        if quit {
+            break;
+        }
+
         let now = Instant::now();
         let delta = now - last_frame;
         let delta_s = delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1_000_000_000.0;
@@ -149,10 +153,6 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
         );
         renderer.render(&mut target, ui).expect("Rendering failed");
         target.finish().unwrap();
-
-        if quit {
-            break;
-        }
     }
 }
 
