@@ -7,7 +7,7 @@ description = "A clone of a strategic board game."
 license = "AGPL-3.0"
 
 [dependencies]
-glium = "0.19"
-imgui = "0.0.18"
-imgui-glium-renderer = "0.0.18"
-imgui-sys = "0.0.18"
+glium = { version = "0.21", default-features = true }
+imgui = { git = "https://github.com/Gekkio/imgui-rs", rev = "a8cd16ef90" }
+imgui-glium-renderer = { git = "https://github.com/Gekkio/imgui-rs", rev = "a8cd16ef90" }
+imgui-sys = { git = "https://github.com/Gekkio/imgui-rs", rev = "a8cd16ef90" }
