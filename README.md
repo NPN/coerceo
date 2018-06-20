@@ -15,7 +15,7 @@ There are [variations](http://coerceo.com/rules2.html) on the game, but this pro
 
 ## Notation
 
-The notation that the AI debug output uses to describe the principal variation (see [Wikipedia](https://en.wikipedia.org/wiki/Principal_variation) or the [Chess Programming Wiki](https://chessprogramming.wikispaces.com/Principal+variation)) does not use the [official notation](http://coerceo.com/Coerceo%20GameNotation.pdf). Rather, it uses an notation based off of the notation for [Gliński's hexagonal chess](https://en.wikipedia.org/wiki/Hexagonal_chess#Gli%C5%84ski's_hexagonal_chess). The files (columns) are lettered 'a-e' from left to right. The ranks (row) are numbered '1-5' from bottom to top. Each row makes a 60 degree bend at the c file, which gives each file a 'V' shape. The fields are lettered from 'a-e' clockwise like so:
+The notation that the AI debug output uses to describe the principal variation (see [Wikipedia](https://en.wikipedia.org/wiki/Principal_variation) or the [Chess Programming Wiki](https://chessprogramming.wikispaces.com/Principal+variation)) does not use the [official notation](http://coerceo.com/Coerceo%20GameNotation.pdf). Rather, it uses an notation based off of the notation for [Gliński's hexagonal chess](https://en.wikipedia.org/wiki/Hexagonal_chess#Gli%C5%84ski's_hexagonal_chess). The files (columns) are lettered 'a-e' from left to right. The ranks (row) are numbered '1-5' from bottom to top. Each row makes a 60 degree bend at the c file, which gives each file a 'V' shape. The fields are lettered from 'a-e' counterclockwise like so:
  ```text
      _______
     /\     /\
