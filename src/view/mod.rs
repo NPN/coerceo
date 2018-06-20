@@ -88,7 +88,7 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                 model.players.white, model.players.black
             ));
 
-            if let Some(click) = board(model, Vec2::new(size.0 - 16.0, size.1 - 170.0)) {
+            if let Some(click) = board(ui, model, Vec2::new(size.0 - 16.0, size.1 - 170.0)) {
                 insert_if_empty(&mut event, click);
             }
 
@@ -198,9 +198,7 @@ fn horz_button_layout(
                 insert_if_empty(event, action);
             }
         } else {
-            unsafe {
-                imgui_sys::igDummy(&size);
-            }
+            ui.dummy(size);
         }
         ui.same_line(0.0);
     }

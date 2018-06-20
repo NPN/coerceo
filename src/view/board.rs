@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use imgui_sys::{self, ImVec2};
+use imgui::{ImMouseButton, Ui};
 
 use model::bitboard::BitBoardExt;
 use model::{FieldCoord, Model, Move};
@@ -30,17 +30,10 @@ const SELECT_HIGHLIGHT: u32 = 0xcc_35_bf_ff;
 const LAST_MOVE_HIGHLIGHT: u32 = 0xc3_49_f8_f2;
 const EXCHANGE_HIGHLIGHT: u32 = 0xc5_2e_2e_fb;
 
-pub fn board(model: &Model, size: Vec2) -> Option<Event> {
-    let mouse_click;
-    let mut mouse_pos = ImVec2::default();
-    let mut cursor_pos = ImVec2::default();
-    unsafe {
-        mouse_click = imgui_sys::igIsMouseClicked(0, false);
-        imgui_sys::igGetMousePos(&mut mouse_pos);
-        imgui_sys::igGetCursorScreenPos(&mut cursor_pos);
-    }
-    let cursor_pos = Vec2::from(cursor_pos);
-    let mouse_pos = Vec2::from(mouse_pos);
+pub fn board(ui: &Ui, model: &Model, size: Vec2) -> Option<Event> {
+    let mouse_click = ui.imgui().is_mouse_clicked(ImMouseButton::Left);
+    let mouse_pos = Vec2::from(ui.imgui().mouse_pos());
+    let cursor_pos = Vec2::from(ui.get_cursor_screen_pos());
 
     let side_len = {
         // hex_spacing  =          m * side_len + b
@@ -111,9 +104,7 @@ pub fn board(model: &Model, size: Vec2) -> Option<Event> {
         }
     }
 
-    unsafe {
-        imgui_sys::igDummy(&size.into());
-    }
+    ui.dummy(size);
 
     if mouse_click {
         hover_field.map(Event::Click)

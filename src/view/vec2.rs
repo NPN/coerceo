@@ -38,6 +38,12 @@ impl From<ImVec2> for Vec2 {
     }
 }
 
+impl From<(f32, f32)> for Vec2 {
+    fn from(v: (f32, f32)) -> Self {
+        Self { x: v.0, y: v.1 }
+    }
+}
+
 impl Into<ImVec2> for Vec2 {
     fn into(self) -> ImVec2 {
         ImVec2::new(self.x, self.y)
