@@ -310,33 +310,6 @@ impl FieldCoord {
 
         1 << (hex * 3 + self.f / 2)
     }
-    /// **TODO**: This notation does not support captures (piece or hex) or exchanges yet.
-    ///
-    /// This is an unofficial notation based partially on the notation for [Gliński's hexagonal
-    /// chess](https://en.wikipedia.org/wiki/Hexagonal_chess#Gli%C5%84ski's_hexagonal_chess). The
-    /// files (columns) are lettered 'a-e' from left to right. The ranks (row) are numbered '1-5'
-    /// from bottom to top. Each row makes a 60 degree bend at the c file, which gives each file a
-    /// 'V' shape. The fields are lettered from 'a-e' clockwise like so:
-    /// ```text
-    ///     _______
-    ///    /\     /\
-    ///   /  \ f /  \
-    ///  / a  \ /  e \
-    /// (------X------)
-    ///  \ b  / \  d /
-    ///   \  / c \  /
-    ///    \/_____\/
-    /// ```
-    /// This ordering mirrors the files going left to right, with an extra 'f' field at the top.
-    ///
-    /// Moves are written as `origin-destination` pairs like `b3f-c4b`. If a piece moves within the same hex, the pair
-    /// can be shortened to `b3f-d`.
-    ///
-    /// The beginning of a sample game might look something like this:
-    /// ```text
-    /// 1. d1e-c b3f-c4b
-    /// 2. c5e-c e3f-b
-    /// ```
     pub fn to_notation(&self) -> String {
         let mut notation = String::with_capacity(3);
 
