@@ -20,8 +20,7 @@ mod board_parts;
 mod sys;
 mod vec2;
 
-use imgui::{ImGuiCond, ImStr, ImVec2, Ui};
-use imgui_sys;
+use imgui::{self, ImGuiCond, ImStr, ImVec2, Ui};
 
 use self::board::board;
 pub use self::sys::run;
@@ -31,7 +30,7 @@ use update::Event;
 
 pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
     unsafe {
-        imgui_sys::igPushStyleVar(imgui_sys::ImGuiStyleVar::WindowRounding, 0.0);
+        imgui::sys::igPushStyleVar(imgui::sys::ImGuiStyleVar::WindowRounding, 0.0);
     }
 
     let mut event = None;
@@ -174,7 +173,7 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
         });
 
     unsafe {
-        imgui_sys::igPopStyleVar(1);
+        imgui::sys::igPopStyleVar(1);
     }
 
     event

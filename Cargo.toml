@@ -10,4 +10,3 @@ license = "AGPL-3.0"
 glium = { version = "0.21", default-features = true }
 imgui = { git = "https://github.com/Gekkio/imgui-rs", rev = "a8cd16ef90" }
 imgui-glium-renderer = { git = "https://github.com/Gekkio/imgui-rs", rev = "a8cd16ef90" }
-imgui-sys = { git = "https://github.com/Gekkio/imgui-rs", rev = "a8cd16ef90" }

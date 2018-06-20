@@ -18,7 +18,7 @@
 use std::convert::{From, Into};
 use std::ops::*;
 
-use imgui_sys::ImVec2;
+use imgui::sys::ImVec2;
 
 #[derive(Copy, Clone)]
 pub struct Vec2 {
