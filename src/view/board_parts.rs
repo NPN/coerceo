@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use imgui_sys;
+use imgui::Ui;
 
 use model::{Color, ColorMap, FieldCoord, HexCoord};
 use view::vec2::Vec2;
@@ -46,72 +46,62 @@ const PIECE_COLORS: ColorMap<[u32; 3]> = ColorMap {
     ],
 };
 
-pub fn draw_hex(coord: &HexCoord, origin: Vec2, size: f32) {
+pub fn draw_hex(ui: &Ui, coord: &HexCoord, origin: Vec2, size: f32) {
     for i in 0..6 {
-        draw_field(&coord.to_field(i), origin, size);
+        let coord = coord.to_field(i);
+        let color = FIELD_COLORS.get(coord.color());
+        draw_field(ui, color, &coord, origin, size);
     }
 }
 
-fn draw_field(coord: &FieldCoord, origin: Vec2, size: f32) {
+pub fn draw_field(ui: &Ui, color: u32, coord: &FieldCoord, origin: Vec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
-    unsafe {
-        let draw_list = imgui_sys::igGetWindowDrawList();
-        imgui_sys::ImDrawList_AddTriangleFilled(
-            draw_list,
-            v1.into(),
-            v2.into(),
-            v3.into(),
-            FIELD_COLORS.get(coord.color()),
-        );
-    }
+    ui.get_window_draw_list()
+        .add_triangle(v1, v2, v3, color)
+        .filled(true)
+        .build();
 }
 
-pub fn highlight_field(color: u32, coord: &FieldCoord, origin: Vec2, size: f32) {
-    let (v1, v2, v3) = field_vertexes(coord, origin, size);
-    unsafe {
-        let draw_list = imgui_sys::igGetWindowDrawList();
-        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1.into(), v2.into(), v3.into(), color);
-    }
-}
-
-pub fn highlight_field_dot(color: u32, coord: &FieldCoord, origin: Vec2, size: f32) {
+pub fn draw_field_dot(ui: &Ui, color: u32, coord: &FieldCoord, origin: Vec2, size: f32) {
     let center = field_center(coord, origin, size);
-    unsafe {
-        let draw_list = imgui_sys::igGetWindowDrawList();
-        imgui_sys::ImDrawList_AddCircleFilled(
-            draw_list,
-            center.into(),
-            size / (4.0 * SQRT_3),
-            color,
-            15,
-        );
-    }
+    ui.get_window_draw_list()
+        .add_circle(center, size / (4.0 * SQRT_3), color)
+        .filled(true)
+        .num_segments(15)
+        .build();
 }
 
-pub fn draw_piece(coord: &FieldCoord, origin: Vec2, size: f32) {
+pub fn draw_piece(ui: &Ui, coord: &FieldCoord, origin: Vec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     let center = field_center(coord, origin, size);
 
     const SCALE: f32 = 0.75;
-
-    let v1 = (center + (v1 - center) * SCALE).into();
-    let v2 = (center + (v2 - center) * SCALE).into();
-    let v3 = (center + (v3 - center) * SCALE).into();
-    let center = center.into();
+    let v1 = center + (v1 - center) * SCALE;
+    let v2 = center + (v2 - center) * SCALE;
+    let v3 = center + (v3 - center) * SCALE;
 
     // Linear equation derived by human testing and regression
     let outline_size = 0.032 * size - 0.535;
 
-    unsafe {
-        let draw_list = imgui_sys::igGetWindowDrawList();
+    let colors = PIECE_COLORS.get_ref(coord.color());
+    let draw_list = ui.get_window_draw_list();
+    draw_list
+        .add_triangle(v1, v2, center, colors[0])
+        .filled(true)
+        .build();
+    draw_list
+        .add_triangle(v2, v3, center, colors[1])
+        .filled(true)
+        .build();
+    draw_list
+        .add_triangle(v3, v1, center, colors[2])
+        .filled(true)
+        .build();
 
-        let colors = PIECE_COLORS.get_ref(coord.color());
-        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v1, v2, center, colors[0]);
-        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v2, v3, center, colors[1]);
-        imgui_sys::ImDrawList_AddTriangleFilled(draw_list, v3, v1, center, colors[2]);
-
-        imgui_sys::ImDrawList_AddTriangle(draw_list, v1, v2, v3, PIECE_OUTLINE, outline_size);
-    }
+    draw_list
+        .add_triangle(v1, v2, v3, PIECE_OUTLINE)
+        .thickness(outline_size)
+        .build();
 }
 
 fn field_center(coord: &FieldCoord, origin: Vec2, size: f32) -> Vec2 {
