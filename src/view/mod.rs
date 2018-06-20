@@ -20,7 +20,7 @@ mod board_parts;
 mod sys;
 mod vec2;
 
-use imgui::{self, ImGuiCond, ImStr, ImVec2, Ui};
+use imgui::{ImGuiCond, ImStr, ImVec2, StyleVar, Ui};
 
 use self::board::board;
 pub use self::sys::run;
@@ -29,10 +29,6 @@ use model::{Color, ColorMap, Model, Player};
 use update::Event;
 
 pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
-    unsafe {
-        imgui::sys::igPushStyleVar(imgui::sys::ImGuiStyleVar::WindowRounding, 0.0);
-    }
-
     let mut event = None;
 
     ui.main_menu_bar(|| {
@@ -74,6 +70,14 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
         }
     });
 
+    ui.with_style_var(StyleVar::WindowRounding(0.0), || {
+        draw_window(ui, size, model, &mut event);
+    });
+
+    event
+}
+
+fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Event>) {
     ui.window(im_str!("Coerceo"))
         .size(size, ImGuiCond::Always)
         .position((0.0, 19.0), ImGuiCond::Once)
@@ -88,7 +92,7 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
             ));
 
             if let Some(click) = board(ui, model, Vec2::new(size.0 - 16.0, size.1 - 170.0)) {
-                insert_if_empty(&mut event, click);
+                insert_if_empty(event, click);
             }
 
             let display_vitals = || {
@@ -113,7 +117,7 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                     ui.text(format!("{:?} wins!", color));
                     display_vitals();
                     if model.can_undo() && ui.button(im_str!("Undo"), button_size) {
-                        insert_if_empty(&mut event, Event::Undo);
+                        insert_if_empty(event, Event::Undo);
                     }
                 }
                 InProgress => {
@@ -134,7 +138,7 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                             (model.can_redo(), im_str!("Redo"), Event::Redo),
                         ],
                         &button_size,
-                        &mut event,
+                        event,
                     );
                     let is_human_player = model.current_player() == Player::Human;
                     horz_button_layout(
@@ -152,7 +156,7 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                             ),
                         ],
                         &button_size,
-                        &mut event,
+                        event,
                     );
                 }
                 // Draw cases
@@ -166,17 +170,11 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                     ui.text(message);
                     display_vitals();
                     if model.can_undo() && ui.button(im_str!("Undo"), button_size) {
-                        insert_if_empty(&mut event, Event::Undo);
+                        insert_if_empty(event, Event::Undo);
                     }
                 }
             }
         });
-
-    unsafe {
-        imgui::sys::igPopStyleVar(1);
-    }
-
-    event
 }
 
 fn horz_button_layout(
