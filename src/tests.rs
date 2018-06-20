@@ -19,7 +19,7 @@
 
 use model::Board;
 
-fn perft(board: &Board, depth: u8) -> u32 {
+fn perft(board: &Board, depth: u8) -> u64 {
     if depth == 0 {
         1
     } else {
@@ -51,6 +51,19 @@ fn perft_depth_5() {
     // These counts have not been verified by an external source. They only test for consistency
     // with earlier versions of the program.
     let counts = [48, 2304, 110304, 5280654, 254945184];
+    let board = Board::new();
+
+    for (i, &count) in counts.iter().enumerate() {
+        assert_eq!(count, perft(&board, i as u8 + 1));
+    }
+}
+
+#[test]
+#[ignore]
+fn perft_depth_6() {
+    // These counts have not been verified by an external source. They only test for consistency
+    // with earlier versions of the program.
+    let counts = [48, 2304, 110304, 5280654, 254945184, 12307984056];
     let board = Board::new();
 
     for (i, &count) in counts.iter().enumerate() {
