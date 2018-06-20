@@ -4,6 +4,13 @@
 
 ![Coerceo game screenshot](https://raw.githubusercontent.com/NPN/coerceo/master/screenshot.png)
 
+## How to Play
+
+The [official rules](http://coerceo.com/rules.html) are on the Coerceo website. You can download a binary of the game from the [releases page](https://github.com/NPN/coerceo/releases) or compile it yourself with:
+```
+cargo run --release
+```
+
 ## AI Features
 
   * Negamax search
