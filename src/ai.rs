@@ -130,6 +130,9 @@ impl AI {
             if let SearchResult::Move(mv) =
                 search_root(depth, board, board_list, &mut ttable, &stop_signal_clone)
             {
+                if stop_signal_clone.load(Ordering::Relaxed) {
+                    return;
+                }
                 move_sender.send(mv).expect("AI failed to send Move");
             }
         });
