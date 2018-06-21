@@ -28,7 +28,12 @@ const SQRT_3: f32 = 1.732_050_807_568_877_f32;
 // Color format is 0xaa_bb_gg_rr
 const SELECT_HIGHLIGHT: u32 = 0xcc_35_bf_ff;
 const LAST_MOVE_HIGHLIGHT: u32 = 0xc3_49_f8_f2;
-const EXCHANGE_HIGHLIGHT: u32 = 0xc5_2e_2e_fb;
+/// The highlight for a piece capture by surrounding or exchanging.
+const CAPTURE_HIGHLIGHT: u32 = 0xcf_40_40_ff;
+
+/// The alpha used for a removed hex and any highlights on it.
+const REMOVED_HEX_ALPHA: u8 = 0x50;
+const EXTANT_HEX_ALPHA: u8 = 0xff;
 
 pub fn board(ui: &Ui, model: &Model, size: Vec2) -> Option<Event> {
     let mouse_click = ui.imgui().is_mouse_clicked(ImMouseButton::Left);
@@ -50,25 +55,35 @@ pub fn board(ui: &Ui, model: &Model, size: Vec2) -> Option<Event> {
     let extant_hexes = model.board.extant_hexes();
 
     for hex in &extant_hexes {
-        draw_hex(ui, hex, origin, side_len);
+        draw_hex(ui, EXTANT_HEX_ALPHA, hex, origin, side_len);
     }
 
-    if let Some(mv) = model.last_move {
-        match mv {
-            Move::Exchange(exchanged, color) => {
-                if model.board.is_hex_extant(exchanged.to_index()) {
-                    let exchanged = FieldCoord::from_bitboard(exchanged, color);
-                    draw_field(ui, EXCHANGE_HIGHLIGHT, &exchanged, origin, side_len);
-                }
-            }
-            Move::Move(from, to, color) => {
-                if model.board.is_hex_extant(from.to_index()) {
-                    let from = FieldCoord::from_bitboard(from, color);
-                    draw_field(ui, LAST_MOVE_HIGHLIGHT, &from, origin, side_len);
-                }
-                let to = FieldCoord::from_bitboard(to, color);
-                draw_field(ui, LAST_MOVE_HIGHLIGHT, &to, origin, side_len);
-            }
+    if let Some(ref mv) = model.last_move {
+        for hex in &mv.removed_hexes {
+            draw_hex(ui, REMOVED_HEX_ALPHA, &hex, origin, side_len);
+        }
+
+        for piece in &mv.removed_pieces {
+            let color = if model.board.is_hex_extant(piece.to_hex().to_index()) {
+                CAPTURE_HIGHLIGHT
+            } else {
+                set_alpha(CAPTURE_HIGHLIGHT, REMOVED_HEX_ALPHA)
+            };
+            draw_field(ui, color, piece, origin, side_len);
+        }
+
+        if let Move::Move(from, to, color) = mv.mv {
+            let from_color = if model.board.is_hex_extant(from.to_index()) {
+                LAST_MOVE_HIGHLIGHT
+            } else {
+                set_alpha(LAST_MOVE_HIGHLIGHT, REMOVED_HEX_ALPHA)
+            };
+
+            let from = FieldCoord::from_bitboard(from, color);
+            draw_field(ui, from_color, &from, origin, side_len);
+
+            let to = FieldCoord::from_bitboard(to, color);
+            draw_field(ui, LAST_MOVE_HIGHLIGHT, &to, origin, side_len);
         }
     }
 
@@ -91,7 +106,7 @@ pub fn board(ui: &Ui, model: &Model, size: Vec2) -> Option<Event> {
             && coord.color() != model.board.turn
             && model.board.is_piece_on_field(coord)
         {
-            draw_field(ui, EXCHANGE_HIGHLIGHT, coord, origin, side_len);
+            draw_field(ui, CAPTURE_HIGHLIGHT, coord, origin, side_len);
         }
     }
 

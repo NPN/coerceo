@@ -20,7 +20,7 @@ use std::cmp;
 use model::bitboard::*;
 use model::constants::*;
 use model::zobrist::{self, ZobristExt, ZobristHash};
-use model::{Color, ColorMap, FieldCoord, HexCoord, Move, Outcome};
+use model::{Color, ColorMap, FieldCoord, HexCoord, Move, MoveAnnotated, Outcome};
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct Board {
@@ -140,6 +140,27 @@ impl Board {
         }
         self.turn = self.turn.switch();
         self.zobrist.switch_turn();
+    }
+    /// Applies a `Move` and returns it as a `MoveAnnotated`, that is, holding `Vec`s of the pieces
+    /// and hexes removed by playing the move.
+    pub fn annotated_apply_move(&mut self, mv: &Move) -> MoveAnnotated {
+        let opp_color = self.turn.switch();
+        let old_opp_fields = self.fields.get(opp_color);
+        let old_hexes = self.hexes;
+
+        self.apply_move(mv);
+
+        let captured_pieces = (old_opp_fields ^ self.fields.get(opp_color))
+            .iter()
+            .map(|bb| FieldCoord::from_bitboard(bb, opp_color))
+            .collect();
+
+        let removed_hexes = (HEX_COORD_MASK & (old_hexes ^ self.hexes))
+            .iter()
+            .map(|bb| HexCoord::from_index(bb.trailing_zeros() as u8 / 3))
+            .collect();
+
+        mv.annotate(captured_pieces, removed_hexes)
     }
     pub fn can_apply_move(&self, mv: &Move) -> bool {
         match *mv {

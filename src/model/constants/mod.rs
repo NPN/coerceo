@@ -25,6 +25,9 @@ use model::{Color, ColorMap, FieldCoord};
 // 19 hexes * 3 bits per hex = 57 set bits
 pub const HEX_STARTING_POSITION: BitBoard = 0x1FF_FFFF_FFFF_FFFF;
 
+/// Clears the top two bits of each hex so we can use an iterator to turn the bits to HexCoords
+pub const HEX_COORD_MASK: BitBoard = 0x49_249_249_249_249;
+
 #[cfg_attr(rustfmt, rustfmt_skip)]
 /// Generate the Laurentius starting position.
 pub fn generate_laurentius() -> ColorMap<BitBoard> {

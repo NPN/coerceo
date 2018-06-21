@@ -33,14 +33,14 @@ use ai::AI;
 pub struct Model {
     pub board: Board,
     pub players: ColorMap<Player>,
-    pub last_move: Option<Move>,
     pub selected_piece: Option<FieldCoord>,
+    pub last_move: Option<MoveAnnotated>,
     pub exchanging: bool,
     pub ai: AI,
     pub ai_search_depth: u8,
     pub outcome: Outcome,
-    undo_stack: Vec<(Board, Option<Move>, Outcome)>,
-    redo_stack: Vec<(Board, Option<Move>, Outcome)>,
+    undo_stack: Vec<(Board, Option<MoveAnnotated>, Outcome)>,
+    redo_stack: Vec<(Board, Option<MoveAnnotated>, Outcome)>,
     pub events_proxy: EventsLoopProxy,
 }
 
@@ -63,8 +63,7 @@ impl Model {
     pub fn try_move(&mut self, mv: Move) -> bool {
         if self.board.can_apply_move(&mv) {
             self.push_undo_state();
-            self.board.apply_move(&mv);
-            self.last_move = Some(mv);
+            self.last_move = Some(self.board.annotated_apply_move(&mv));
             self.update_outcome();
             true
         } else {
@@ -83,7 +82,7 @@ impl Model {
     }
     pub fn push_undo_state(&mut self) {
         self.undo_stack
-            .push((self.board, self.last_move, self.outcome));
+            .push((self.board, self.last_move.clone(), self.outcome));
         self.redo_stack.clear();
     }
     pub fn undo_move(&mut self) {
@@ -119,7 +118,7 @@ impl Model {
         }
     }
     pub fn board_list(&self) -> Vec<Board> {
-        let mut board_list: Vec<_> = self.undo_stack.iter().map(|&t| t.0).collect();
+        let mut board_list: Vec<_> = self.undo_stack.iter().map(|ref t| t.0).collect();
         board_list.push(self.board);
         board_list
     }
@@ -238,6 +237,13 @@ impl Move {
     pub fn exchange_from_field(field: &FieldCoord) -> Self {
         Move::Exchange(field.to_bitboard(), field.color())
     }
+    pub fn annotate(&self, pieces: Vec<FieldCoord>, hexes: Vec<HexCoord>) -> MoveAnnotated {
+        MoveAnnotated {
+            mv: *self,
+            removed_pieces: pieces,
+            removed_hexes: hexes,
+        }
+    }
 }
 
 impl fmt::Display for Move {
@@ -258,6 +264,15 @@ impl fmt::Display for Move {
             ),
         }
     }
+}
+
+/// A move that also holds the pieces and hexes removed by playing that move. Used by the board to
+/// show the effects of the last move.
+#[derive(Clone)]
+pub struct MoveAnnotated {
+    pub mv: Move,
+    pub removed_pieces: Vec<FieldCoord>,
+    pub removed_hexes: Vec<HexCoord>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -388,6 +403,18 @@ impl HexCoord {
             x: self.x,
             y: self.y,
             f,
+        }
+    }
+    pub fn from_index(index: u8) -> Self {
+        let hex = index as i8 + match index {
+            0...2 => 2,
+            3...15 => 3,
+            16...18 => 4,
+            _ => unreachable!(),
+        };
+        Self {
+            x: hex % 5 - 2,
+            y: hex / 5 - 2,
         }
     }
     pub fn to_index(&self) -> usize {

@@ -46,11 +46,18 @@ const PIECE_COLORS: ColorMap<[u32; 3]> = ColorMap {
     ],
 };
 
-pub fn draw_hex(ui: &Ui, coord: &HexCoord, origin: Vec2, size: f32) {
+pub fn set_alpha(mut color: u32, alpha: u8) -> u32 {
+    const ALPHA_MASK: u32 = 0xff_00_00_00;
+    color &= !ALPHA_MASK;
+    color | u32::from(alpha) << 24
+}
+
+pub fn draw_hex(ui: &Ui, alpha: u8, coord: &HexCoord, origin: Vec2, size: f32) {
     for i in 0..6 {
         let coord = coord.to_field(i);
         let color = FIELD_COLORS.get(coord.color());
-        draw_field(ui, color, &coord, origin, size);
+
+        draw_field(ui, set_alpha(color, alpha), &coord, origin, size);
     }
 }
 
