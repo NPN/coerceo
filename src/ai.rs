@@ -132,7 +132,7 @@ impl AI {
             // stop throws away its Status enum.
             let mut ttable = match ttable_mutex.lock() {
                 Ok(table) => table,
-                Err(_) => panic!("Transposition table mutex is poisoned"),
+                Err(_poison_error) => panic!("Transposition table mutex is poisoned"),
             };
 
             if let SearchResult::Move(mv) =
