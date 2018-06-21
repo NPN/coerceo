@@ -23,7 +23,7 @@ use glium::{Display, Surface};
 use imgui::{ImGui, Ui};
 use imgui_glium_renderer::Renderer;
 
-const FRAME_DURATION: Duration = Duration::from_millis(40);
+const FRAME_DURATION: Duration = Duration::from_millis(50);
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
 struct MouseState {
@@ -53,15 +53,39 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
     let mut last_frame = Instant::now();
     let mut mouse_state = MouseState::default();
 
+    let mut render = |imgui: &mut ImGui, last_frame: &mut Instant| {
+        let now = Instant::now();
+        let delta = now - *last_frame;
+        let delta_s = delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1_000_000_000.0;
+        *last_frame = now;
+
+        let gl_window = display.gl_window();
+        let size_pixels = gl_window.get_inner_size().unwrap();
+        let hidpi = gl_window.hidpi_factor();
+        let size_points = (
+            (size_pixels.0 as f32 / hidpi) as u32,
+            (size_pixels.1 as f32 / hidpi) as u32,
+        );
+
+        let ui = imgui.frame(size_points, size_pixels, delta_s);
+        if !run_ui(&ui, (size_points.0 as f32, size_points.1 as f32)) {
+            return false;
+        }
+
+        let mut target = display.draw();
+        target.clear_color(
+            clear_color[0],
+            clear_color[1],
+            clear_color[2],
+            clear_color[3],
+        );
+        renderer.render(&mut target, ui).expect("Rendering failed");
+        target.finish().unwrap();
+        true
+    };
+
     // Render one frame before the event loop so the screen isn't empty
-    render(
-        &mut imgui,
-        &mut run_ui,
-        &display,
-        &mut renderer,
-        clear_color,
-        0.1,
-    );
+    render(&mut imgui, &mut last_frame);
 
     events_loop.run_forever(|event| {
         use glium::glutin::ElementState::Pressed;
@@ -78,29 +102,20 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
                         }
                     }
                 }
+                Resized(_, _) | HiDPIFactorChanged(_) => {
+                    if !render(&mut imgui, &mut last_frame) {
+                        return ControlFlow::Break;
+                    }
+                }
                 CursorMoved {
                     position: (x, y), ..
                 } => {
                     mouse_state.pos = (x as i32, y as i32);
                     update_mouse(&mut imgui, &mut mouse_state);
 
-                    let now = Instant::now();
-                    let delta = now - last_frame;
-                    if delta < FRAME_DURATION {
+                    if Instant::now() - last_frame < FRAME_DURATION {
                         return ControlFlow::Continue;
-                    }
-                    let delta_s =
-                        delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1_000_000_000.0;
-                    last_frame = now;
-
-                    if !render(
-                        &mut imgui,
-                        &mut run_ui,
-                        &display,
-                        &mut renderer,
-                        clear_color,
-                        delta_s,
-                    ) {
+                    } else if !render(&mut imgui, &mut last_frame) {
                         return ControlFlow::Break;
                     }
                 }
@@ -108,31 +123,11 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
                     mouse_state.pressed.0 = state == Pressed;
                     update_mouse(&mut imgui, &mut mouse_state);
 
-                    let now = Instant::now();
-                    let delta = now - last_frame;
-                    let delta_s =
-                        delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1_000_000_000.0;
-                    last_frame = now;
-
                     // Render twice to immediately show the results of the click
-                    if !render(
-                        &mut imgui,
-                        &mut run_ui,
-                        &display,
-                        &mut renderer,
-                        clear_color,
-                        delta_s,
-                    ) {
+                    if !render(&mut imgui, &mut last_frame) {
                         return ControlFlow::Break;
                     }
-                    if !render(
-                        &mut imgui,
-                        &mut run_ui,
-                        &display,
-                        &mut renderer,
-                        clear_color,
-                        delta_s,
-                    ) {
+                    if !render(&mut imgui, &mut last_frame) {
                         return ControlFlow::Break;
                     }
                 },
@@ -141,39 +136,6 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
         }
         ControlFlow::Continue
     });
-}
-
-pub fn render<F: FnMut(&Ui, (f32, f32)) -> bool>(
-    imgui: &mut ImGui,
-    mut run_ui: F,
-    display: &Display,
-    renderer: &mut Renderer,
-    clear_color: [f32; 4],
-    delta_s: f32,
-) -> bool {
-    let gl_window = display.gl_window();
-    let size_pixels = gl_window.get_inner_size().unwrap();
-    let hidpi = gl_window.hidpi_factor();
-    let size_points = (
-        (size_pixels.0 as f32 / hidpi) as u32,
-        (size_pixels.1 as f32 / hidpi) as u32,
-    );
-
-    let ui = imgui.frame(size_points, size_pixels, delta_s);
-    if !run_ui(&ui, (size_points.0 as f32, size_points.1 as f32)) {
-        return false;
-    }
-
-    let mut target = display.draw();
-    target.clear_color(
-        clear_color[0],
-        clear_color[1],
-        clear_color[2],
-        clear_color[3],
-    );
-    renderer.render(&mut target, ui).expect("Rendering failed");
-    target.finish().unwrap();
-    true
 }
 
 fn update_mouse(imgui: &mut ImGui, mouse_state: &mut MouseState) {
