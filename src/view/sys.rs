@@ -92,6 +92,11 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
                             Some(Key::LShift) | Some(Key::RShift) => imgui.set_key_shift(pressed),
                             Some(Key::LAlt) | Some(Key::RAlt) => imgui.set_key_alt(pressed),
                             Some(Key::LWin) | Some(Key::RWin) => imgui.set_key_super(pressed),
+                            Some(Key::Q) => {
+                                if cfg!(target_os = "macos") && input.modifiers.logo {
+                                    quit = true;
+                                }
+                            }
                             _ => {}
                         }
                     }
