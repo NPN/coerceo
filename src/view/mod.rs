@@ -80,7 +80,7 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
 fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Event>) {
     ui.window(im_str!("Coerceo"))
         .size(size, ImGuiCond::Always)
-        .position((0.0, 27.0), ImGuiCond::Once)
+        .position((0.0, 27.0), ImGuiCond::Always)
         .title_bar(false)
         .resizable(false)
         .movable(false)
