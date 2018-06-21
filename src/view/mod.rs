@@ -95,18 +95,28 @@ fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Even
                 insert_if_empty(event, click);
             }
 
+            let format_piece_count = |count| match count {
+                1 => String::from("1 piece"),
+                _ => format!("{} pieces", count),
+            };
+
+            let format_hex_count = |count| match count {
+                1 => String::from("1 captured hex"),
+                _ => format!("{} captured hexes", count),
+            };
+
             let display_vitals = || {
                 ui.text(format!(
-                    "{:?} has {} piece(s) left and {} captured hex(es).",
+                    "{:?} has {} and {}.",
                     Color::White,
-                    model.board.pieces(Color::White),
-                    model.board.hexes(Color::White),
+                    format_piece_count(model.board.pieces(Color::White)),
+                    format_hex_count(model.board.hexes(Color::White)),
                 ));
                 ui.text(format!(
-                    "{:?} has {} piece(s) left and {} captured hex(es).",
+                    "{:?} has {} and {}.",
                     Color::Black,
-                    model.board.pieces(Color::Black),
-                    model.board.hexes(Color::Black),
+                    format_piece_count(model.board.pieces(Color::Black)),
+                    format_hex_count(model.board.hexes(Color::Black)),
                 ));
             };
 
@@ -121,14 +131,15 @@ fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Even
                     }
                 }
                 InProgress => {
-                    ui.text(format!(
-                        "It's {:?}'s turn. ({})",
-                        model.board.turn,
-                        match model.current_player() {
-                            Player::Computer => "Computer",
-                            Player::Human => "Human",
-                        }
-                    ));
+                    if model.players.white == model.players.black {
+                        ui.text(format!("It's {:?}'s turn.", model.board.turn,));
+                    } else {
+                        ui.text(match model.current_player() {
+                            Player::Computer => "Waiting for the computer...",
+                            Player::Human => "It's your turn.",
+                        });
+                    }
+
                     display_vitals();
 
                     horz_button_layout(
