@@ -6,6 +6,10 @@ authors = ["Ryan Huang"]
 description = "A clone of a strategic board game."
 license = "AGPL-3.0"
 
+[package.metadata.bundle]
+name = "Coerceo"
+identifier = "io.github.npn.coerceo"
+
 [dependencies]
 glium = { version = "0.21", default-features = true }
 imgui = { git = "https://github.com/Gekkio/imgui-rs", rev = "a8cd16ef90" }
