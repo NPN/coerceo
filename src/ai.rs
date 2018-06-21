@@ -22,6 +22,8 @@ use std::sync::mpsc::{self, Receiver, TryRecvError};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 
+use glium::glutin::EventsLoopProxy;
+
 use model::ttable::{Score, TTable};
 use model::{Board, Move, Outcome};
 
@@ -95,7 +97,13 @@ impl AI {
         result
     }
 
-    pub fn think(&mut self, board: Board, board_list: Vec<Board>, depth: u8) {
+    pub fn think(
+        &mut self,
+        board: Board,
+        board_list: Vec<Board>,
+        depth: u8,
+        events_proxy: EventsLoopProxy,
+    ) {
         assert_ne!(depth, 0);
 
         let prev_status = mem::replace(&mut self.status, Status::Idle);
@@ -134,6 +142,9 @@ impl AI {
                     return;
                 }
                 move_sender.send(mv).expect("AI failed to send Move");
+                events_proxy
+                    .wakeup()
+                    .expect("Failed to wake up events loop");
             }
         });
 

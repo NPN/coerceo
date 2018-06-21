@@ -24,6 +24,8 @@ mod zobrist;
 use std::fmt;
 use std::mem;
 
+use glium::glutin::EventsLoopProxy;
+
 use self::bitboard::BitBoard;
 pub use self::board::Board;
 use ai::AI;
@@ -39,13 +41,23 @@ pub struct Model {
     pub outcome: Outcome,
     undo_stack: Vec<(Board, Option<Move>, Outcome)>,
     redo_stack: Vec<(Board, Option<Move>, Outcome)>,
+    pub events_proxy: EventsLoopProxy,
 }
 
 impl Model {
-    pub fn new(players: ColorMap<Player>) -> Self {
+    pub fn new(players: ColorMap<Player>, events_proxy: EventsLoopProxy) -> Self {
         Self {
+            board: Board::new(),
             players,
-            ..Default::default()
+            selected_piece: None,
+            last_move: None,
+            exchanging: false,
+            ai: AI::new(),
+            ai_search_depth: 6,
+            outcome: Outcome::InProgress,
+            undo_stack: vec![],
+            redo_stack: vec![],
+            events_proxy,
         }
     }
     pub fn can_undo(&self) -> bool {
@@ -127,23 +139,6 @@ impl Model {
     pub fn resign(&mut self) {
         assert_eq!(self.outcome, Outcome::InProgress);
         self.outcome = Outcome::Win(self.board.turn.switch());
-    }
-}
-
-impl Default for Model {
-    fn default() -> Self {
-        Self {
-            board: Board::new(),
-            players: ColorMap::new(Player::Human, Player::Human),
-            selected_piece: None,
-            last_move: None,
-            exchanging: false,
-            ai: AI::new(),
-            ai_search_depth: 6,
-            outcome: Outcome::InProgress,
-            undo_stack: vec![],
-            redo_stack: vec![],
-        }
     }
 }
 

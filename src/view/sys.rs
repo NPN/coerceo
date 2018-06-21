@@ -36,9 +36,9 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
     title: String,
     dimensions: (u32, u32),
     clear_color: [f32; 4],
+    mut events_loop: glutin::EventsLoop,
     mut run_ui: F,
 ) {
-    let mut events_loop = glutin::EventsLoop::new();
     let window = glutin::WindowBuilder::new()
         .with_title(title)
         .with_dimensions(dimensions.0, dimensions.1);
@@ -92,7 +92,15 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
         use glium::glutin::WindowEvent::*;
         use glium::glutin::{ControlFlow, Event, MouseButton, VirtualKeyCode};
 
-        if let Event::WindowEvent { event, .. } = event {
+        if let Event::Awakened = event {
+            // Render twice to immediately show the new AI move
+            if !render(&mut imgui, &mut last_frame) {
+                return ControlFlow::Break;
+            }
+            if !render(&mut imgui, &mut last_frame) {
+                return ControlFlow::Break;
+            }
+        } else if let Event::WindowEvent { event, .. } = event {
             match event {
                 Closed => return ControlFlow::Break,
                 KeyboardInput { input, .. } => {

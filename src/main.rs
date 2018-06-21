@@ -26,17 +26,22 @@ mod tests;
 mod update;
 mod view;
 
+use glium::glutin::EventsLoop;
 use imgui::Ui;
 
-use model::Model;
+use model::{ColorMap, Model, Player};
 
 fn main() {
-    let mut model = Model::default();
+    let events_loop = EventsLoop::new();
+    let events_proxy = events_loop.create_proxy();
+
+    let mut model = Model::new(ColorMap::new(Player::Human, Player::Human), events_proxy);
 
     view::run(
         String::from("Coerceo"),
         (800, 800),
         [1.0, 1.0, 1.0, 1.0],
+        events_loop,
         |ui, size| game_loop(ui, size, &mut model),
     );
 }

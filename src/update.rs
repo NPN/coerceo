@@ -60,9 +60,12 @@ pub fn update(model: &mut Model, event: Option<Event>) -> bool {
             if !model.is_game_over() {
                 if model.ai.is_idle() {
                     let board_list = model.board_list();
-                    model
-                        .ai
-                        .think(model.board, board_list, model.ai_search_depth);
+                    model.ai.think(
+                        model.board,
+                        board_list,
+                        model.ai_search_depth,
+                        model.events_proxy.clone(),
+                    );
                 }
                 if let Some(mv) = model.ai.try_recv() {
                     try_move(model, mv);
@@ -84,7 +87,7 @@ fn handle_event(model: &mut Model, event: &Event) {
         },
         NewGame(players) => {
             let search_depth = model.ai_search_depth;
-            *model = Model::new(*players);
+            *model = Model::new(*players, model.events_proxy.clone());
             model.ai_search_depth = search_depth;
         }
         Resign => {
