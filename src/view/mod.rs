@@ -80,7 +80,7 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
 fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Event>) {
     ui.window(im_str!("Coerceo"))
         .size(size, ImGuiCond::Always)
-        .position((0.0, 19.0), ImGuiCond::Once)
+        .position((0.0, 27.0), ImGuiCond::Once)
         .title_bar(false)
         .resizable(false)
         .movable(false)
@@ -91,7 +91,7 @@ fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Even
                 model.players.white, model.players.black
             ));
 
-            if let Some(click) = board(ui, model, Vec2::new(size.0 - 16.0, size.1 - 170.0)) {
+            if let Some(click) = board(ui, model, Vec2::new(size.0 - 16.0, size.1 - 230.0)) {
                 insert_if_empty(event, click);
             }
 
@@ -120,7 +120,7 @@ fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Even
                 ));
             };
 
-            let button_size = Vec2::new(120.0, 20.0);
+            let button_size = Vec2::new(120.0, 28.0);
             use model::Outcome::*;
             match model.outcome {
                 Win(color) => {

@@ -20,7 +20,7 @@ use std::time::{Duration, Instant};
 
 use glium::glutin;
 use glium::{Display, Surface};
-use imgui::{ImGui, Ui};
+use imgui::{FontGlyphRange, ImFontConfig, ImGui, Ui};
 use imgui_glium_renderer::Renderer;
 
 const FRAME_DURATION: Duration = Duration::from_millis(50);
@@ -46,9 +46,21 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
     let display = Display::new(window, context, &events_loop).unwrap();
 
     let mut imgui = ImGui::init();
-    let mut renderer = Renderer::init(&mut imgui, &display).expect("Failed to initialize renderer");
-
     imgui.set_ini_filename(None);
+
+    let config = ImFontConfig::new()
+        .oversample_h(4)
+        .oversample_v(4)
+        .size_pixels(21.0)
+        .rasterizer_multiply(1.05);
+
+    config.add_font(
+        &mut imgui.fonts(),
+        include_bytes!("../fonts/FiraSans-Regular.ttf"),
+        &FontGlyphRange::default(),
+    );
+
+    let mut renderer = Renderer::init(&mut imgui, &display).expect("Failed to initialize renderer");
 
     let mut last_frame = Instant::now();
     let mut mouse_state = MouseState::default();

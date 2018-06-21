@@ -52,4 +52,6 @@ The notation that the AI debug output uses to describe the principal variation (
 
 This game is licensed under the AGPLv3.
 
+This game uses the font [Fira Sans](https://github.com/mozilla/Fira) which is licensed under the OFL v1.1.
+
 All rights, trademarks, copyrights, concepts, etc. of the game Coerceo belong to the Coerceo Company.
