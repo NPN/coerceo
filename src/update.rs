@@ -68,7 +68,7 @@ pub fn update(model: &mut Model, event: Option<Event>) -> bool {
                     );
                 }
                 if let Some(mv) = model.ai.try_recv() {
-                    try_move(model, mv);
+                    model.try_move(mv);
                 }
             }
         }
@@ -109,12 +109,12 @@ fn handle_click(model: &mut Model, clicked: FieldCoord) {
             } else if model.board.is_piece_on_field(&clicked) {
                 model.selected_piece = Some(clicked);
             } else {
-                try_move(model, Move::move_from_field(&selected, &clicked));
+                model.try_move(Move::move_from_field(&selected, &clicked));
                 model.clear_selection();
             }
         }
         None => {
-            if model.exchanging && try_move(model, Move::exchange_from_field(&clicked)) {
+            if model.exchanging && model.try_move(Move::exchange_from_field(&clicked)) {
                 model.exchanging = false;
             } else if !model.exchanging
                 && clicked.color() == model.board.turn
@@ -123,17 +123,5 @@ fn handle_click(model: &mut Model, clicked: FieldCoord) {
                 model.selected_piece = Some(clicked);
             }
         }
-    }
-}
-
-fn try_move(model: &mut Model, mv: Move) -> bool {
-    if model.board.can_apply_move(&mv) {
-        model.push_undo_state();
-        model.board.apply_move(&mv);
-        model.last_move = Some(mv);
-        model.update_outcome();
-        true
-    } else {
-        false
     }
 }

@@ -60,6 +60,17 @@ impl Model {
             events_proxy,
         }
     }
+    pub fn try_move(&mut self, mv: Move) -> bool {
+        if self.board.can_apply_move(&mv) {
+            self.push_undo_state();
+            self.board.apply_move(&mv);
+            self.last_move = Some(mv);
+            self.update_outcome();
+            true
+        } else {
+            false
+        }
+    }
     pub fn can_undo(&self) -> bool {
         let comp_v_comp =
             self.players.white == Player::Computer && self.players.black == Player::Computer;
