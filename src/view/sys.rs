@@ -110,7 +110,7 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
                         }
                     }
                 }
-                Resized(_, _) | HiDPIFactorChanged(_) => {
+                Refresh | Resized(_, _) | HiDPIFactorChanged(_) => {
                     if !render(&mut imgui, &mut last_frame) {
                         return ControlFlow::Break;
                     }
