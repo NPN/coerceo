@@ -91,7 +91,7 @@ fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Even
                 model.players.white, model.players.black
             ));
 
-            if let Some(click) = board(ui, model, Vec2::new(size.0 - 16.0, size.1 - 230.0)) {
+            if let Some(click) = board(ui, model, Vec2::new(size.0 - 16.0, size.1 - 232.0)) {
                 insert_if_empty(event, click);
             }
 
@@ -120,7 +120,7 @@ fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Even
                 ));
             };
 
-            let button_size = Vec2::new(120.0, 28.0);
+            let button_size = Vec2::new(155.0, 29.0);
             use model::Outcome::*;
             match model.outcome {
                 Win(color) => {
