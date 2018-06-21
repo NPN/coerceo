@@ -23,7 +23,7 @@ use glium::{Display, Surface};
 use imgui::{FontGlyphRange, ImFontConfig, ImGui, Ui};
 use imgui_glium_renderer::Renderer;
 
-const FRAME_DURATION: Duration = Duration::from_millis(50);
+const FRAME_DURATION: Duration = Duration::from_millis(16);
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
 struct MouseState {
