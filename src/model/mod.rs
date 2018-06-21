@@ -61,10 +61,14 @@ impl Model {
         }
     }
     pub fn can_undo(&self) -> bool {
-        self.current_player() != Player::Computer && !self.undo_stack.is_empty()
+        let comp_v_comp =
+            self.players.white == Player::Computer && self.players.black == Player::Computer;
+        !comp_v_comp && !self.undo_stack.is_empty()
     }
     pub fn can_redo(&self) -> bool {
-        self.current_player() != Player::Computer && !self.redo_stack.is_empty()
+        let comp_v_comp =
+            self.players.white == Player::Computer && self.players.black == Player::Computer;
+        !comp_v_comp && !self.redo_stack.is_empty()
     }
     pub fn push_undo_state(&mut self) {
         self.undo_stack
