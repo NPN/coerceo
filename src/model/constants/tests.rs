@@ -23,6 +23,50 @@ use model::{Color, FieldCoord};
 
 use self::OptionFieldCoord::*;
 
+#[test]
+#[ignore]
+pub fn laurentius_starting_position() {
+    let mut white = 0;
+    let mut black = 0;
+
+    // (0, 0) is the only empty hex.
+    // All other hexes have exactly two pieces on them in the starting position.
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    let piece_locations = [
+        (-2,  2, 0, 4),
+        (-2,  1, 0, 3),
+        (-2,  0, 3, 5),
+        (-1,  2, 1, 4),
+        (-1,  1, 0, 4),
+        (-1,  0, 3, 5),
+        (-1, -1, 2, 5),
+        ( 0,  2, 1, 5),
+        ( 0,  1, 1, 5),
+        ( 0, -1, 2, 4),
+        ( 0, -2, 2, 4),
+        ( 1,  1, 2, 5),
+        ( 1,  0, 0, 2),
+        ( 1, -1, 1, 3),
+        ( 1, -2, 1, 4),
+        ( 2,  0, 0, 2),
+        ( 2, -1, 0, 3),
+        ( 2, -2, 1, 3),
+    ];
+
+    {
+        let mut set_field = |coord: FieldCoord| match coord.color() {
+            Color::White => white |= coord.to_bitboard(),
+            Color::Black => black |= coord.to_bitboard(),
+        };
+        for &(x, y, f1, f2) in &piece_locations {
+            set_field(FieldCoord::new(x, y, f1));
+            set_field(FieldCoord::new(x, y, f2));
+        }
+    }
+    assert_eq!(LAURENTIUS_POSITION.white, white);
+    assert_eq!(LAURENTIUS_POSITION.black, black);
+}
+
 /// A wrapper enum representing a `FieldCoord` which may be invalid (i.e. one that is off the board).
 /// Useful for keeping lookup table generation clean.
 enum OptionFieldCoord {

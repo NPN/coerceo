@@ -20,55 +20,18 @@
 mod tests;
 
 use model::bitboard::BitBoard;
-use model::{Color, ColorMap, FieldCoord};
+use model::{Color, ColorMap};
 
 /// 19 hexes * 3 bits per hex = 57 set bits
 pub const HEX_STARTING_POSITION: BitBoard = 0x1ff_ffff_ffff_ffff;
 
+pub const LAURENTIUS_POSITION: ColorMap<BitBoard> = ColorMap {
+    white: 0x148942006c988c8,
+    black: 0x254296c0046426,
+};
+
 /// Clears the top two bits of each hex so we can use an iterator to turn the bits to HexCoords
 pub const HEX_COORD_MASK: BitBoard = 0x49_249_249_249_249;
-
-#[cfg_attr(rustfmt, rustfmt_skip)]
-/// Generate the Laurentius starting position.
-pub fn generate_laurentius() -> ColorMap<BitBoard> {
-    let mut white = 0;
-    let mut black = 0;
-
-    // (0, 0) is the only empty hex.
-    // All other hexes have exactly two pieces on them in the starting position.
-    let piece_locations = [
-        (-2,  2, 0, 4),
-        (-2,  1, 0, 3),
-        (-2,  0, 3, 5),
-        (-1,  2, 1, 4),
-        (-1,  1, 0, 4),
-        (-1,  0, 3, 5),
-        (-1, -1, 2, 5),
-        ( 0,  2, 1, 5),
-        ( 0,  1, 1, 5),
-        ( 0, -1, 2, 4),
-        ( 0, -2, 2, 4),
-        ( 1,  1, 2, 5),
-        ( 1,  0, 0, 2),
-        ( 1, -1, 1, 3),
-        ( 1, -2, 1, 4),
-        ( 2,  0, 0, 2),
-        ( 2, -1, 0, 3),
-        ( 2, -2, 1, 3),
-    ];
-
-    {
-        let mut set_field = |coord: FieldCoord| match coord.color() {
-            Color::White => white |= coord.to_bitboard(),
-            Color::Black => black |= coord.to_bitboard(),
-        };
-        for &(x, y, f1, f2) in &piece_locations {
-            set_field(FieldCoord::new(x, y, f1));
-            set_field(FieldCoord::new(x, y, f2));
-        }
-    }
-    ColorMap::new(white, black)
-}
 
 pub struct LookupTable<T>(ColorMap<T>);
 
