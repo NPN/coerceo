@@ -19,7 +19,7 @@
 
 use model::bitboard::BitBoard;
 use model::constants::*;
-use model::{Color, FieldCoord};
+use model::{Color, FieldCoord, HexCoord};
 
 use self::OptionFieldCoord::*;
 
@@ -63,8 +63,46 @@ pub fn laurentius_starting_position() {
             set_field(FieldCoord::new(x, y, f2));
         }
     }
+    assert_eq!(LAURENTIUS.hexes, (1 << 57) - 1);
     assert_eq!(LAURENTIUS.fields.white, white);
     assert_eq!(LAURENTIUS.fields.black, black);
+}
+
+#[test]
+#[ignore]
+pub fn ocius_starting_position() {
+    let mut hexes = 0;
+    let mut white = 0;
+    let mut black = 0;
+
+    // All hexes have exactly two pieces on them in the starting position.
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    let piece_locations = [
+        (-1,  1, 1, 3),
+        (-1,  0, 0, 2),
+        ( 0,  1, 2, 4),
+        ( 0,  0, 0, 3),
+        ( 0, -1, 1, 5),
+        ( 1,  0, 3, 5),
+        ( 1, -1, 0, 4),
+    ];
+
+    {
+        let mut set_field = |coord: FieldCoord| match coord.color() {
+            Color::White => white |= coord.to_bitboard(),
+            Color::Black => black |= coord.to_bitboard(),
+        };
+        for &(x, y, f1, f2) in &piece_locations {
+            let hex = HexCoord::try_new(x, y).unwrap();
+            hexes |= HEX_MASK[hex.to_index()];
+
+            set_field(FieldCoord::new(x, y, f1));
+            set_field(FieldCoord::new(x, y, f2));
+        }
+    }
+    assert_eq!(OCIUS.hexes, hexes);
+    assert_eq!(OCIUS.fields.white, white);
+    assert_eq!(OCIUS.fields.black, black);
 }
 
 /// A wrapper enum representing a `FieldCoord` which may be invalid (i.e. one that is off the board).

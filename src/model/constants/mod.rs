@@ -27,6 +27,7 @@ pub struct StartingPosition {
     pub hexes: BitBoard,
 }
 
+/// The standard starting position. 19 tiles, 18 white pieces, and 18 black pieces.
 pub const LAURENTIUS: StartingPosition = StartingPosition {
     fields: ColorMap {
         white: 0x148942006c988c8,
@@ -34,6 +35,15 @@ pub const LAURENTIUS: StartingPosition = StartingPosition {
     },
     // 19 hexes * 3 bits per hex = 57 set bits
     hexes: 0x1ff_ffff_ffff_ffff,
+};
+
+/// "7 tiles, 7 white pieces, 7 black pieces."
+pub const OCIUS: StartingPosition = StartingPosition {
+    fields: ColorMap {
+        white: 0x18190005000,
+        black: 0x18000b028000,
+    },
+    hexes: 0x1f81ff03f000,
 };
 
 /// Clears the top two bits of each hex so we can use an iterator to turn the bits to HexCoords
