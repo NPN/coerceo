@@ -22,12 +22,18 @@ mod tests;
 use model::bitboard::BitBoard;
 use model::{Color, ColorMap};
 
-/// 19 hexes * 3 bits per hex = 57 set bits
-pub const HEX_STARTING_POSITION: BitBoard = 0x1ff_ffff_ffff_ffff;
+pub struct StartingPosition {
+    pub fields: ColorMap<BitBoard>,
+    pub hexes: BitBoard,
+}
 
-pub const LAURENTIUS_POSITION: ColorMap<BitBoard> = ColorMap {
-    white: 0x148942006c988c8,
-    black: 0x254296c0046426,
+pub const LAURENTIUS: StartingPosition = StartingPosition {
+    fields: ColorMap {
+        white: 0x148942006c988c8,
+        black: 0x254296c0046426,
+    },
+    // 19 hexes * 3 bits per hex = 57 set bits
+    hexes: 0x1ff_ffff_ffff_ffff,
 };
 
 /// Clears the top two bits of each hex so we can use an iterator to turn the bits to HexCoords

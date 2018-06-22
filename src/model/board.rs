@@ -94,11 +94,11 @@ impl Board {
     /// Create a new board with the "Laurentius" starting position.
     pub fn new() -> Self {
         Self {
-            fields: LAURENTIUS_POSITION,
-            hexes: HEX_STARTING_POSITION,
+            fields: LAURENTIUS.fields,
+            hexes: LAURENTIUS.hexes,
             turn: Color::White,
             vitals: ColorMap::new(PlayerVitals::new(), PlayerVitals::new()),
-            zobrist: zobrist::new(LAURENTIUS_POSITION, ColorMap::new(0, 0), Color::White),
+            zobrist: zobrist::new(LAURENTIUS.fields, ColorMap::new(0, 0), Color::White),
         }
     }
     pub fn apply_move(&mut self, mv: &Move) {

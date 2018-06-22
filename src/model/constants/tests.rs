@@ -63,8 +63,8 @@ pub fn laurentius_starting_position() {
             set_field(FieldCoord::new(x, y, f2));
         }
     }
-    assert_eq!(LAURENTIUS_POSITION.white, white);
-    assert_eq!(LAURENTIUS_POSITION.black, black);
+    assert_eq!(LAURENTIUS.fields.white, white);
+    assert_eq!(LAURENTIUS.fields.black, black);
 }
 
 /// A wrapper enum representing a `FieldCoord` which may be invalid (i.e. one that is off the board).
