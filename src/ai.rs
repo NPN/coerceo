@@ -21,11 +21,14 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, TryRecvError};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
+use std::time::{Duration, Instant};
 
 use glium::glutin::EventsLoopProxy;
 
 use model::ttable::{Score, TTable};
 use model::{Board, Move, Outcome};
+
+const AI_MOVE_DELAY: Duration = Duration::from_millis(300);
 
 const NEG_INFINITY: i16 = -0x7000;
 const LOSE: i16 = -0x4000;
@@ -103,6 +106,7 @@ impl AI {
         board_list: Vec<Board>,
         depth: u8,
         events_proxy: EventsLoopProxy,
+        delay: bool,
     ) {
         assert_ne!(depth, 0);
 
@@ -115,6 +119,8 @@ impl AI {
         let ttable_mutex = self.ttable.clone();
 
         let handle = thread::spawn(move || {
+            let start = Instant::now();
+
             if let Status::Thinking {
                 stop_signal,
                 handle,
@@ -141,6 +147,12 @@ impl AI {
                 if stop_signal_clone.load(Ordering::Relaxed) {
                     return;
                 }
+
+                let elapsed = Instant::now() - start;
+                if delay && elapsed < AI_MOVE_DELAY {
+                    thread::sleep(AI_MOVE_DELAY - elapsed);
+                }
+
                 move_sender.send(mv).expect("AI failed to send Move");
                 events_proxy
                     .wakeup()

@@ -59,12 +59,15 @@ pub fn update(model: &mut Model, event: Option<Event>) -> bool {
 
             if !model.is_game_over() {
                 if model.ai.is_idle() {
+                    let should_delay =
+                        model.players.get(model.board.turn.switch()) == Player::Human;
                     let board_list = model.board_list();
                     model.ai.think(
                         model.board,
                         board_list,
                         model.ai_search_depth,
                         model.events_proxy.clone(),
+                        should_delay,
                     );
                 }
                 if let Some(mv) = model.ai.try_recv() {
