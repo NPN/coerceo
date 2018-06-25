@@ -20,7 +20,7 @@ mod board_parts;
 mod sys;
 mod vec2;
 
-use imgui::{ImGuiCond, ImStr, ImVec2, StyleVar, Ui};
+use imgui::{ImGuiCond, ImStr, StyleVar, Ui};
 
 use self::board::board;
 pub use self::sys::run;
@@ -148,7 +148,7 @@ fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Even
                             (model.can_undo(), im_str!("Undo"), Event::Undo),
                             (model.can_redo(), im_str!("Redo"), Event::Redo),
                         ],
-                        &button_size,
+                        button_size,
                         event,
                     );
                     let is_human_player = model.current_player() == Player::Human;
@@ -166,7 +166,7 @@ fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Even
                                 Event::Exchange,
                             ),
                         ],
-                        &button_size,
+                        button_size,
                         event,
                     );
                 }
@@ -191,14 +191,12 @@ fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Even
 fn horz_button_layout(
     ui: &Ui,
     buttons: Vec<(bool, &ImStr, Event)>,
-    size: &Vec2,
+    size: Vec2,
     event: &mut Option<Event>,
 ) {
     if !buttons.iter().any(|&(show, _, _)| show) {
         return;
     }
-
-    let size: ImVec2 = (*size).into();
 
     for (show, label, action) in buttons {
         if show {

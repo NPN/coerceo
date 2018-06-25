@@ -181,8 +181,8 @@ pub enum Color {
 }
 
 impl Color {
-    pub fn switch(&self) -> Self {
-        match *self {
+    pub fn switch(self) -> Self {
+        match self {
             Color::White => Color::Black,
             Color::Black => Color::White,
         }
@@ -231,10 +231,10 @@ pub enum Move {
 }
 
 impl Move {
-    pub fn move_from_field(from: &FieldCoord, to: &FieldCoord) -> Self {
+    pub fn move_from_field(from: FieldCoord, to: FieldCoord) -> Self {
         Move::Move(from.to_bitboard(), to.to_bitboard(), from.color())
     }
-    pub fn exchange_from_field(field: &FieldCoord) -> Self {
+    pub fn exchange_from_field(field: FieldCoord) -> Self {
         Move::Exchange(field.to_bitboard(), field.color())
     }
     pub fn annotate(&self, pieces: Vec<FieldCoord>, hexes: Vec<HexCoord>) -> MoveAnnotated {

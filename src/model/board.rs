@@ -279,7 +279,7 @@ impl Board {
                     .map(move |dest| Move::Move(origin, dest, our_color))
             }))
     }
-    pub fn available_moves_for_piece(&self, field: &FieldCoord) -> Vec<FieldCoord> {
+    pub fn available_moves_for_piece(&self, field: FieldCoord) -> Vec<FieldCoord> {
         if self.is_piece_on_field(field) {
             let color = field.color();
             let vertex_neighbors = self.hexes & VERTEX_NEIGHBORS.bb_get(field.to_bitboard(), color);
@@ -296,7 +296,7 @@ impl Board {
     pub fn can_exchange(&self) -> bool {
         self.vitals.get(self.turn).hexes >= 2
     }
-    pub fn is_piece_on_field(&self, coord: &FieldCoord) -> bool {
+    pub fn is_piece_on_field(&self, coord: FieldCoord) -> bool {
         self.is_piece_on_bitboard(coord.to_bitboard(), coord.color())
     }
     pub fn is_piece_on_bitboard(&self, bb: BitBoard, color: Color) -> bool {

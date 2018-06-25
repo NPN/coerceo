@@ -54,16 +54,16 @@ pub fn board(ui: &Ui, model: &Model, size: Vec2) -> Option<Event> {
 
     let extant_hexes = model.board.extant_hexes();
 
-    for hex in &extant_hexes {
+    for &hex in &extant_hexes {
         draw_hex(ui, EXTANT_HEX_ALPHA, hex, origin, side_len);
     }
 
     if let Some(ref mv) = model.last_move {
-        for hex in &mv.removed_hexes {
-            draw_hex(ui, REMOVED_HEX_ALPHA, &hex, origin, side_len);
+        for &hex in &mv.removed_hexes {
+            draw_hex(ui, REMOVED_HEX_ALPHA, hex, origin, side_len);
         }
 
-        for piece in &mv.removed_pieces {
+        for &piece in &mv.removed_pieces {
             let color = if model.board.is_hex_extant(piece.to_hex().to_index()) {
                 CAPTURE_HIGHLIGHT
             } else {
@@ -80,24 +80,24 @@ pub fn board(ui: &Ui, model: &Model, size: Vec2) -> Option<Event> {
             };
 
             let from = FieldCoord::from_bitboard(from, color);
-            draw_field(ui, from_color, &from, origin, side_len);
+            draw_field(ui, from_color, from, origin, side_len);
 
             let to = FieldCoord::from_bitboard(to, color);
-            draw_field(ui, LAST_MOVE_HIGHLIGHT, &to, origin, side_len);
+            draw_field(ui, LAST_MOVE_HIGHLIGHT, to, origin, side_len);
         }
     }
 
-    if let Some(ref coord) = model.selected_piece {
+    if let Some(coord) = model.selected_piece {
         draw_field(ui, SELECT_HIGHLIGHT, coord, origin, side_len);
         for coord in model.board.available_moves_for_piece(coord) {
-            draw_field_dot(ui, SELECT_HIGHLIGHT, &coord, origin, side_len);
+            draw_field_dot(ui, SELECT_HIGHLIGHT, coord, origin, side_len);
         }
     }
 
     let hover_field = pixel_to_field(mouse_pos, origin, side_len)
         .filter(|field| model.board.is_hex_extant(field.to_hex().to_index()));
 
-    if let Some(ref coord) = hover_field {
+    if let Some(coord) = hover_field {
         if model.exchanging
             && coord.color() != model.board.turn
             && model.board.is_piece_on_field(coord)
@@ -109,8 +109,8 @@ pub fn board(ui: &Ui, model: &Model, size: Vec2) -> Option<Event> {
     for hex in &extant_hexes {
         for f in 0..6 {
             let coord = hex.to_field(f);
-            if model.board.is_piece_on_field(&coord) {
-                draw_piece(ui, &coord, origin, side_len);
+            if model.board.is_piece_on_field(coord) {
+                draw_piece(ui, coord, origin, side_len);
             }
         }
     }

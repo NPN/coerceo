@@ -52,16 +52,16 @@ pub fn set_alpha(mut color: u32, alpha: u8) -> u32 {
     color | u32::from(alpha) << 24
 }
 
-pub fn draw_hex(ui: &Ui, alpha: u8, coord: &HexCoord, origin: Vec2, size: f32) {
+pub fn draw_hex(ui: &Ui, alpha: u8, coord: HexCoord, origin: Vec2, size: f32) {
     for i in 0..6 {
         let coord = coord.to_field(i);
         let color = FIELD_COLORS.get(coord.color());
 
-        draw_field(ui, set_alpha(color, alpha), &coord, origin, size);
+        draw_field(ui, set_alpha(color, alpha), coord, origin, size);
     }
 }
 
-pub fn draw_field(ui: &Ui, color: u32, coord: &FieldCoord, origin: Vec2, size: f32) {
+pub fn draw_field(ui: &Ui, color: u32, coord: FieldCoord, origin: Vec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     ui.get_window_draw_list()
         .add_triangle(v1, v2, v3, color)
@@ -69,7 +69,7 @@ pub fn draw_field(ui: &Ui, color: u32, coord: &FieldCoord, origin: Vec2, size: f
         .build();
 }
 
-pub fn draw_field_dot(ui: &Ui, color: u32, coord: &FieldCoord, origin: Vec2, size: f32) {
+pub fn draw_field_dot(ui: &Ui, color: u32, coord: FieldCoord, origin: Vec2, size: f32) {
     let center = field_center(coord, origin, size);
     ui.get_window_draw_list()
         .add_circle(center, size / (4.0 * SQRT_3), color)
@@ -78,7 +78,7 @@ pub fn draw_field_dot(ui: &Ui, color: u32, coord: &FieldCoord, origin: Vec2, siz
         .build();
 }
 
-pub fn draw_piece(ui: &Ui, coord: &FieldCoord, origin: Vec2, size: f32) {
+pub fn draw_piece(ui: &Ui, coord: FieldCoord, origin: Vec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     let center = field_center(coord, origin, size);
 
@@ -111,7 +111,7 @@ pub fn draw_piece(ui: &Ui, coord: &FieldCoord, origin: Vec2, size: f32) {
         .build();
 }
 
-fn field_center(coord: &FieldCoord, origin: Vec2, size: f32) -> Vec2 {
+fn field_center(coord: FieldCoord, origin: Vec2, size: f32) -> Vec2 {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     let center_x = (v1.x + v2.x + v3.x) / 3.0;
     let min_y = (v1.y).min(v2.y).min(v3.y);
@@ -123,8 +123,8 @@ fn field_center(coord: &FieldCoord, origin: Vec2, size: f32) -> Vec2 {
     Vec2::new(center_x, center_y)
 }
 
-fn field_vertexes(coord: &FieldCoord, origin: Vec2, size: f32) -> (Vec2, Vec2, Vec2) {
-    let center = hex_to_pixel(&coord.to_hex(), origin, size);
+fn field_vertexes(coord: FieldCoord, origin: Vec2, size: f32) -> (Vec2, Vec2, Vec2) {
+    let center = hex_to_pixel(coord.to_hex(), origin, size);
     let height = size * SQRT_3 / 2.0;
 
     let west = center + Vec2::new(-size, 0.0);
@@ -153,7 +153,7 @@ fn hex_spacing(size: f32) -> f32 {
 }
 
 // Algorithm based on http://www.redblobgames.com/grids/hexagons/#hex-to-pixel
-fn hex_to_pixel(coord: &HexCoord, origin: Vec2, size: f32) -> Vec2 {
+fn hex_to_pixel(coord: HexCoord, origin: Vec2, size: f32) -> Vec2 {
     let x = f32::from(coord.x());
     let y = f32::from(coord.y());
 
@@ -175,7 +175,7 @@ pub fn pixel_to_field(p: Vec2, origin: Vec2, size: f32) -> Option<FieldCoord> {
             // the rounded hex coordinate again with the correct size. If the pixel is still in the right
             // hex, then we know we are not in a gap.
 
-            let pixel_offset = p - hex_to_pixel(&hex, origin, size);
+            let pixel_offset = p - hex_to_pixel(hex, origin, size);
             if HexCoord::try_new(0, 0) == round_hex_coord(pixel_offset, size) {
                 Some((hex, pixel_to_hex_uniform(pixel_offset, size)))
             } else {
