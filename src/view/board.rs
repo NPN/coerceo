@@ -94,13 +94,9 @@ pub fn board(ui: &Ui, model: &Model, size: Vec2) -> Option<Event> {
         }
     }
 
-    let mut hover_field = pixel_to_field(mouse_pos, origin, side_len);
-    if !hover_field
-        .map(|field| model.board.is_hex_extant(field.to_hex().to_index()))
-        .unwrap_or(false)
-    {
-        hover_field = None;
-    }
+    let hover_field = pixel_to_field(mouse_pos, origin, side_len)
+        .filter(|field| model.board.is_hex_extant(field.to_hex().to_index()));
+
     if let Some(ref coord) = hover_field {
         if model.exchanging
             && coord.color() != model.board.turn
@@ -121,9 +117,5 @@ pub fn board(ui: &Ui, model: &Model, size: Vec2) -> Option<Event> {
 
     ui.dummy(size);
 
-    if mouse_click {
-        hover_field.map(Event::Click)
-    } else {
-        None
-    }
+    hover_field.filter(|_| mouse_click).map(Event::Click)
 }
