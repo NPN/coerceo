@@ -20,11 +20,13 @@
 mod tests;
 
 use model::bitboard::BitBoard;
+use model::board::PlayerVitals;
 use model::{Color, ColorMap};
 
 pub struct StartingPosition {
     pub fields: ColorMap<BitBoard>,
     pub hexes: BitBoard,
+    pub vitals: ColorMap<PlayerVitals>,
 }
 
 /// The standard starting position. 19 tiles, 18 white pieces, and 18 black pieces.
@@ -35,6 +37,16 @@ pub const LAURENTIUS: StartingPosition = StartingPosition {
     },
     // 19 hexes * 3 bits per hex = 57 set bits
     hexes: 0x1ff_ffff_ffff_ffff,
+    vitals: ColorMap {
+        white: PlayerVitals {
+            pieces: 18,
+            hexes: 0,
+        },
+        black: PlayerVitals {
+            pieces: 18,
+            hexes: 0,
+        },
+    },
 };
 
 /// "7 tiles, 7 white pieces, 7 black pieces."
@@ -44,6 +56,16 @@ pub const OCIUS: StartingPosition = StartingPosition {
         black: 0x18000b028000,
     },
     hexes: 0x1f81ff03f000,
+    vitals: ColorMap {
+        white: PlayerVitals {
+            pieces: 7,
+            hexes: 0,
+        },
+        black: PlayerVitals {
+            pieces: 7,
+            hexes: 0,
+        },
+    },
 };
 
 /// Clears the top two bits of each hex so we can use an iterator to turn the bits to HexCoords

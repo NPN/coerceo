@@ -76,17 +76,8 @@ pub struct Board {
 /// essential to a player's survival (i.e. vital signs).
 #[derive(Clone, Copy, PartialEq)]
 pub struct PlayerVitals {
-    pieces: u8,
-    hexes: u8,
-}
-
-impl PlayerVitals {
-    fn new() -> Self {
-        Self {
-            pieces: 18,
-            hexes: 0,
-        }
-    }
+    pub pieces: u8,
+    pub hexes: u8,
 }
 
 // Public methods
@@ -97,7 +88,7 @@ impl Board {
             fields: LAURENTIUS.fields,
             hexes: LAURENTIUS.hexes,
             turn: Color::White,
-            vitals: ColorMap::new(PlayerVitals::new(), PlayerVitals::new()),
+            vitals: LAURENTIUS.vitals,
             zobrist: zobrist::new(LAURENTIUS.fields, ColorMap::new(0, 0), Color::White),
         }
     }
