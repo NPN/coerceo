@@ -226,9 +226,8 @@ impl Board {
         // also examine less quiescence nodes in the long run, which is (hopefully) an net gain.
         let mut exchange_captures = 0;
 
-        for i in 0..18 {
+        for (i, hex) in HEX_MASK.iter().enumerate() {
             if self.is_hex_extant(i) && self.is_hex_maybe_removable(i) {
-                let hex = HEX_MASK[i];
                 let opp_piece = opp_fields & hex;
                 let our_piece = our_fields & hex;
 
