@@ -30,7 +30,7 @@ pub struct TTable {
 impl TTable {
     pub fn new() -> Self {
         Self {
-            table: vec![Default::default(); TABLE_SIZE],
+            table: vec![Entry::default(); TABLE_SIZE],
             age: 0,
         }
     }
