@@ -50,6 +50,8 @@ The notation that the AI debug output uses to describe the principal variation (
 
 ## Legal
 
+This game is an unofficial clone. Please support the official game by buying it at [coerceo.com](http://coerceo.com/order.html).
+
 This game is licensed under the AGPLv3.
 
 This game uses the font [Fira Sans](https://github.com/mozilla/Fira) which is licensed under the OFL v1.1.
