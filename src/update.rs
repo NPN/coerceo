@@ -63,6 +63,7 @@ pub fn update(model: &mut Model, event: Option<Event>) -> bool {
                         *model.ai_search_depth.borrow() as u8,
                         model.events_proxy.clone(),
                         should_delay,
+                        model.ply_count,
                     );
                 }
                 if let Some(mv) = model.ai.try_recv() {

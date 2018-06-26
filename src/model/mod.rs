@@ -34,6 +34,7 @@ use ai::AI;
 pub struct Model {
     pub game_type: GameType,
     pub board: Board,
+    pub ply_count: u64,
     pub players: ColorMap<Player>,
     pub selected_piece: Option<FieldCoord>,
     pub last_move: Option<MoveAnnotated>,
@@ -56,6 +57,7 @@ impl Model {
         Self {
             game_type,
             board: Board::new(game_type),
+            ply_count: 0,
             players,
             selected_piece: None,
             last_move: None,
@@ -73,6 +75,7 @@ impl Model {
         self.game_type = game_type;
         self.players = players;
         self.board = Board::new(game_type);
+        self.ply_count = 0;
         self.selected_piece = None;
         self.last_move = None;
         self.exchanging = false;
@@ -83,6 +86,7 @@ impl Model {
     }
     pub fn try_move(&mut self, mv: Move) -> bool {
         if self.board.can_apply_move(&mv) {
+            self.ply_count += 1;
             self.push_undo_state();
             self.last_move = Some(self.board.annotated_apply_move(&mv));
             self.update_outcome();

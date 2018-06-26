@@ -110,6 +110,7 @@ impl AI {
         depth: u8,
         events_proxy: EventsLoopProxy,
         delay: bool,
+        ply_count: u64,
     ) {
         assert_ne!(depth, 0);
 
@@ -147,6 +148,13 @@ impl AI {
 
             if let Ok(mut debug_info) = debug_info.write() {
                 debug_info.clear();
+                writeln!(
+                    debug_info,
+                    "Turn {}: {:?} (Depth {})",
+                    ply_count / 2 + 1,
+                    board.turn,
+                    depth
+                ).unwrap();
             }
 
             if let SearchResult::Move(mv) = search_root(
