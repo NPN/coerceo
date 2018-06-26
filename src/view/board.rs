@@ -18,7 +18,7 @@
 use imgui::{ImMouseButton, Ui};
 
 use model::bitboard::BitBoardExt;
-use model::{FieldCoord, Model, Move};
+use model::{FieldCoord, GameType, Model, Move};
 use view::board_parts::*;
 use view::vec2::Vec2;
 use view::Event;
@@ -40,15 +40,27 @@ pub fn board(ui: &Ui, model: &Model, size: Vec2) -> Option<Event> {
     let mouse_pos = Vec2::from(ui.imgui().mouse_pos());
     let cursor_pos = Vec2::from(ui.get_cursor_screen_pos());
 
-    let side_len = {
-        // hex_spacing  =          m * side_len + b
-        // board_width  =          8 * side_len + 6 * SQRT_3 * hex_spacing
-        // board_height = 5 * SQRT_3 * side_len +          4 * hex_spacing
-        let (m, b) = HEX_SPACING_COEFF;
-        let width = (size.x - 6.0 * SQRT_3 * b) / (8.0 + 6.0 * SQRT_3 * m);
-        let height = (size.y - 4.0 * b) / (5.0 * SQRT_3 + 4.0 * m);
+    let side_len = match model.game_type {
+        GameType::Laurentius => {
+            // hex_spacing  =          m * side_len + b
+            // board_width  =          8 * side_len + 6 * SQRT_3 * hex_spacing
+            // board_height = 5 * SQRT_3 * side_len +          4 * hex_spacing
+            let (m, b) = HEX_SPACING_COEFF;
+            let size_width = (size.x - 6.0 * SQRT_3 * b) / (8.0 + 6.0 * SQRT_3 * m);
+            let size_height = (size.y - 4.0 * b) / (5.0 * SQRT_3 + 4.0 * m);
 
-        width.min(height)
+            size_width.min(size_height)
+        }
+        GameType::Ocius => {
+            // hex_spacing  =          m * side_len + b
+            // board_width  =          5 * side_len + SQRT_3 * hex_spacing
+            // board_height = 3 * SQRT_3 * side_len +      2 * hex_spacing
+            let (m, b) = HEX_SPACING_COEFF;
+            let size_width = (size.x - SQRT_3 * b) / (5.0 + SQRT_3 * m);
+            let size_height = (size.y - 2.0 * b) / (3.0 * SQRT_3 + 2.0 * m);
+
+            size_width.min(size_height)
+        }
     };
     let origin = cursor_pos + size / 2.0;
 

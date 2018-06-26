@@ -31,6 +31,7 @@ pub use self::board::Board;
 use ai::AI;
 
 pub struct Model {
+    pub game_type: GameType,
     pub board: Board,
     pub players: ColorMap<Player>,
     pub selected_piece: Option<FieldCoord>,
@@ -51,6 +52,7 @@ impl Model {
         events_proxy: EventsLoopProxy,
     ) -> Self {
         Self {
+            game_type,
             board: Board::new(game_type),
             players,
             selected_piece: None,
