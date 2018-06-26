@@ -15,15 +15,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use model::{ColorMap, FieldCoord, Model, Move, Player};
+use model::{ColorMap, FieldCoord, GameType, Model, Move, Player};
 
 use self::Event::*;
 
-#[derive(PartialEq)]
 pub enum Event {
     Click(FieldCoord),
     Exchange,
-    NewGame(ColorMap<Player>),
+    NewGame(GameType, ColorMap<Player>),
     Resign,
     Undo,
     Redo,
@@ -32,7 +31,7 @@ pub enum Event {
 }
 
 pub fn update(model: &mut Model, event: Option<Event>) -> bool {
-    if event == Some(Quit) {
+    if let Some(Quit) = event {
         return false;
     }
 
@@ -88,9 +87,9 @@ fn handle_event(model: &mut Model, event: &Event) {
             model.exchanging = !model.exchanging;
             model.clear_selection();
         },
-        NewGame(players) => {
+        NewGame(game_type, players) => {
             let search_depth = model.ai_search_depth;
-            *model = Model::new(*players, model.events_proxy.clone());
+            *model = Model::new(*game_type, *players, model.events_proxy.clone());
             model.ai_search_depth = search_depth;
         }
         Resign => {

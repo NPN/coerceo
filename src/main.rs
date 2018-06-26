@@ -29,13 +29,17 @@ mod view;
 use glium::glutin::EventsLoop;
 use imgui::Ui;
 
-use model::{ColorMap, Model, Player};
+use model::{ColorMap, GameType, Model, Player};
 
 fn main() {
     let events_loop = EventsLoop::new();
     let events_proxy = events_loop.create_proxy();
 
-    let mut model = Model::new(ColorMap::new(Player::Human, Player::Human), events_proxy);
+    let mut model = Model::new(
+        GameType::Laurentius,
+        ColorMap::new(Player::Human, Player::Human),
+        events_proxy,
+    );
 
     view::run(
         String::from("Coerceo"),

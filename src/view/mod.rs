@@ -25,7 +25,7 @@ use imgui::{ImGuiCond, ImStr, StyleVar, Ui};
 use self::board::board;
 pub use self::sys::run;
 use self::vec2::Vec2;
-use model::{Color, ColorMap, Model, Player};
+use model::{Color, ColorMap, GameType, Model, Player};
 use update::Event;
 
 pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
@@ -35,23 +35,15 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
         ui.menu(im_str!("Game")).build(|| {
             ui.menu_item(im_str!("New game")).enabled(false).build();
 
-            use self::Player::*;
-            if ui.menu_item(im_str!("Human vs. Human")).build() {
-                insert_if_empty(&mut event, Event::NewGame(ColorMap::new(Human, Human)));
-            }
-            if ui.menu_item(im_str!("Human vs. Computer")).build() {
-                insert_if_empty(&mut event, Event::NewGame(ColorMap::new(Human, Computer)));
-            }
-            if ui.menu_item(im_str!("Computer vs. Human")).build() {
-                insert_if_empty(&mut event, Event::NewGame(ColorMap::new(Computer, Human)));
-            }
-            if ui.menu_item(im_str!("Computer vs. Computer")).build() {
-                insert_if_empty(
-                    &mut event,
-                    Event::NewGame(ColorMap::new(Computer, Computer)),
-                );
-            }
+            ui.menu(im_str!("Laurentius")).build(|| {
+                player_options(ui, &mut event, GameType::Laurentius);
+            });
+            ui.menu(im_str!("Ocius")).build(|| {
+                player_options(ui, &mut event, GameType::Ocius);
+            });
+
             ui.separator();
+
             if ui.menu_item(im_str!("Quit")).build() {
                 insert_if_empty(&mut event, Event::Quit);
             }
@@ -75,6 +67,34 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
     });
 
     event
+}
+
+fn player_options(ui: &Ui, event: &mut Option<Event>, game_type: GameType) {
+    use self::Player::*;
+    if ui.menu_item(im_str!("Human vs. Human")).build() {
+        insert_if_empty(
+            event,
+            Event::NewGame(game_type, ColorMap::new(Human, Human)),
+        );
+    }
+    if ui.menu_item(im_str!("Human vs. Computer")).build() {
+        insert_if_empty(
+            event,
+            Event::NewGame(game_type, ColorMap::new(Human, Computer)),
+        );
+    }
+    if ui.menu_item(im_str!("Computer vs. Human")).build() {
+        insert_if_empty(
+            event,
+            Event::NewGame(game_type, ColorMap::new(Computer, Human)),
+        );
+    }
+    if ui.menu_item(im_str!("Computer vs. Computer")).build() {
+        insert_if_empty(
+            event,
+            Event::NewGame(game_type, ColorMap::new(Computer, Computer)),
+        );
+    }
 }
 
 fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Event>) {

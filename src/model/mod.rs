@@ -45,9 +45,13 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn new(players: ColorMap<Player>, events_proxy: EventsLoopProxy) -> Self {
+    pub fn new(
+        game_type: GameType,
+        players: ColorMap<Player>,
+        events_proxy: EventsLoopProxy,
+    ) -> Self {
         Self {
-            board: Board::new(),
+            board: Board::new(game_type),
             players,
             selected_piece: None,
             last_move: None,
@@ -154,6 +158,12 @@ impl Model {
         assert_eq!(self.outcome, Outcome::InProgress);
         self.outcome = Outcome::Win(self.board.turn.switch());
     }
+}
+
+#[derive(Copy, Clone)]
+pub enum GameType {
+    Laurentius,
+    Ocius,
 }
 
 /// The outcome of a game. This includes being in progress; a win/loss by capturing all of an

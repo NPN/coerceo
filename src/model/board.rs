@@ -20,7 +20,7 @@ use std::cmp;
 use model::bitboard::*;
 use model::constants::*;
 use model::zobrist::{self, ZobristExt, ZobristHash};
-use model::{Color, ColorMap, FieldCoord, HexCoord, Move, MoveAnnotated, Outcome};
+use model::{Color, ColorMap, FieldCoord, GameType, HexCoord, Move, MoveAnnotated, Outcome};
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct Board {
@@ -83,13 +83,18 @@ pub struct PlayerVitals {
 // Public methods
 impl Board {
     /// Create a new board with the "Laurentius" starting position.
-    pub fn new() -> Self {
+    pub fn new(game_type: GameType) -> Self {
+        let starting_position = match game_type {
+            GameType::Laurentius => LAURENTIUS,
+            GameType::Ocius => OCIUS,
+        };
+
         Self {
-            fields: LAURENTIUS.fields,
-            hexes: LAURENTIUS.hexes,
+            fields: starting_position.fields,
+            hexes: starting_position.hexes,
             turn: Color::White,
-            vitals: LAURENTIUS.vitals,
-            zobrist: zobrist::new(LAURENTIUS.fields, ColorMap::new(0, 0), Color::White),
+            vitals: starting_position.vitals,
+            zobrist: zobrist::new(starting_position.fields, ColorMap::new(0, 0), Color::White),
         }
     }
     pub fn apply_move(&mut self, mv: &Move) {
