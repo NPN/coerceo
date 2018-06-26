@@ -11,7 +11,7 @@ The [official rules](http://coerceo.com/rules.html) are on the Coerceo website. 
 cargo run --release
 ```
 
-There are [variations](http://coerceo.com/rules2.html) on the game, but this program does not support them yet.
+This game also supports the Ocius variation of the game, which is [explained here](http://coerceo.com/Coerceo%20variation2%20shortgame.pdf).
 
 ## Notation
 
