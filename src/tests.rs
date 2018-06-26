@@ -33,10 +33,11 @@ fn perft(board: &Board, depth: u8) -> u64 {
     }
 }
 
+// All of the following perft results have not been verified by an external source. They only test
+// for consistency with earlier versions of the program.
+
 #[test]
 fn laurentius_perft_4() {
-    // These counts have not been verified by an external source. They only test for consistency
-    // with earlier versions of the program.
     let counts = [48, 2304, 110304, 5280654];
     let board = Board::new(GameType::Laurentius);
 
@@ -48,8 +49,6 @@ fn laurentius_perft_4() {
 #[test]
 #[ignore]
 fn laurentius_perft_5() {
-    // These counts have not been verified by an external source. They only test for consistency
-    // with earlier versions of the program.
     let counts = [48, 2304, 110304, 5280654, 254945184];
     let board = Board::new(GameType::Laurentius);
 
@@ -61,10 +60,40 @@ fn laurentius_perft_5() {
 #[test]
 #[ignore]
 fn laurentius_perft_6() {
-    // These counts have not been verified by an external source. They only test for consistency
-    // with earlier versions of the program.
     let counts = [48, 2304, 110304, 5280654, 254945184, 12307984056];
     let board = Board::new(GameType::Laurentius);
+
+    for (i, &count) in counts.iter().enumerate() {
+        assert_eq!(count, perft(&board, i as u8 + 1));
+    }
+}
+
+#[test]
+fn ocius_perft_5() {
+    let counts = [26, 676, 17234, 435572, 10739924];
+    let board = Board::new(GameType::Ocius);
+
+    for (i, &count) in counts.iter().enumerate() {
+        assert_eq!(count, perft(&board, i as u8 + 1));
+    }
+}
+
+#[test]
+#[ignore]
+fn ocius_perft_6() {
+    let counts = [26, 676, 17234, 435572, 10739924, 262208752];
+    let board = Board::new(GameType::Ocius);
+
+    for (i, &count) in counts.iter().enumerate() {
+        assert_eq!(count, perft(&board, i as u8 + 1));
+    }
+}
+
+#[test]
+#[ignore]
+fn ocius_perft_7() {
+    let counts = [26, 676, 17234, 435572, 10739924, 262208752, 6252014770];
+    let board = Board::new(GameType::Ocius);
 
     for (i, &count) in counts.iter().enumerate() {
         assert_eq!(count, perft(&board, i as u8 + 1));
