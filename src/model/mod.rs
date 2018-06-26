@@ -278,16 +278,14 @@ impl fmt::Display for Move {
         match *self {
             Move::Move(from, to, color) => write!(
                 f,
-                "Move::Move({}, {}, {:?})",
+                "Move({}, {})",
                 FieldCoord::from_bitboard(from, color).to_notation(),
                 FieldCoord::from_bitboard(to, color).to_notation(),
-                color
             ),
             Move::Exchange(bb, color) => write!(
                 f,
-                "Move::Exchange({}, {:?})",
+                "Exchange({})",
                 FieldCoord::from_bitboard(bb, color).to_notation(),
-                color
             ),
         }
     }
