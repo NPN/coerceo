@@ -17,7 +17,7 @@
 
 #![cfg(test)]
 
-use model::Board;
+use model::{Board, GameType};
 
 fn perft(board: &Board, depth: u8) -> u64 {
     if depth == 0 {
@@ -34,11 +34,11 @@ fn perft(board: &Board, depth: u8) -> u64 {
 }
 
 #[test]
-fn perft_depth_4() {
+fn laurentius_perft_4() {
     // These counts have not been verified by an external source. They only test for consistency
     // with earlier versions of the program.
     let counts = [48, 2304, 110304, 5280654];
-    let board = Board::new();
+    let board = Board::new(GameType::Laurentius);
 
     for (i, &count) in counts.iter().enumerate() {
         assert_eq!(count, perft(&board, i as u8 + 1));
@@ -47,11 +47,11 @@ fn perft_depth_4() {
 
 #[test]
 #[ignore]
-fn perft_depth_5() {
+fn laurentius_perft_5() {
     // These counts have not been verified by an external source. They only test for consistency
     // with earlier versions of the program.
     let counts = [48, 2304, 110304, 5280654, 254945184];
-    let board = Board::new();
+    let board = Board::new(GameType::Laurentius);
 
     for (i, &count) in counts.iter().enumerate() {
         assert_eq!(count, perft(&board, i as u8 + 1));
@@ -60,11 +60,11 @@ fn perft_depth_5() {
 
 #[test]
 #[ignore]
-fn perft_depth_6() {
+fn laurentius_perft_6() {
     // These counts have not been verified by an external source. They only test for consistency
     // with earlier versions of the program.
     let counts = [48, 2304, 110304, 5280654, 254945184, 12307984056];
-    let board = Board::new();
+    let board = Board::new(GameType::Laurentius);
 
     for (i, &count) in counts.iter().enumerate() {
         assert_eq!(count, perft(&board, i as u8 + 1));
