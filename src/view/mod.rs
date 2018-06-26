@@ -49,22 +49,37 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
             }
         });
 
-        let mut depth = i32::from(model.ai_search_depth);
         ui.menu(im_str!("Computer")).build(|| {
-            ui.slider_int(im_str!("Search depth"), &mut depth, 1, 7)
-                .build();
+            ui.slider_int(
+                im_str!("Search depth"),
+                &mut model.ai_search_depth.borrow_mut(),
+                1,
+                7,
+            ).build();
             if ui.is_item_hovered() {
                 ui.tooltip_text("How many moves ahead the computer will search.\nFewer moves is faster and easier, while more moves is slower and more difficult.");
             }
+
+            ui.menu_item(im_str!("Show debug info"))
+                .selected(&mut model.show_ai_debug_window.borrow_mut())
+                .build();
         });
-        if depth as u8 != model.ai_search_depth {
-            insert_if_empty(&mut event, Event::SetAIDepth(depth as u8));
-        }
     });
 
     ui.with_style_var(StyleVar::WindowRounding(0.0), || {
         draw_window(ui, size, model, &mut event);
     });
+
+    if *model.show_ai_debug_window.borrow() {
+        ui.window(im_str!("AI Debug Info"))
+            .opened(&mut model.show_ai_debug_window.borrow_mut())
+            .size((300.0, 600.0), ImGuiCond::FirstUseEver)
+            .build(|| {
+                if let Ok(debug_info) = model.ai.debug_info.read() {
+                    ui.text(debug_info.clone());
+                }
+            });
+    }
 
     event
 }
@@ -104,6 +119,7 @@ fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Even
         .title_bar(false)
         .resizable(false)
         .movable(false)
+        .no_bring_to_front_on_focus(true)
         .build(|| {
             ui.text("Welcome to Coerceo!");
             ui.text(format!(

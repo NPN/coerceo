@@ -27,7 +27,6 @@ pub enum Event {
     Undo,
     Redo,
     Quit,
-    SetAIDepth(u8),
 }
 
 pub fn update(model: &mut Model, event: Option<Event>) -> bool {
@@ -45,9 +44,6 @@ pub fn update(model: &mut Model, event: Option<Event>) -> bool {
             if let Some(event) = event {
                 match event {
                     Click(_) | Exchange => {}
-                    SetAIDepth(_) => {
-                        handle_event(model, &event);
-                    }
                     _ => {
                         model.ai.stop();
                         handle_event(model, &event);
@@ -64,7 +60,7 @@ pub fn update(model: &mut Model, event: Option<Event>) -> bool {
                     model.ai.think(
                         model.board,
                         board_list,
-                        model.ai_search_depth,
+                        *model.ai_search_depth.borrow() as u8,
                         model.events_proxy.clone(),
                         should_delay,
                     );
@@ -88,9 +84,7 @@ fn handle_event(model: &mut Model, event: &Event) {
             model.clear_selection();
         },
         NewGame(game_type, players) => {
-            let search_depth = model.ai_search_depth;
-            *model = Model::new(*game_type, *players, model.events_proxy.clone());
-            model.ai_search_depth = search_depth;
+            model.reset(*game_type, *players);
         }
         Resign => {
             model.push_undo_state();
@@ -99,7 +93,6 @@ fn handle_event(model: &mut Model, event: &Event) {
         Undo => model.undo_move(),
         Redo => model.redo_move(),
         Quit => unreachable!(),
-        SetAIDepth(depth) => model.ai_search_depth = *depth,
     }
 }
 

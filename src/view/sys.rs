@@ -102,7 +102,9 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
     events_loop.run_forever(|event| {
         use glium::glutin::ElementState::Pressed;
         use glium::glutin::WindowEvent::*;
-        use glium::glutin::{ControlFlow, Event, MouseButton, VirtualKeyCode};
+        use glium::glutin::{
+            ControlFlow, Event, MouseButton, MouseScrollDelta, TouchPhase, VirtualKeyCode,
+        };
 
         if let Event::Awakened = event {
             // Render twice to immediately show the new AI move
@@ -136,6 +138,22 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
                     if Instant::now() - last_frame < FRAME_DURATION {
                         return ControlFlow::Continue;
                     } else if !render(&mut imgui, &mut last_frame) {
+                        return ControlFlow::Break;
+                    }
+                }
+                MouseWheel {
+                    delta: MouseScrollDelta::LineDelta(_, y),
+                    phase: TouchPhase::Moved,
+                    ..
+                }
+                | MouseWheel {
+                    delta: MouseScrollDelta::PixelDelta(_, y),
+                    phase: TouchPhase::Moved,
+                    ..
+                } => {
+                    mouse_state.wheel = y;
+                    update_mouse(&mut imgui, &mut mouse_state);
+                    if !render(&mut imgui, &mut last_frame) {
                         return ControlFlow::Break;
                     }
                 }

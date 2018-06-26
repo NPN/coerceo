@@ -16,10 +16,11 @@
  */
 
 use std::cmp;
+use std::fmt::Write;
 use std::mem;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, TryRecvError};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
@@ -39,6 +40,7 @@ const ASPIRATION_WIDTH: i16 = 51;
 pub struct AI {
     status: Status,
     ttable: Arc<Mutex<TTable>>,
+    pub debug_info: Arc<RwLock<String>>,
 }
 
 enum Status {
@@ -59,6 +61,7 @@ impl AI {
         Self {
             status: Status::Idle,
             ttable: Arc::new(Mutex::new(TTable::new())),
+            debug_info: Arc::new(RwLock::new(String::new())),
         }
     }
 
@@ -117,6 +120,7 @@ impl AI {
         let stop_signal_clone = stop_signal.clone();
 
         let ttable_mutex = self.ttable.clone();
+        let debug_info = self.debug_info.clone();
 
         let handle = thread::spawn(move || {
             let start = Instant::now();
@@ -141,9 +145,19 @@ impl AI {
                 Err(_poison_error) => panic!("Transposition table mutex is poisoned"),
             };
 
-            if let SearchResult::Move(mv) =
-                search_root(depth, board, board_list, &mut ttable, &stop_signal_clone)
-            {
+            if let Ok(mut debug_info) = debug_info.write() {
+                debug_info.clear();
+            }
+
+            if let SearchResult::Move(mv) = search_root(
+                depth,
+                board,
+                board_list,
+                &mut ttable,
+                &stop_signal_clone,
+                debug_info,
+                &events_proxy,
+            ) {
                 if stop_signal_clone.load(Ordering::Relaxed) {
                     return;
                 }
@@ -179,6 +193,8 @@ fn search_root(
     board_list: Vec<Board>,
     ttable: &mut TTable,
     stop_signal: &Arc<AtomicBool>,
+    debug_info: Arc<RwLock<String>>,
+    events_proxy: &EventsLoopProxy,
 ) -> SearchResult {
     ttable.inc_age();
 
@@ -244,16 +260,19 @@ fn search_root(
         moves.sort_by(|&(_, a), &(_, b)| b.cmp(&a));
         iter_score = moves[0].1;
 
-        println!("\nDepth {}: {:>6}", depth, moves[0].1);
-        if let Some(ref mut pv) = pv {
-            pv.push(moves[0].0);
-            for mv in pv.iter().rev() {
-                println!("    {}", mv);
+        if let Ok(mut debug_info) = debug_info.write() {
+            writeln!(debug_info, "\nDepth {}: {:>6}", depth, moves[0].1).unwrap();
+            if let Some(ref mut pv) = pv {
+                pv.push(moves[0].0);
+                for mv in pv.iter().rev() {
+                    writeln!(debug_info, "    {}", mv).unwrap();
+                }
             }
+            events_proxy
+                .wakeup()
+                .expect("Failed to wake up events loop");
         }
     }
-    println!("\n---------------------");
-
     SearchResult::Move(moves[0].0)
 }
 

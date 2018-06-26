@@ -21,6 +21,7 @@ mod constants;
 pub mod ttable;
 mod zobrist;
 
+use std::cell::RefCell;
 use std::fmt;
 use std::mem;
 
@@ -38,7 +39,8 @@ pub struct Model {
     pub last_move: Option<MoveAnnotated>,
     pub exchanging: bool,
     pub ai: AI,
-    pub ai_search_depth: u8,
+    pub ai_search_depth: RefCell<i32>,
+    pub show_ai_debug_window: RefCell<bool>,
     pub outcome: Outcome,
     undo_stack: Vec<(Board, Option<MoveAnnotated>, Outcome)>,
     redo_stack: Vec<(Board, Option<MoveAnnotated>, Outcome)>,
@@ -59,12 +61,25 @@ impl Model {
             last_move: None,
             exchanging: false,
             ai: AI::new(),
-            ai_search_depth: 6,
+            ai_search_depth: RefCell::new(6),
+            show_ai_debug_window: RefCell::new(false),
             outcome: Outcome::InProgress,
             undo_stack: vec![],
             redo_stack: vec![],
             events_proxy,
         }
+    }
+    pub fn reset(&mut self, game_type: GameType, players: ColorMap<Player>) {
+        self.game_type = game_type;
+        self.players = players;
+        self.board = Board::new(game_type);
+        self.selected_piece = None;
+        self.last_move = None;
+        self.exchanging = false;
+        self.ai = AI::new();
+        self.outcome = Outcome::InProgress;
+        self.undo_stack.clear();
+        self.redo_stack.clear();
     }
     pub fn try_move(&mut self, mv: Move) -> bool {
         if self.board.can_apply_move(&mv) {
