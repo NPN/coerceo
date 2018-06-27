@@ -9,6 +9,11 @@ license = "AGPL-3.0"
 [package.metadata.bundle]
 name = "Coerceo"
 identifier = "io.github.npn.coerceo"
+icon = ["images/64x64.png",
+        "images/128x128.png",
+        "images/256x256.png",
+        "images/512x512.png",
+        "images/512x512@2x.png"]
 
 [dependencies]
 glium = { version = "0.21", default-features = true }
