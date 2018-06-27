@@ -56,7 +56,7 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
 
     config.add_font(
         &mut imgui.fonts(),
-        include_bytes!("../fonts/FiraSans-Regular.ttf"),
+        include_bytes!("../../assets/FiraSans-Regular.ttf"),
         &FontGlyphRange::default(),
     );
 

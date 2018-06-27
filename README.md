@@ -2,7 +2,7 @@
 
 [Coerceo](http://coerceo.com/) is a board game like Go, where you can capture your opponent's pieces by enclosing them. However, Coereceo uses tetrahedral pieces on a hexagonal board that shrinks as time goes on. It won the MENSA Mind Games in 2012.
 
-![Coerceo game screenshot](https://raw.githubusercontent.com/NPN/coerceo/master/images/screenshot.png)
+![Coerceo game screenshot](https://raw.githubusercontent.com/NPN/coerceo/master/assets/screenshot.png)
 
 ## How to Play
 
