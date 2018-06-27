@@ -30,6 +30,7 @@ use update::Event;
 
 pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
     let mut event = None;
+    let mut window_states = model.window_states.borrow_mut();
 
     ui.main_menu_bar(|| {
         ui.menu(im_str!("Game")).build(|| {
@@ -57,11 +58,23 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
                 7,
             ).build();
             if ui.is_item_hovered() {
-                ui.tooltip_text("How many moves ahead the computer will search.\nFewer moves is faster and easier, while more moves is slower and more difficult.");
+                ui.tooltip_text(
+                    "How many moves ahead the computer will search.\nFewer moves is \
+                     faster and easier, while more moves is slower and more difficult.",
+                );
             }
 
             ui.menu_item(im_str!("Show debug info"))
-                .selected(&mut model.show_ai_debug_window.borrow_mut())
+                .selected(&mut window_states.ai_debug)
+                .build();
+        });
+
+        ui.menu(im_str!("Help")).build(|| {
+            ui.menu_item(im_str!("How to Play"))
+                .selected(&mut window_states.how_to_play)
+                .build();
+            ui.menu_item(im_str!("About"))
+                .selected(&mut window_states.about)
                 .build();
         });
     });
@@ -70,14 +83,37 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
         draw_window(ui, size, model, &mut event);
     });
 
-    if *model.show_ai_debug_window.borrow() {
+    if window_states.ai_debug {
         ui.window(im_str!("AI Debug Info"))
-            .opened(&mut model.show_ai_debug_window.borrow_mut())
+            .opened(&mut window_states.ai_debug)
             .size((300.0, 600.0), ImGuiCond::FirstUseEver)
             .build(|| {
                 if let Ok(debug_info) = model.ai.debug_info.read() {
                     ui.text(debug_info.clone());
                 }
+            });
+    }
+
+    if window_states.how_to_play {
+        // TODO: Create an interactive, in-game tutorial to teach the rules of the game
+        ui.window(im_str!("How to Play"))
+            .opened(&mut window_states.how_to_play)
+            .build(|| {
+                ui.text(
+                    "Unfortunately, there isn't an in-game tutorial. Sorry!\nSee coerceo.com for \
+                     the rules of the game.",
+                );
+            });
+    }
+
+    if window_states.about {
+        ui.window(im_str!("About"))
+            .opened(&mut window_states.about)
+            .build(|| {
+                ui.text(
+                    "Coerceo v1.0.0\n\nAn unofficial clone of a strategic board game.\n\n\
+                     Copyright (C) 2017-2018 Ryan Huang\n\nhttps://github.com/NPN/coerceo",
+                );
             });
     }
 

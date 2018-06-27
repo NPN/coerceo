@@ -67,7 +67,7 @@ dependencies = [
 
 [[package]]
 name = "coerceo"
-version = "0.0.0"
+version = "1.0.0"
 dependencies = [
  "glium 0.21.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "imgui 0.0.19-pre (git+https://github.com/Gekkio/imgui-rs?rev=a8cd16ef90)",

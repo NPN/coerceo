@@ -41,7 +41,7 @@ pub struct Model {
     pub exchanging: bool,
     pub ai: AI,
     pub ai_search_depth: RefCell<i32>,
-    pub show_ai_debug_window: RefCell<bool>,
+    pub window_states: RefCell<WindowStates>,
     pub outcome: Outcome,
     undo_stack: Vec<(Board, Option<MoveAnnotated>, Outcome)>,
     redo_stack: Vec<(Board, Option<MoveAnnotated>, Outcome)>,
@@ -64,7 +64,7 @@ impl Model {
             exchanging: false,
             ai: AI::new(),
             ai_search_depth: RefCell::new(6),
-            show_ai_debug_window: RefCell::new(false),
+            window_states: RefCell::new(WindowStates::default()),
             outcome: Outcome::InProgress,
             undo_stack: vec![],
             redo_stack: vec![],
@@ -179,6 +179,13 @@ impl Model {
         assert_eq!(self.outcome, Outcome::InProgress);
         self.outcome = Outcome::Win(self.board.turn.switch());
     }
+}
+
+#[derive(Default)]
+pub struct WindowStates {
+    pub about: bool,
+    pub ai_debug: bool,
+    pub how_to_play: bool,
 }
 
 #[derive(Copy, Clone)]
