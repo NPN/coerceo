@@ -163,7 +163,7 @@ impl AI {
                 board_list,
                 &mut ttable,
                 &stop_signal_clone,
-                debug_info,
+                &debug_info,
                 &events_proxy,
             ) {
                 if stop_signal_clone.load(Ordering::Relaxed) {
@@ -201,7 +201,7 @@ fn search_root(
     board_list: Vec<Board>,
     ttable: &mut TTable,
     stop_signal: &Arc<AtomicBool>,
-    debug_info: Arc<RwLock<String>>,
+    debug_info: &Arc<RwLock<String>>,
     events_proxy: &EventsLoopProxy,
 ) -> SearchResult {
     ttable.inc_age();
