@@ -28,7 +28,7 @@ The notation that the AI debug output uses to describe the principal variation (
  ```
  This ordering mirrors the files going left to right, with an extra 'f' field at the top.
 
- Moves are written as `origin-destination` pairs like `b3f-c4b`. If a piece moves within the same hex, the pair can be shortened to `b3f-d`.
+ Moves are written as `origin-destination` pairs like `b3f-c4b`. If a piece moves within the same tile, the pair can be shortened to `b3f-d`.
 
  The beginning of a sample game might look something like this:
  ```text

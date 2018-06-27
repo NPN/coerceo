@@ -137,8 +137,8 @@ fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Even
             };
 
             let format_hex_count = |count| match count {
-                1 => String::from("1 captured hex"),
-                _ => format!("{} captured hexes", count),
+                1 => String::from("1 captured tile"),
+                _ => format!("{} captured tiles", count),
             };
 
             let display_vitals = || {
