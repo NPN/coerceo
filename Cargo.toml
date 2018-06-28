@@ -6,14 +6,23 @@ authors = ["Ryan Huang"]
 description = "An unofficial clone of a strategic board game."
 license = "AGPL-3.0"
 
+[package.metadata.android]
+label = "Coerceo"
+package_name = "io.github.npn.coerceo"
+res = "assets/android_res"
+icon = "@mipmap/ic_launcher"
+opengles_version_major = 2
+opengles_version_minor = 0
+fullscreen = true
+
 [package.metadata.bundle]
 name = "Coerceo"
 identifier = "io.github.npn.coerceo"
-icon = ["assets/64x64.png",
-        "assets/128x128.png",
-        "assets/256x256.png",
-        "assets/512x512.png",
-        "assets/512x512@2x.png"]
+icon = ["assets/bundle_icon/64x64.png",
+        "assets/bundle_icon/128x128.png",
+        "assets/bundle_icon/256x256.png",
+        "assets/bundle_icon/512x512.png",
+        "assets/bundle_icon/512x512@2x.png"]
 
 [dependencies]
 glium = { version = "0.21", default-features = true }

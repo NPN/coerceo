@@ -18,7 +18,7 @@
 
 use std::time::{Duration, Instant};
 
-use glium::glutin;
+use glium::glutin::{self, Api, GlRequest};
 use glium::{Display, Surface};
 use imgui::{FontGlyphRange, ImFontConfig, ImGui, Ui};
 use imgui_glium_renderer::Renderer;
@@ -42,7 +42,14 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
     let window = glutin::WindowBuilder::new()
         .with_title(title)
         .with_dimensions(dimensions.0, dimensions.1);
-    let context = glutin::ContextBuilder::new().with_vsync(true);
+    let mut context = glutin::ContextBuilder::new().with_vsync(true);
+    if cfg!(target_os = "android") {
+        // https://github.com/tomaka/android-rs-glue/issues/153#issuecomment-318348732
+        // On Android we must specify an OpenGL ES version or glutin will assume we are using an
+        // unsupported version and panic
+        context = context.with_gl(GlRequest::Specific(Api::OpenGlEs, (2, 0)));
+    }
+
     let display = Display::new(window, context, &events_loop).unwrap();
 
     let mut imgui = ImGui::init();
@@ -169,6 +176,35 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
                         return ControlFlow::Break;
                     }
                 },
+                Touch(glutin::Touch {
+                    phase,
+                    location: (x, y),
+                    ..
+                }) => {
+                    mouse_state.pos = (x.round() as i32, y.round() as i32);
+                    mouse_state.pressed.0 =
+                        phase == TouchPhase::Started || phase == TouchPhase::Moved;
+                    update_mouse(&mut imgui, &mut mouse_state);
+
+                    match phase {
+                        TouchPhase::Moved => {
+                            if Instant::now() - last_frame < FRAME_DURATION {
+                                return ControlFlow::Continue;
+                            } else if !render(&mut imgui, &mut last_frame) {
+                                return ControlFlow::Break;
+                            }
+                        }
+                        _ => {
+                            // Render twice to immediately show the results of the touch
+                            if !render(&mut imgui, &mut last_frame) {
+                                return ControlFlow::Break;
+                            }
+                            if !render(&mut imgui, &mut last_frame) {
+                                return ControlFlow::Break;
+                            }
+                        }
+                    }
+                }
                 _ => (),
             }
         }
