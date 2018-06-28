@@ -111,8 +111,23 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
             .opened(&mut window_states.about)
             .build(|| {
                 ui.text(
-                    "Coerceo v1.0.0\n\nAn unofficial clone of a strategic board game.\n\n\
-                     Copyright (C) 2017-2018 Ryan Huang\n\nhttps://github.com/NPN/coerceo",
+                    "Coerceo v1.0.0 (https://github.com/NPN/coerceo)
+
+An unofficial clone of a strategic board game.
+
+Copyright (C) 2017-2018 Ryan Huang
+This program comes with absolutely no warranty.
+See the GNU AGPL, version 3 or later, for details.
+
+This program includes work from the following sources:
+
+imgui-rs (https://github.com/Gekkio/imgui-rs)
+Copyright (c) 2015-2017 The imgui-rs Developers
+Licensed under the MIT License.
+
+Fira Sans (https://github.com/mozilla/Fira)
+Copyright (c) 2012-2015 The Mozilla Foundation and Telefonica S.A.
+Licensed under the SIL Open Font License v1.1",
                 );
             });
     }
