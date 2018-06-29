@@ -148,7 +148,7 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
                 CursorMoved {
                     position: (x, y), ..
                 } => {
-                    mouse_state.pos = (x as i32, y as i32);
+                    mouse_state.pos = (x.round() as i32, y.round() as i32);
                     update_mouse(&mut imgui, &mut mouse_state);
 
                     if Instant::now() - last_frame < FRAME_DURATION {
