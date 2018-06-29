@@ -34,6 +34,7 @@ use ai::AI;
 pub struct Model {
     pub game_type: GameType,
     pub board: Board,
+    pub exchange_one_hex: RefCell<bool>,
     pub ply_count: u64,
     pub players: ColorMap<Player>,
     pub selected_piece: Option<FieldCoord>,
@@ -56,7 +57,8 @@ impl Model {
     ) -> Self {
         Self {
             game_type,
-            board: Board::new(game_type),
+            board: Board::new(game_type, 2),
+            exchange_one_hex: RefCell::new(false),
             ply_count: 0,
             players,
             selected_piece: None,
@@ -74,7 +76,13 @@ impl Model {
     pub fn reset(&mut self, game_type: GameType, players: ColorMap<Player>) {
         self.game_type = game_type;
         self.players = players;
-        self.board = Board::new(game_type);
+
+        let exchange_hex_count = if *self.exchange_one_hex.borrow() {
+            1
+        } else {
+            2
+        };
+        self.board = Board::new(game_type, exchange_hex_count);
         self.ply_count = 0;
         self.selected_piece = None;
         self.last_move = None;

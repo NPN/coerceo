@@ -70,6 +70,7 @@ pub struct Board {
     pub turn: Color,
     pub vitals: ColorMap<PlayerVitals>,
     pub zobrist: ZobristHash,
+    pub hexes_to_exchange: u8,
 }
 
 /// A struct tracking a player's piece and captured hex count. So named because these two numbers are
@@ -83,7 +84,9 @@ pub struct PlayerVitals {
 // Public methods
 impl Board {
     /// Create a new board with the "Laurentius" starting position.
-    pub fn new(game_type: GameType) -> Self {
+    pub fn new(game_type: GameType, hexes_to_exchange: u8) -> Self {
+        assert!(hexes_to_exchange == 1 || hexes_to_exchange == 2);
+
         let starting_position = match game_type {
             GameType::Laurentius => LAURENTIUS,
             GameType::Ocius => OCIUS,
@@ -95,6 +98,7 @@ impl Board {
             turn: Color::White,
             vitals: starting_position.vitals,
             zobrist: zobrist::new(starting_position.fields, ColorMap::new(0, 0), Color::White),
+            hexes_to_exchange,
         }
     }
     pub fn apply_move(&mut self, mv: &Move) {
@@ -122,9 +126,12 @@ impl Board {
 
                 {
                     let vitals = self.vitals.get_mut(self.turn);
-                    self.zobrist
-                        .set_hex_count(vitals.hexes, vitals.hexes - 2, color);
-                    vitals.hexes -= 2;
+                    self.zobrist.set_hex_count(
+                        vitals.hexes,
+                        vitals.hexes - self.hexes_to_exchange,
+                        color,
+                    );
+                    vitals.hexes -= self.hexes_to_exchange;
                 }
 
                 // Players don't collect hexes removed due to an exchange
@@ -289,7 +296,7 @@ impl Board {
         }
     }
     pub fn can_exchange(&self) -> bool {
-        self.vitals.get(self.turn).hexes >= 2
+        self.vitals.get(self.turn).hexes >= self.hexes_to_exchange
     }
     pub fn is_piece_on_field(&self, coord: FieldCoord) -> bool {
         self.is_piece_on_bitboard(coord.to_bitboard(), coord.color())
@@ -358,7 +365,9 @@ impl Board {
             let bh = self.hexes(Black);
 
             // If neither side can capture the other's pieces, the game is drawn
-            if wp == 1 && bp == 1 && (self.hexes.count_ones() as u8 / 3 + cmp::max(wh, bh) - 1 < 2)
+            if wp == 1 && bp == 1
+                && (self.hexes.count_ones() as u8 / 3 + cmp::max(wh, bh) - 1
+                    < self.hexes_to_exchange)
             {
                 Outcome::DrawInsufficientMaterial
             } else {

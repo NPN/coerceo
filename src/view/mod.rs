@@ -45,6 +45,22 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
 
             ui.separator();
 
+            ui.menu_item(im_str!("Rules")).enabled(false).build();
+            if ui.is_item_hovered() {
+                ui.tooltip_text("Any changes to the rules apply at the start of the next game.");
+            }
+
+            ui.menu_item(im_str!("One tile to exchange"))
+                .selected(&mut model.exchange_one_hex.borrow_mut())
+                .build();
+            if ui.is_item_hovered() {
+                ui.tooltip_text(
+                    "If selected, only one tile (rather than two) is needed to exchange for a piece."
+                );
+            }
+
+            ui.separator();
+
             if ui.menu_item(im_str!("Quit")).build() {
                 insert_if_empty(&mut event, Event::Quit);
             }
@@ -173,9 +189,15 @@ fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Even
         .no_bring_to_front_on_focus(true)
         .build(|| {
             ui.text("Welcome to Coerceo!");
+
+            let exchange_hex_string = if model.board.hexes_to_exchange == 1 {
+                "One tile to exchange"
+            } else {
+                "Two tiles to exchange"
+            };
             ui.text(format!(
-                "{:?} vs. {:?}",
-                model.players.white, model.players.black
+                "{:?} vs. {:?} ({})",
+                model.players.white, model.players.black, exchange_hex_string
             ));
 
             if let Some(click) = board(ui, model, Vec2::new(size.0 - 16.0, size.1 - 232.0)) {

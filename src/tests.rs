@@ -39,7 +39,7 @@ fn perft(board: &Board, depth: u8) -> u64 {
 #[test]
 fn laurentius_perft_4() {
     let counts = [48, 2304, 110304, 5280654];
-    let board = Board::new(GameType::Laurentius);
+    let board = Board::new(GameType::Laurentius, 2);
 
     for (i, &count) in counts.iter().enumerate() {
         assert_eq!(count, perft(&board, i as u8 + 1));
@@ -50,7 +50,7 @@ fn laurentius_perft_4() {
 #[ignore]
 fn laurentius_perft_5() {
     let counts = [48, 2304, 110304, 5280654, 254945184];
-    let board = Board::new(GameType::Laurentius);
+    let board = Board::new(GameType::Laurentius, 2);
 
     for (i, &count) in counts.iter().enumerate() {
         assert_eq!(count, perft(&board, i as u8 + 1));
@@ -61,7 +61,7 @@ fn laurentius_perft_5() {
 #[ignore]
 fn laurentius_perft_6() {
     let counts = [48, 2304, 110304, 5280654, 254945184, 12307984056];
-    let board = Board::new(GameType::Laurentius);
+    let board = Board::new(GameType::Laurentius, 2);
 
     for (i, &count) in counts.iter().enumerate() {
         assert_eq!(count, perft(&board, i as u8 + 1));
@@ -71,7 +71,7 @@ fn laurentius_perft_6() {
 #[test]
 fn ocius_perft_5() {
     let counts = [26, 676, 17234, 435572, 10739924];
-    let board = Board::new(GameType::Ocius);
+    let board = Board::new(GameType::Ocius, 2);
 
     for (i, &count) in counts.iter().enumerate() {
         assert_eq!(count, perft(&board, i as u8 + 1));
@@ -82,7 +82,7 @@ fn ocius_perft_5() {
 #[ignore]
 fn ocius_perft_6() {
     let counts = [26, 676, 17234, 435572, 10739924, 262208752];
-    let board = Board::new(GameType::Ocius);
+    let board = Board::new(GameType::Ocius, 2);
 
     for (i, &count) in counts.iter().enumerate() {
         assert_eq!(count, perft(&board, i as u8 + 1));
@@ -93,7 +93,7 @@ fn ocius_perft_6() {
 #[ignore]
 fn ocius_perft_7() {
     let counts = [26, 676, 17234, 435572, 10739924, 262208752, 6252014770];
-    let board = Board::new(GameType::Ocius);
+    let board = Board::new(GameType::Ocius, 2);
 
     for (i, &count) in counts.iter().enumerate() {
         assert_eq!(count, perft(&board, i as u8 + 1));

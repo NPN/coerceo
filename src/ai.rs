@@ -448,8 +448,12 @@ fn quiescence_search(
 fn evaluate(board: &Board) -> i16 {
     use model::Color::*;
 
-    let wp = 100 * i16::from(board.pieces(White));
-    let bp = 100 * i16::from(board.pieces(Black));
+    // If it's two hexes to exchange, then a piece is 100 and a hex is 50. If it's one hex, then we
+    // halve the value of a piece so that both are 50. We could instead up the value of a hex to
+    // 100, but this way we don't need to change the width of the aspiration window.
+    let hex_factor = board.hexes_to_exchange as i16;
+    let wp = hex_factor * 50 * i16::from(board.pieces(White));
+    let bp = hex_factor * 50 * i16::from(board.pieces(Black));
     let wh = 50 * i16::from(board.hexes(White));
     let bh = 50 * i16::from(board.hexes(Black));
 
