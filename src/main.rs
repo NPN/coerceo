@@ -35,7 +35,7 @@ fn main() {
     let events_loop = EventsLoop::new();
     let events_proxy = events_loop.create_proxy();
 
-    let mut model = Model::new(
+    let model = Model::new(
         GameType::Laurentius,
         ColorMap::new(Player::Human, Player::Human),
         events_proxy,
@@ -46,11 +46,12 @@ fn main() {
         (800, 800),
         [1.0, 1.0, 1.0, 1.0],
         events_loop,
-        |ui, size| game_loop(ui, size, &mut model),
+        model,
+        |model, ui, size| game_loop(model, ui, size),
     );
 }
 
-fn game_loop(ui: &Ui, size: (f32, f32), model: &mut Model) -> bool {
+fn game_loop(model: &mut Model, ui: &Ui, size: (f32, f32)) -> bool {
     let event = view::draw(ui, size, model);
     update::update(model, event)
 }

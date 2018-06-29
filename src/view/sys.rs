@@ -23,6 +23,9 @@ use glium::{Display, Surface};
 use imgui::{FontGlyphRange, ImFontConfig, ImGui, Ui};
 use imgui_glium_renderer::Renderer;
 
+use model::Model;
+use update;
+
 const FRAME_DURATION: Duration = Duration::from_millis(16);
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
@@ -32,11 +35,12 @@ struct MouseState {
     wheel: f32,
 }
 
-pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
+pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
     title: String,
     dimensions: (u32, u32),
     clear_color: [f32; 4],
     mut events_loop: glutin::EventsLoop,
+    mut model: Model,
     mut run_ui: F,
 ) {
     let window = glutin::WindowBuilder::new()
@@ -72,7 +76,7 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
     let mut last_frame = Instant::now();
     let mut mouse_state = MouseState::default();
 
-    let mut render = |imgui: &mut ImGui, last_frame: &mut Instant| {
+    let mut render = |model: &mut Model, imgui: &mut ImGui, last_frame: &mut Instant| {
         let now = Instant::now();
         let delta = now - *last_frame;
         let delta_s = delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1_000_000_000.0;
@@ -87,7 +91,7 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
         );
 
         let ui = imgui.frame(size_points, size_pixels, delta_s);
-        if !run_ui(&ui, (size_points.0 as f32, size_points.1 as f32)) {
+        if !run_ui(model, &ui, (size_points.0 as f32, size_points.1 as f32)) {
             return false;
         }
 
@@ -104,7 +108,7 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
     };
 
     // Render one frame before the event loop so the screen isn't empty
-    render(&mut imgui, &mut last_frame);
+    render(&mut model, &mut imgui, &mut last_frame);
 
     events_loop.run_forever(|event| {
         use glium::glutin::ElementState::Pressed;
@@ -114,12 +118,17 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
         };
 
         if let Event::Awakened = event {
-            // Render twice to immediately show the new AI move
-            if !render(&mut imgui, &mut last_frame) {
-                return ControlFlow::Break;
-            }
-            if !render(&mut imgui, &mut last_frame) {
-                return ControlFlow::Break;
+            if Instant::now() - last_frame < FRAME_DURATION {
+                // Receive the AI move, and queue the next one (if it's a computer-only game)
+                update::update(&mut model, None);
+                update::update(&mut model, None);
+                return ControlFlow::Continue;
+            } else {
+                // Receive the AI move, then render
+                update::update(&mut model, None);
+                if !render(&mut model, &mut imgui, &mut last_frame) {
+                    return ControlFlow::Break;
+                }
             }
         } else if let Event::WindowEvent { event, .. } = event {
             match event {
@@ -132,7 +141,7 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
                     }
                 }
                 Refresh | Resized(_, _) | HiDPIFactorChanged(_) => {
-                    if !render(&mut imgui, &mut last_frame) {
+                    if !render(&mut model, &mut imgui, &mut last_frame) {
                         return ControlFlow::Break;
                     }
                 }
@@ -144,7 +153,7 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
 
                     if Instant::now() - last_frame < FRAME_DURATION {
                         return ControlFlow::Continue;
-                    } else if !render(&mut imgui, &mut last_frame) {
+                    } else if !render(&mut model, &mut imgui, &mut last_frame) {
                         return ControlFlow::Break;
                     }
                 }
@@ -160,7 +169,8 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
                 } => {
                     mouse_state.wheel = y;
                     update_mouse(&mut imgui, &mut mouse_state);
-                    if !render(&mut imgui, &mut last_frame) {
+
+                    if !render(&mut model, &mut imgui, &mut last_frame) {
                         return ControlFlow::Break;
                     }
                 }
@@ -169,10 +179,10 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
                     update_mouse(&mut imgui, &mut mouse_state);
 
                     // Render twice to immediately show the results of the click
-                    if !render(&mut imgui, &mut last_frame) {
+                    if !render(&mut model, &mut imgui, &mut last_frame) {
                         return ControlFlow::Break;
                     }
-                    if !render(&mut imgui, &mut last_frame) {
+                    if !render(&mut model, &mut imgui, &mut last_frame) {
                         return ControlFlow::Break;
                     }
                 },
@@ -190,16 +200,16 @@ pub fn run<F: FnMut(&Ui, (f32, f32)) -> bool>(
                         TouchPhase::Moved => {
                             if Instant::now() - last_frame < FRAME_DURATION {
                                 return ControlFlow::Continue;
-                            } else if !render(&mut imgui, &mut last_frame) {
+                            } else if !render(&mut model, &mut imgui, &mut last_frame) {
                                 return ControlFlow::Break;
                             }
                         }
                         _ => {
                             // Render twice to immediately show the results of the touch
-                            if !render(&mut imgui, &mut last_frame) {
+                            if !render(&mut model, &mut imgui, &mut last_frame) {
                                 return ControlFlow::Break;
                             }
-                            if !render(&mut imgui, &mut last_frame) {
+                            if !render(&mut model, &mut imgui, &mut last_frame) {
                                 return ControlFlow::Break;
                             }
                         }
