@@ -138,6 +138,11 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
                     return ControlFlow::Break;
                 }
             }
+        } else if let Event::Suspended(true) = event {
+            // This is so that the AI doesn't run in the background on Android. Technically, we
+            // should also call update or render on Suspended(false) to restart the AI, but there's
+            // no point since the app crashes when it's resumed or even right after it's suspended.
+            model.ai.stop();
         } else if let Event::WindowEvent { event, .. } = event {
             match event {
                 Closed => return ControlFlow::Break,
