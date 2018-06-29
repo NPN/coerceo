@@ -122,7 +122,15 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
                 // Receive the AI move, and queue the next one (if it's a computer-only game)
                 update::update(&mut model, None);
                 update::update(&mut model, None);
-                return ControlFlow::Continue;
+
+                // If the AI is moving very quickly, then the last move of the game will be
+                // throttled and not receive a render. This appears to "freeze" the game. So, we
+                // render if the game is finished.
+                if model.is_game_over() {
+                    if !render(&mut model, &mut imgui, &mut last_frame) {
+                        return ControlFlow::Break;
+                    }
+                }
             } else {
                 // Receive the AI move, then render
                 update::update(&mut model, None);
