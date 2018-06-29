@@ -135,6 +135,9 @@ Copyright (C) 2017-2018 Ryan Huang
 This program comes with absolutely no warranty.
 See the GNU AGPL, version 3 or later, for details.
 
+All rights, trademarks, copyrights, concepts, etc. of the game
+Coerceo belong to the Coerceo Company.
+
 This program includes work from the following sources:
 
 imgui-rs (https://github.com/Gekkio/imgui-rs)
