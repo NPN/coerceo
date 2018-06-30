@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Coerceo README</title>
+    <style>
+        body {
+            /* https://css-tricks.com/snippets/css/system-font-stack/ */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 4em auto;
+            max-width: 80vw;
+            font-size: 16px;
+            color: #111;
+        }
+
+        img {
+            max-width: 100%;
+        }
+
+        /* https://github.com/sindresorhus/github-markdown-css/ */
+        code {
+          font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+          padding: 0.2em 0.4em;
+          margin: 0;
+          font-size: 85%;
+          background-color: rgba(27,31,35,0.05);
+          border-radius: 3px;
+        }
+
+        pre {
+          font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+          word-wrap: normal;
+          word-break: normal;
+          margin-bottom: 0;
+          padding: 16px;
+          overflow: auto;
+          font-size: 85%;
+          line-height: 1.45;
+          background-color: #f2f2f2;
+          border-radius: 3px;
+        }
+
+        pre > code {
+          display: inline;
+          padding: 0;
+          margin: 0;
+          font-size: 100%;
+          word-break: normal;
+          white-space: pre;
+          background: transparent;
+          overflow: visible;
+          line-height: inherit;
+          word-wrap: normal;
+        }
+    </style>
+</head>
+<body>
+    <h1>Coerceo</h1>
+
+    <p>This is an unofficial clone of the strategic board game <a href="http://coerceo.com/">Coerceo</a>. Coerceo is like Go in that you enclose your opponent's pieces to capture them. However, Coereceo uses tetrahedral pieces on a hexagonal board that shrinks as time goes on. It won the MENSA Mind Games in 2012.</p>
+
+    <p>
+        <img alt="The game in the Laurentius opening position" src="https://raw.githubusercontent.com/NPN/coerceo/master/assets/screenshot.png">
+    </p>
+
+    <h2>How to Play</h2>
+
+    <p>The <a href="http://coerceo.com/rules3.html">official rules</a> are on the Coerceo website. Download a binary of the game from the <a href="https://github.com/NPN/coerceo/releases">releases page</a> or see the <a href="#compiling">Compiling</a> section below.</p>
+
+    <p>This game supports the Ocius or "short game" variation, which is <a href="http://coerceo.com/Coerceo%20variation2%20shortgame.pdf">explained here</a>.</p>
+
+    <h3>Game Interface Help</h3>
+
+    <h4>How do I exchange tiles?</h4>
+
+    <p>When you have captured enough tiles, the "Exchange" button will appear at the bottom of the screen. Press it to start exchanging. Click an opponent's piece to exchange for it, or press the button again to stop exchanging and make a normal move.</p>
+
+    <h4>How do I change the number of tiles needed to exchange for a piece?</h4>
+
+    <p>By default, it takes two tiles to exchange for one piece. You can change this by selecting <em>Game</em> → <em>One tile to exchange</em> in the menu.</p>
+
+    <p><strong>Note</strong>: Any changes to this setting will take place in the next game. You can see the setting for the current game in the status line at the top of the screen under "Welcome to Coerceo!"</p>
+
+    <h4>How do I change the computer difficulty?</h4>
+
+    <p>You can change the difficulty with the <em>Computer</em> → <em>Search depth</em> slider. Search depth is how many plies (a single turn taken by a player) ahead the computer will search. A smaller search depth makes the computer easier and faster. A larger search depth makes the computer more difficult and slower.</p>
+
+    <p><strong>Note</strong>: Search depth is only an approximation of difficulty. At a depth of one, the computer is very easy to beat. With successively larger depths, the search gets exponentially slower and delivers diminishing returns on engine strength.</p>
+
+    <h2 id="supported-platforms">Supported Platforms</h2>
+
+    <p>OpenGL 2.0+ is required on desktop, and OpenGL ES 2.0+ is required on Android.</p>
+
+    <h3>Great</h3>
+
+    <p>Run with few issues that do not significantly impact the experience.</p>
+
+    <ul>
+        <li>Linux x86-64</li>
+        <li>macOS x86-64</li>
+    </ul>
+
+    <h3>Okay</h3>
+
+    <p>Still playable, but have issues that hamper the experience.</p>
+
+    <ul>
+        <li>Android ARMv7
+            <ul>
+                <li>Suspending the app in the middle of a game will cause the app to crash on reload. Thus, all games must be finished in one sitting.</li>
+                <li>When rotating the device, the screen does not redraw properly. (You can tap the screen after a rotation to fix this.)</li>
+                <li>The <em>Game</em> → <em>Quit</em> menu item freezes the game instead of quitting.</li>
+                <li>The <code>INTERNET</code>, <code>READ_EXTERNAL_STORAGE</code>, and <code>WRITE_EXTERNAL_STORAGE</code> permissions are requested even though the game does not use them.</li>
+            </ul>
+        </li>
+
+        <li>Windows x86-64
+            <ul>
+                <li>Moving the mouse causes lag. Thus, the game (and especially menus) must be interacted with slowly and patiently.</li>
+                <li>When minimizing or maximizing the window, the screen does not redraw properly. (You can move your mouse anywhere in the game to fix this.)</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h3>Untested/Fail to Compile</h3>
+
+    <ul>
+        <li>iOS
+            <ul>
+                <li>Currently <a href="https://github.com/tomaka/glutin/issues/29">not supported</a> by glutin.</li>
+            </ul>
+        </li>
+
+        <li>macOS i686
+            <ul>
+                <li>Blocked by <a href="https://github.com/tomaka/winit/issues/78">a bug in winit</a> (and soon to be deprecated anyways).</li>
+            </ul>
+        </li>
+
+        <li>Other 32-bit and Android architectures
+            <ul>
+                <li>Untested, but they would probably work if you could get them to compile.</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h2>Computer AI</h2>
+
+    <h3>Features</h3>
+
+    <ul>
+        <li>Negamax search</li>
+        <li>Alpha-beta pruning</li>
+        <li>Iterative deepening</li>
+        <li>Transposition table</li>
+        <li>Aspiration windows</li>
+        <li>Quiescence search</li>
+        <li>Delta pruning</li>
+    </ul>
+
+    <h3>Notes</h3>
+
+    <p>The main weakness of the AI is that its evaluation function only considers material, and does not take into account other factors like mobility. Thus, in quiet positions where there aren't many captures to be made, most positions will have the same score. This causes the AI to move the same piece back and forth until the contempt factor forces it to avoid a draw by threefold repetition.</p>
+
+    <p>Unfortunately, this makes the opening of a Laurentius game boring, as the computer is completely passive. (In Ocius mode, the board is small enough that this isn't a problem.) To get anything to happen, the human player must engage the computer. What would happen if you didn't engage the computer and also played as passively as possible? Just watch the computer play a Laurentius game against itself with a search depth of 2.</p>
+
+    <p>Other than that, I'm pretty pleased with how the AI turned out. It could be stronger, but that's out of the scope of this project. See the <a href="#future-development">Future Development</a> section for possible avenues of improvement, though.</p>
+
+    <h3>Principal Variation Notation</h3>
+
+    <p><strong>Note</strong>: The following explanations assume a Laurentius board. An Ocius board is just a Laurentius board with the outer tiles removed.</p>
+
+    <p>The debug output (<em>Computer</em> → <em>Show debug info</em>) prints the principal variation found at each depth of the iterative deepening search. The notation used is not the <a href="http://coerceo.com/Coerceo%20GameNotation.pdf">official notation</a>, but a notation based off of the notation for <a href="https://en.wikipedia.org/wiki/Hexagonal_chess#Gli%C5%84ski's_hexagonal_chess">Gliński's hexagonal chess</a>.</p>
+
+    <p>Currently, the notation is incomplete and suited for debug usage only. It consists of two forms, <code>Move(_, _)</code> and <code>Exchange(_)</code>, where the underscores stand for the origin/destination fields and the field of the piece to be exchanged, respectively.</p>
+
+    <p>A field is represented as a triplet of <code>[file][rank][field]</code>. The file (column) and rank (row) specify a tile, and the field identifies a field on that tile. The files are lettered 'a-e' from left to right. The ranks are numbered '1-5' from bottom to top. Each rank makes a 60 degree bend at the c-file, which gives each rank a 'V' shape. The fields are lettered from 'a-e' counterclockwise like so:</p>
+
+    <pre><code class="language-text">    _______
+   /\     /\
+  /  \ f /  \
+ / a  \ /  e \
+(------X------)
+ \ b  / \  d /
+  \  / c \  /
+   \/_____\/
+</code></pre>
+    <p>This ordering mirrors the files going left to right, with an extra f-field at the top.</p>
+
+    <p>Now, finding the file and field are simple, but the rank is more difficult. The simplest way to do it is to count from the bottom of the board. For example, the center tile of the board has the coordinates <code>c3</code> because it is the third tile from the bottom of the board in the c-file. Because of this system, the tiles at the bottom of the board are all in the same rank (<code>a1</code>, <code>b1</code>, <code>c1</code>, etc.) whereas the tiles at the top of the board all have different ranks (<code>a3</code>, <code>b4</code>, <code>c5</code>, <code>d4</code>, <code>e3</code>). In fact, <code>c5</code> is the only tile in the fifth rank.</p>
+
+    <p>As an example, let's find the coordinates of the top field of the bottom-right tile. We know this field is in the e-file because it is in the last column of the board. This tile is also the first in its file, so it is in the first rank. Looking at the diagram above, the top field is the f-field. Putting it all together, the coordinates of the this field are <code>e1f</code>.</p>
+
+    <p>Here is a sequence of possible moves for the start of a Laurentius game:</p>
+
+    <pre><code>Move(d1e, d1c)
+Move(b3f, c4b)
+Move(c5e, c5c)
+Move(e3f, e3b)
+
+[a lot of moves and captures later...]
+
+Exchange(a3f)
+</code></pre>
+    <p>As mentioned earlier, this notation is incomplete. There is no way to notate piece or tile captures. See <a href="#future-development">Future Development</a> for more information.</p>
+
+    <h2 id="compiling">Compiling</h2>
+
+    <p>This game requires a minimum Rust version of 1.27.</p>
+
+    <h3>Linux and macOS</h3>
+
+    <p><code>cargo run --release</code> is enough to build the game. <a href="https://github.com/burtonageo/cargo-bundle">cargo-bundle</a> is used to create the <code>.app</code> bundle for releases.</p>
+
+    <h3>Windows</h3>
+
+    <p>Only the <code>x86_64-pc-windows-msvc</code> toolchain has been tested. If you are having trouble installing the Visual C++ Build Tools, there is an <a href="https://github.com/rust-lang-nursery/rustup.rs/issues/1363#issuecomment-369953262">illustrated guide</a>.</p>
+
+    <p>After installing Rust, compile with <code>cargo run --release</code>. Consider adding <code>-C target-feature=+crt-static</code> to <code>RUSTFLAGS</code> so that the resulting binary will run without requiring the CRT DLLs to be installed.</p>
+
+    <h3>Android</h3>
+
+    <p>This game uses <a href="https://github.com/tomaka/android-rs-glue">android-rs-glue</a> to compile for Android.</p>
+
+    <p>Follow the instructions in the README to compile the game. Remember to pass the build target to <code>cargo apk build</code> or set it in <code>[package.metadata.android]</code>. If you get an error about <a href="https://github.com/tomaka/android-rs-glue/issues/163"><code>jni.h: No such file or directory</code></a>, downgrade the NDK to version r15c.</p>
+
+    <p>If you compile a release APK (and you should to improve performance), you must <a href="https://developer.android.com/studio/publish/app-signing">sign it</a> before you can load it on your phone.</p>
+
+    <h2 id="future-development">Future Development</h2>
+
+    <p>This game is not in development anymore. Version 1.0.0, as it stands, is "finished" and no new features will be added. Bug fixes or library upgrades may be made as time permits.</p>
+
+    <p>That being said, however, there is no shortage of possible features to add. Below is a list of ideas which I did not get to implement. If you decide to implement any of these, feel free to open a pull request.</p>
+
+    <p>If you happen to find any bugs, feel free to open an issue, but do note that I may choose to ignore them if they aren't too serious (like the bugs in the <a href="#supported-platforms">Supported Platforms</a> section).</p>
+
+    <h3>Feature Ideas</h3>
+
+    <ul>
+        <li>Better platform support</li>
+        <li>Move explorer</li>
+        <li>Save/restore games</li>
+        <li>Time control</li>
+        <li>Networked play</li>
+        <li>Fancier UI (animated/draggable pieces)</li>
+        <li>Sound effects</li>
+        <li>Draw offering</li>
+        <li>In-game tutorial</li>
+        <li>Cura/12-piece winning rule</li>
+        <li>More color schemes and piece styles</li>
+        <li>Internationalization/accessibility</li>
+    </ul>
+
+    <h3>AI Ideas</h3>
+
+    <ul>
+        <li>Stronger AI
+            <ul>
+                <li>Better evaluation function
+                    <ul>
+                        <li>Mobility</li>
+                        <li>Piece structure (chains, tile domination, etc.)</li>
+                    </ul>
+                </li>
+
+                <li>Better search algorithms</li>
+                <li>Shared transposition table</li>
+            </ul>
+        </li>
+
+        <li>Improved performance
+            <ul>
+                <li>Faster quiescence</li>
+                <li>Multithreading</li>
+                <li>SIMD</li>
+            </ul>
+        </li>
+
+        <li>Better difficulty levels</li>
+        <li>Computer analysis/hint</li>
+    </ul>
+
+    <h3>Notation Ideas</h3>
+
+    <p>The notation could be converted to a more natural one where moves are written as <code>origin-destination</code> pairs like <code>b3f-b3d</code>. If a piece moves within the same tile, the pair could be shortened to <code>b3f-d</code>.</p>
+
+    <p>The beginning of a sample game, then, might look something like this:</p>
+
+    <pre><code class="language-text">1. d1e-c b3f-c4b
+2. c5e-c e3f-b
+</code></pre>
+    <p>Ideas from other games and the official notation could be used to find a way to represent piece and tile captures. The biggest challenge is coming up with an effective way to represent the multiple piece and tile captures that can occur from a single move.</p>
+
+    <h2>Special Thanks</h2>
+
+    <ul>
+        <li>
+            <a href="https://chessprogramming.wikispaces.com/">Chess Programming Wiki</a>
+        </li>
+
+        <li>
+            <a href="https://mediocrechess.blogspot.com/">Mediocre Chess</a>
+        </li>
+
+        <li>
+            <a href="https://github.com/sfleischman105/Pleco">Pleco</a>
+        </li>
+
+        <li>
+            <a href="https://github.com/vinc/littlewing">Little Wing</a>
+        </li>
+
+        <li>
+            <a href="https://github.com/Blecki/coerceo">Blecki's engine</a>
+        </li>
+
+        <li>
+            <a href="https://www.redblobgames.com/grids/hexagons/">Amit's guide to hex grids</a>
+        </li>
+
+        <li>The now-defunct codelympics, for starting off this whole thing.</li>
+
+        <li>And the creators of Coerceo, for making such an interesting game.</li>
+    </ul>
+
+    <h2>Legal</h2>
+
+    <p>This game is an unofficial clone. Please support the official game by buying it at <a href="http://coerceo.com/order.html">coerceo.com</a>.</p>
+
+    <p>This game is licensed under the AGPLv3. A copy is available in the <code>LICENSE</code> file or online at <a href="https://www.gnu.org/licenses/">gnu.org</a>.</p>
+
+    <p>This game uses code from the library <a href="https://github.com/Gekkio/imgui-rs">imgui-rs</a>, which is licensed under the MIT License, and the font <a href="https://github.com/mozilla/Fira">Fira Sans</a>, which is licensed under the OFL v1.1. See the <code>NOTICE</code> file for more information.</p>
+
+    <p>All rights, trademarks, copyrights, concepts, etc. of the game Coerceo belong to the Coerceo Company.</p>
+</body>
+</html>
