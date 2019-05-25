@@ -365,7 +365,8 @@ impl Board {
             let bh = self.hexes(Black);
 
             // If neither side can capture the other's pieces, the game is drawn
-            if wp == 1 && bp == 1
+            if wp == 1
+                && bp == 1
                 && (self.hexes.count_ones() as u8 / 3 + cmp::max(wh, bh) - 1
                     < self.hexes_to_exchange)
             {

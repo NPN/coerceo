@@ -77,13 +77,17 @@ pub fn update(model: &mut Model, event: Option<Event>) -> bool {
 
 fn handle_event(model: &mut Model, event: &Event) {
     match event {
-        Click(clicked) => if !model.is_game_over() {
-            handle_click(model, *clicked);
-        },
-        Exchange => if model.board.can_exchange() && !model.is_game_over() {
-            model.exchanging = !model.exchanging;
-            model.clear_selection();
-        },
+        Click(clicked) => {
+            if !model.is_game_over() {
+                handle_click(model, *clicked);
+            }
+        }
+        Exchange => {
+            if model.board.can_exchange() && !model.is_game_over() {
+                model.exchanging = !model.exchanging;
+                model.clear_selection();
+            }
+        }
         NewGame(game_type, players) => {
             model.reset(*game_type, *players);
         }

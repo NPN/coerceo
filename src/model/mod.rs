@@ -343,10 +343,11 @@ impl FieldCoord {
     pub fn from_index(index: u8, color: Color) -> Self {
         assert!(index < 57);
 
-        let f = 2 * (index % 3) + match color {
-            Color::White => 1,
-            Color::Black => 0,
-        };
+        let f = 2 * (index % 3)
+            + match color {
+                Color::White => 1,
+                Color::Black => 0,
+            };
 
         Self::from_hex_f(index / 3, f)
     }
@@ -354,12 +355,13 @@ impl FieldCoord {
         assert!(hex < 19);
         assert!(f < 6);
 
-        let hex = hex as i8 + match hex {
-            0...2 => 2,
-            3...15 => 3,
-            16...18 => 4,
-            _ => unreachable!(),
-        };
+        let hex = hex as i8
+            + match hex {
+                0...2 => 2,
+                3...15 => 3,
+                16...18 => 4,
+                _ => unreachable!(),
+            };
         Self::new(hex % 5 - 2, hex / 5 - 2, f as u8)
     }
     pub fn to_hex(&self) -> HexCoord {
@@ -370,12 +372,13 @@ impl FieldCoord {
     }
     pub fn to_bitboard(&self) -> BitBoard {
         let hex = 5 * (self.y + 2) + self.x + 2;
-        let hex = hex as u8 - match hex {
-            2...4 => 2,
-            6...18 => 3,
-            20...22 => 4,
-            _ => unreachable!(),
-        };
+        let hex = hex as u8
+            - match hex {
+                2...4 => 2,
+                6...18 => 3,
+                20...22 => 4,
+                _ => unreachable!(),
+            };
 
         1 << (hex * 3 + self.f / 2)
     }
@@ -450,12 +453,13 @@ impl HexCoord {
         }
     }
     pub fn from_index(index: u8) -> Self {
-        let hex = index as i8 + match index {
-            0...2 => 2,
-            3...15 => 3,
-            16...18 => 4,
-            _ => unreachable!(),
-        };
+        let hex = index as i8
+            + match index {
+                0...2 => 2,
+                3...15 => 3,
+                16...18 => 4,
+                _ => unreachable!(),
+            };
         Self {
             x: hex % 5 - 2,
             y: hex / 5 - 2,
@@ -463,12 +467,13 @@ impl HexCoord {
     }
     pub fn to_index(&self) -> usize {
         let hex = 5 * (self.y + 2) + self.x + 2;
-        hex as usize - match hex {
-            2...4 => 2,
-            6...18 => 3,
-            20...22 => 4,
-            _ => unreachable!(),
-        }
+        hex as usize
+            - match hex {
+                2...4 => 2,
+                6...18 => 3,
+                20...22 => 4,
+                _ => unreachable!(),
+            }
     }
     fn is_valid_coord(x: i8, y: i8) -> bool {
         x.abs() <= 2 && y.abs() <= 2 && (x + y).abs() <= 2

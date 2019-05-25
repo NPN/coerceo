@@ -178,22 +178,18 @@ fn edge_neighbors() {
         })
     };
 
-    assert!(
-        EDGE_NEIGHBORS
-            .0
-            .white
-            .iter()
-            .map(|&x| x)
-            .eq(neighbors(Color::White))
-    );
-    assert!(
-        EDGE_NEIGHBORS
-            .0
-            .black
-            .iter()
-            .map(|&x| x)
-            .eq(neighbors(Color::Black))
-    );
+    assert!(EDGE_NEIGHBORS
+        .0
+        .white
+        .iter()
+        .map(|&x| x)
+        .eq(neighbors(Color::White)));
+    assert!(EDGE_NEIGHBORS
+        .0
+        .black
+        .iter()
+        .map(|&x| x)
+        .eq(neighbors(Color::Black)));
 }
 
 #[test]
@@ -213,22 +209,18 @@ fn vertex_neighbors() {
         })
     };
 
-    assert!(
-        VERTEX_NEIGHBORS
-            .0
-            .white
-            .iter()
-            .map(|&x| x)
-            .eq(neighbors(Color::White))
-    );
-    assert!(
-        VERTEX_NEIGHBORS
-            .0
-            .black
-            .iter()
-            .map(|&x| x)
-            .eq(neighbors(Color::Black))
-    );
+    assert!(VERTEX_NEIGHBORS
+        .0
+        .white
+        .iter()
+        .map(|&x| x)
+        .eq(neighbors(Color::White)));
+    assert!(VERTEX_NEIGHBORS
+        .0
+        .black
+        .iter()
+        .map(|&x| x)
+        .eq(neighbors(Color::Black)));
 }
 
 #[test]
@@ -252,22 +244,18 @@ fn hex_field_neighbors() {
         })
     };
 
-    assert!(
-        HEX_FIELD_NEIGHBORS
-            .0
-            .white
-            .iter()
-            .map(|&x| x)
-            .eq(neighbors(Color::White))
-    );
-    assert!(
-        HEX_FIELD_NEIGHBORS
-            .0
-            .black
-            .iter()
-            .map(|&x| x)
-            .eq(neighbors(Color::Black))
-    );
+    assert!(HEX_FIELD_NEIGHBORS
+        .0
+        .white
+        .iter()
+        .map(|&x| x)
+        .eq(neighbors(Color::White)));
+    assert!(HEX_FIELD_NEIGHBORS
+        .0
+        .black
+        .iter()
+        .map(|&x| x)
+        .eq(neighbors(Color::Black)));
 }
 
 #[test]

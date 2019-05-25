@@ -160,9 +160,7 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
                         return ControlFlow::Break;
                     }
                 }
-                CursorMoved {
-                    position, ..
-                } => {
+                CursorMoved { position, .. } => {
                     mouse_state.pos = position.into();
                     update_mouse(&mut imgui, &mut mouse_state);
 
@@ -187,22 +185,22 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
                         return ControlFlow::Break;
                     }
                 }
-                MouseInput { state, button, .. } => if MouseButton::Left == button {
-                    mouse_state.pressed.0 = state == Pressed;
-                    update_mouse(&mut imgui, &mut mouse_state);
+                MouseInput { state, button, .. } => {
+                    if MouseButton::Left == button {
+                        mouse_state.pressed.0 = state == Pressed;
+                        update_mouse(&mut imgui, &mut mouse_state);
 
-                    // Render twice to immediately show the results of the click
-                    if !render(&mut model, &mut imgui, &mut last_frame) {
-                        return ControlFlow::Break;
+                        // Render twice to immediately show the results of the click
+                        if !render(&mut model, &mut imgui, &mut last_frame) {
+                            return ControlFlow::Break;
+                        }
+                        if !render(&mut model, &mut imgui, &mut last_frame) {
+                            return ControlFlow::Break;
+                        }
                     }
-                    if !render(&mut model, &mut imgui, &mut last_frame) {
-                        return ControlFlow::Break;
-                    }
-                },
+                }
                 Touch(glutin::Touch {
-                    phase,
-                    location,
-                    ..
+                    phase, location, ..
                 }) => {
                     mouse_state.pos = location.into();
                     mouse_state.pressed.0 =

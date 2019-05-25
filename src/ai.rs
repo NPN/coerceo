@@ -154,7 +154,8 @@ impl AI {
                     ply_count / 2 + 1,
                     board.turn,
                     depth
-                ).unwrap();
+                )
+                .unwrap();
             }
 
             if let SearchResult::Move(mv) = search_root(
