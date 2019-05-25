@@ -55,6 +55,7 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
     }
 
     let display = Display::new(window, context, &events_loop).unwrap();
+    let gl_window = display.gl_window();
 
     let mut imgui = ImGui::init();
     imgui.set_ini_filename(None);
@@ -82,7 +83,6 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
         let delta_s = delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1_000_000_000.0;
         *last_frame = now;
 
-        let gl_window = display.gl_window();
         let frame_size = FrameSize {
             logical_size: gl_window.get_inner_size().unwrap().into(),
             hidpi_factor: gl_window.get_hidpi_factor(),
