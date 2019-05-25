@@ -57,7 +57,7 @@ Still playable, but have issues that hamper the experience.
 * iOS
   * Currently [not supported](https://github.com/tomaka/glutin/issues/29) by glutin.
 * macOS i686
-  * Blocked by [a bug in winit](https://github.com/tomaka/winit/issues/78) (and soon to be deprecated anyways).
+  * [Not supported by winit](https://github.com/tomaka/winit/issues/78) (and probably soon to be deprecated).
 * Other 32-bit and Android architectures 
   * Untested, but they would probably work if you could get them to compile.
 
