@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2018 Ryan Huang
+ * Copyright (C) 2017-2019 Ryan Huang
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -131,7 +131,7 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
 
 An unofficial clone of a strategic board game.
 
-Copyright (C) 2017-2018 Ryan Huang
+Copyright (C) 2017-2019 Ryan Huang
 This program comes with absolutely no warranty.
 See the GNU AGPL, version 3 or later, for details.
 

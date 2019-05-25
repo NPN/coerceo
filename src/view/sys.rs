@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2015-2017 The imgui-rs Developers
- * Copyright (C) 2017-2018 Ryan Huang
+ * Copyright (C) 2017-2019 Ryan Huang
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
