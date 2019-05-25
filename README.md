@@ -198,7 +198,7 @@ Ideas from other games and the official notation could be used to find a way to 
 
 ## Special Thanks
 
-* [Chess Programming Wiki](https://chessprogramming.wikispaces.com/)
+* [Chess Programming Wiki](https://www.chessprogramming.org/)
 * [Mediocre Chess](https://mediocrechess.blogspot.com/)
 * [Pleco](https://github.com/sfleischman105/Pleco)
 * [Little Wing](https://github.com/vinc/littlewing)
