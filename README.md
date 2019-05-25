@@ -125,7 +125,7 @@ As mentioned earlier, this notation is incomplete. There is no way to notate pie
  
 ## Compiling
 
-This game requires a minimum Rust version of 1.27.
+This game requires a minimum Rust version of 1.31.
 
 ### Linux and macOS
 
