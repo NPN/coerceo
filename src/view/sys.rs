@@ -20,7 +20,7 @@ use std::time::{Duration, Instant};
 
 use glium::glutin::{self, Api, GlRequest};
 use glium::{Display, Surface};
-use imgui::{FontGlyphRange, ImFontConfig, ImGui, Ui};
+use imgui::{FontGlyphRange, FrameSize, ImFontConfig, ImGui, Ui};
 use imgui_glium_renderer::Renderer;
 
 use model::Model;
@@ -45,7 +45,7 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
 ) {
     let window = glutin::WindowBuilder::new()
         .with_title(title)
-        .with_dimensions(dimensions.0, dimensions.1);
+        .with_dimensions(dimensions.into());
     let mut context = glutin::ContextBuilder::new().with_vsync(true);
     if cfg!(target_os = "android") {
         // https://github.com/tomaka/android-rs-glue/issues/153#issuecomment-318348732
@@ -83,15 +83,17 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
         *last_frame = now;
 
         let gl_window = display.gl_window();
-        let size_pixels = gl_window.get_inner_size().unwrap();
-        let hidpi = gl_window.hidpi_factor();
+        let frame_size = FrameSize {
+            logical_size: gl_window.get_inner_size().unwrap().into(),
+            hidpi_factor: gl_window.get_hidpi_factor(),
+        };
         let size_points = (
-            (size_pixels.0 as f32 / hidpi) as u32,
-            (size_pixels.1 as f32 / hidpi) as u32,
+            (frame_size.logical_size.0 / frame_size.hidpi_factor) as f32,
+            (frame_size.logical_size.1 / frame_size.hidpi_factor) as f32,
         );
 
-        let ui = imgui.frame(size_points, size_pixels, delta_s);
-        if !run_ui(model, &ui, (size_points.0 as f32, size_points.1 as f32)) {
+        let ui = imgui.frame(frame_size, delta_s);
+        if !run_ui(model, &ui, size_points) {
             return false;
         }
 
@@ -145,7 +147,7 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
             model.ai.stop();
         } else if let Event::WindowEvent { event, .. } = event {
             match event {
-                Closed => return ControlFlow::Break,
+                CloseRequested => return ControlFlow::Break,
                 KeyboardInput { input, .. } => {
                     if let Some(VirtualKeyCode::Q) = input.virtual_keycode {
                         if cfg!(target_os = "macos") && input.modifiers.logo {
@@ -153,15 +155,15 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
                         }
                     }
                 }
-                Refresh | Resized(_, _) | HiDPIFactorChanged(_) => {
+                Refresh | Resized(_) | HiDpiFactorChanged(_) => {
                     if !render(&mut model, &mut imgui, &mut last_frame) {
                         return ControlFlow::Break;
                     }
                 }
                 CursorMoved {
-                    position: (x, y), ..
+                    position, ..
                 } => {
-                    mouse_state.pos = (x.round() as i32, y.round() as i32);
+                    mouse_state.pos = position.into();
                     update_mouse(&mut imgui, &mut mouse_state);
 
                     if Instant::now() - last_frame < FRAME_DURATION {
@@ -171,16 +173,14 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
                     }
                 }
                 MouseWheel {
-                    delta: MouseScrollDelta::LineDelta(_, y),
-                    phase: TouchPhase::Moved,
-                    ..
-                }
-                | MouseWheel {
-                    delta: MouseScrollDelta::PixelDelta(_, y),
+                    delta,
                     phase: TouchPhase::Moved,
                     ..
                 } => {
-                    mouse_state.wheel = y;
+                    mouse_state.wheel = match delta {
+                        MouseScrollDelta::LineDelta(_, y) => y,
+                        MouseScrollDelta::PixelDelta(position) => position.y as f32,
+                    };
                     update_mouse(&mut imgui, &mut mouse_state);
 
                     if !render(&mut model, &mut imgui, &mut last_frame) {
@@ -201,10 +201,10 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
                 },
                 Touch(glutin::Touch {
                     phase,
-                    location: (x, y),
+                    location,
                     ..
                 }) => {
-                    mouse_state.pos = (x.round() as i32, y.round() as i32);
+                    mouse_state.pos = location.into();
                     mouse_state.pressed.0 =
                         phase == TouchPhase::Started || phase == TouchPhase::Moved;
                     update_mouse(&mut imgui, &mut mouse_state);
@@ -241,7 +241,7 @@ fn update_mouse(imgui: &mut ImGui, mouse_state: &mut MouseState) {
         mouse_state.pos.0 as f32 / scale.0,
         mouse_state.pos.1 as f32 / scale.1,
     );
-    imgui.set_mouse_down(&[
+    imgui.set_mouse_down([
         mouse_state.pressed.0,
         mouse_state.pressed.1,
         mouse_state.pressed.2,
