@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#![cfg_attr(feature = "cargo-clippy", allow(unreadable_literal))]
+#![allow(clippy::unreadable_literal)]
 
 use crate::model::bitboard::{BitBoard, BitBoardExt};
 use crate::model::{Color, ColorMap};
@@ -65,7 +65,7 @@ impl ZobristExt for ZobristHash {
 // These constants were generated with random.org
 const WHITE_TO_MOVE: u64 = 0xb047cbc27fa474a6;
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 const HEX_COUNT: ColorMap<[u64; 18]> = ColorMap {
     white: [
         0x342ebe3aba0639e1, 0x85c3a94db6c410f8, 0x4a59e5d60c9c2578, 0x4f1c7aace25eaa2c, 0xa3bb92a83f5da3d8, 0x72212cadb3bc08fe, 0x233681dee2d6d5ff,
@@ -79,7 +79,7 @@ const HEX_COUNT: ColorMap<[u64; 18]> = ColorMap {
     ]
 };
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 const PIECE_FIELD: ColorMap<[u64; 57]> = ColorMap {
     white: [
         0x3f7a3a29caa1b6d0, 0xd1b37d9434ecaa46, 0x9386bf627bfcb69c, 0xd589972483045b43, 0x2aa564f33adb00b5, 0xe7625c3ed0b8e824, 0x0a5d51afa7eed359,

@@ -20,7 +20,7 @@ use imgui::Ui;
 use crate::model::{Color, ColorMap, FieldCoord, HexCoord};
 use crate::view::vec2::Vec2;
 
-const SQRT_3: f32 = 1.732_050_807_568_877_f32;
+const SQRT_3: f32 = 1.732_050_8;
 
 // Slope and y-intercept
 pub const HEX_SPACING_COEFF: (f32, f32) = (0.0331, 1.45);

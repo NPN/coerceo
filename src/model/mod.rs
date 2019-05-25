@@ -364,13 +364,13 @@ impl FieldCoord {
             };
         Self::new(hex % 5 - 2, hex / 5 - 2, f as u8)
     }
-    pub fn to_hex(&self) -> HexCoord {
+    pub fn to_hex(self) -> HexCoord {
         HexCoord {
             x: self.x,
             y: self.y,
         }
     }
-    pub fn to_bitboard(&self) -> BitBoard {
+    pub fn to_bitboard(self) -> BitBoard {
         let hex = 5 * (self.y + 2) + self.x + 2;
         let hex = hex as u8
             - match hex {
@@ -382,7 +382,7 @@ impl FieldCoord {
 
         1 << (hex * 3 + self.f / 2)
     }
-    pub fn to_notation(&self) -> String {
+    pub fn to_notation(self) -> String {
         let mut notation = String::with_capacity(3);
 
         notation.push(match self.x {
@@ -415,10 +415,10 @@ impl FieldCoord {
         });
         notation
     }
-    pub fn f(&self) -> u8 {
+    pub fn f(self) -> u8 {
         self.f
     }
-    pub fn color(&self) -> Color {
+    pub fn color(self) -> Color {
         if self.f % 2 == 0 {
             Color::Black
         } else {
@@ -438,13 +438,13 @@ impl HexCoord {
             None
         }
     }
-    pub fn x(&self) -> i8 {
+    pub fn x(self) -> i8 {
         self.x
     }
-    pub fn y(&self) -> i8 {
+    pub fn y(self) -> i8 {
         self.y
     }
-    pub fn to_field(&self, f: u8) -> FieldCoord {
+    pub fn to_field(self, f: u8) -> FieldCoord {
         assert!(f < 6);
         FieldCoord {
             x: self.x,
@@ -465,7 +465,7 @@ impl HexCoord {
             y: hex / 5 - 2,
         }
     }
-    pub fn to_index(&self) -> usize {
+    pub fn to_index(self) -> usize {
         let hex = 5 * (self.y + 2) + self.x + 2;
         hex as usize
             - match hex {

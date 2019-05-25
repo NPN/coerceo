@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#![cfg_attr(feature = "cargo-clippy", allow(unreadable_literal))]
+#![allow(clippy::unreadable_literal)]
 
 mod tests;
 
@@ -94,7 +94,7 @@ macro_rules! lookup_table {
     };
 }
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 lookup_table!(
     EDGE_NEIGHBORS,
     57,
@@ -116,7 +116,7 @@ lookup_table!(
     ]
 );
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 lookup_table!(
     VERTEX_NEIGHBORS,
     57,
@@ -138,7 +138,7 @@ lookup_table!(
     ]
 );
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 lookup_table!(
     HEX_FIELD_NEIGHBORS,
     19,
@@ -174,7 +174,7 @@ pub const HEX_MASK: [BitBoard; 19] = [
     0b111000000000000000000000000000000000000000000000000000000,
 ];
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 pub const REMOVABLE_HEX_COMBS: [BitBoard; 342] = [
     9248, 9216, 8224, 1024, 8192, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 73729, 73984, 8193, 73728, 65792, 1, 8192, 65536, 256, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 589832, 65544, 589824, 8, 65536, 524288, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 37765120, 33570820, 37748736, 33570816, 16388, 4194304,

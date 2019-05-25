@@ -23,7 +23,7 @@ use crate::view::board_parts::*;
 use crate::view::vec2::Vec2;
 use crate::view::Event;
 
-const SQRT_3: f32 = 1.732_050_807_568_877_f32;
+const SQRT_3: f32 = 1.732_050_8;
 
 // Color format is 0xaa_bb_gg_rr
 const SELECT_HIGHLIGHT: u32 = 0xcc_35_bf_ff;

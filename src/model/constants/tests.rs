@@ -31,7 +31,7 @@ pub fn laurentius_starting_position() {
 
     // (0, 0) is the only empty hex.
     // All other hexes have exactly two pieces on them in the starting position.
-    #[cfg_attr(rustfmt, rustfmt_skip)]
+    #[rustfmt::skip]
     let piece_locations = [
         (-2,  2, 0, 4),
         (-2,  1, 0, 3),
@@ -76,7 +76,7 @@ pub fn ocius_starting_position() {
     let mut black = 0;
 
     // All hexes have exactly two pieces on them in the starting position.
-    #[cfg_attr(rustfmt, rustfmt_skip)]
+    #[rustfmt::skip]
     let piece_locations = [
         (-1,  1, 1, 3),
         (-1,  0, 0, 2),
