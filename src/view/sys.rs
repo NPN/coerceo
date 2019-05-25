@@ -30,7 +30,7 @@ const FRAME_DURATION: Duration = Duration::from_millis(16);
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
 struct MouseState {
-    pos: (i32, i32),
+    pos: (f64, f64),
     pressed: (bool, bool, bool),
     wheel: f32,
 }
@@ -90,13 +90,16 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
             logical_size: gl_window.get_inner_size().unwrap().into(),
             hidpi_factor: gl_window.get_hidpi_factor(),
         };
-        let size_points = (
-            (frame_size.logical_size.0 / frame_size.hidpi_factor) as f32,
-            (frame_size.logical_size.1 / frame_size.hidpi_factor) as f32,
-        );
 
         let ui = imgui.frame(frame_size, delta_s);
-        if !run_ui(model, &ui, size_points) {
+        if !run_ui(
+            model,
+            &ui,
+            (
+                frame_size.logical_size.0 as f32,
+                frame_size.logical_size.1 as f32,
+            ),
+        ) {
             return false;
         }
 
@@ -235,11 +238,7 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
 }
 
 fn update_mouse(imgui: &mut ImGui, mouse_state: &mut MouseState) {
-    let scale = imgui.display_framebuffer_scale();
-    imgui.set_mouse_pos(
-        mouse_state.pos.0 as f32 / scale.0,
-        mouse_state.pos.1 as f32 / scale.1,
-    );
+    imgui.set_mouse_pos(mouse_state.pos.0 as f32, mouse_state.pos.1 as f32);
     imgui.set_mouse_down([
         mouse_state.pressed.0,
         mouse_state.pressed.1,
@@ -247,6 +246,6 @@ fn update_mouse(imgui: &mut ImGui, mouse_state: &mut MouseState) {
         false,
         false,
     ]);
-    imgui.set_mouse_wheel(mouse_state.wheel / scale.1);
+    imgui.set_mouse_wheel(mouse_state.wheel);
     mouse_state.wheel = 0.0;
 }
