@@ -78,29 +78,23 @@ impl AI {
         } = self.status
         {
             stop_signal.store(true, Ordering::Relaxed);
+            self.status = Status::Idle;
         }
-        // Unconditionally assign because without NLL, we can't put this in the if let block above
-        self.status = Status::Idle;
     }
 
     pub fn try_recv(&mut self) -> Option<Move> {
         use self::TryRecvError::*;
-
-        let result;
         match self.status {
-            Status::Idle => result = None,
+            Status::Idle => None,
             Status::Thinking { ref move_recv, .. } => match move_recv.try_recv() {
-                Ok(mv) => result = Some(mv),
-                Err(Empty) => result = None,
+                Ok(mv) => {
+                    self.status = Status::Idle;
+                    Some(mv)
+                }
+                Err(Empty) => None,
                 Err(Disconnected) => panic!("Tried to receive move from disconnected sender"),
             },
         }
-
-        // We can't set status in the Ok(mv) arm above without NLL
-        if result.is_some() {
-            self.status = Status::Idle;
-        }
-        result
     }
 
     pub fn think(
