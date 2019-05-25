@@ -58,6 +58,9 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
     let gl_window = display.gl_window();
 
     let mut imgui = ImGui::init();
+    unsafe {
+        imgui::sys::igStyleColorsClassic(imgui.style_mut());
+    }
     imgui.set_ini_filename(None);
 
     let config = ImFontConfig::new()
