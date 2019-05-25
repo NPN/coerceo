@@ -55,9 +55,9 @@ Still playable, but have issues that hamper the experience.
 ### Untested/Fail to Compile
 
 * iOS
-  * Currently [not supported](https://github.com/tomaka/glutin/issues/29) by glutin.
+  * Currently [not supported](https://github.com/rust-windowing/glutin/issues/29) by glutin.
 * macOS i686
-  * [Not supported by winit](https://github.com/tomaka/winit/issues/78) (and probably soon to be deprecated).
+  * [Not supported by winit](https://github.com/rust-windowing/winit/issues/78) (and probably soon to be deprecated).
 * Other 32-bit and Android architectures 
   * Untested, but they would probably work if you could get them to compile.
 
@@ -139,9 +139,9 @@ After installing Rust, compile with `cargo run --release`. Consider adding `-C t
 
 ### Android
 
-This game uses [android-rs-glue](https://github.com/tomaka/android-rs-glue) to compile for Android.
+This game uses [android-rs-glue](https://github.com/rust-windowing/android-rs-glue) to compile for Android.
 
-Follow the instructions in the README to compile the game. Remember to pass the build target to `cargo apk build` or set it in `[package.metadata.android]`. If you get an error about [`jni.h: No such file or directory`](https://github.com/tomaka/android-rs-glue/issues/163), downgrade the NDK to version r15c.
+Follow the instructions in the README to compile the game. Remember to pass the build target to `cargo apk build` or set it in `[package.metadata.android]`. If you get an error about [`jni.h: No such file or directory`](https://github.com/rust-windowing/android-rs-glue/issues/163), downgrade the NDK to version r15c.
 
 If you compile a release APK (and you should to improve performance), you must [sign it](https://developer.android.com/studio/publish/app-signing) before you can load it on your phone.
 
