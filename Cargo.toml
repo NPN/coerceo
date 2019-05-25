@@ -26,5 +26,5 @@ icon = ["assets/bundle_icon/64x64.png",
 
 [dependencies]
 glium = { version = "0.22", default-features = true }
-imgui = { version = "0.0.19" }
-imgui-glium-renderer = { version = "0.0.19" }
+imgui = { version = "0.0.21" }
+imgui-glium-renderer = { version = "0.0.21" }
