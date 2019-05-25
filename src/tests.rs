@@ -17,7 +17,7 @@
 
 #![cfg(test)]
 
-use model::{Board, GameType};
+use crate::model::{Board, GameType};
 
 fn perft(board: &Board, depth: u8) -> u64 {
     if depth == 0 {

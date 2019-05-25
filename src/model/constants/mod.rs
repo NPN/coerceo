@@ -19,9 +19,9 @@
 
 mod tests;
 
-use model::bitboard::BitBoard;
-use model::board::PlayerVitals;
-use model::{Color, ColorMap};
+use crate::model::bitboard::BitBoard;
+use crate::model::board::PlayerVitals;
+use crate::model::{Color, ColorMap};
 
 pub struct StartingPosition {
     pub fields: ColorMap<BitBoard>,

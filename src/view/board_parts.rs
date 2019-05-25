@@ -17,8 +17,8 @@
 
 use imgui::Ui;
 
-use model::{Color, ColorMap, FieldCoord, HexCoord};
-use view::vec2::Vec2;
+use crate::model::{Color, ColorMap, FieldCoord, HexCoord};
+use crate::view::vec2::Vec2;
 
 const SQRT_3: f32 = 1.732_050_807_568_877_f32;
 

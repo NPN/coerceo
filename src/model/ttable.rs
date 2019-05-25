@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use model::zobrist::ZobristHash;
+use crate::model::zobrist::ZobristHash;
 
 const TABLE_SIZE: usize = 1 << 20;
 const TABLE_MASK: u64 = TABLE_SIZE as u64 - 1;

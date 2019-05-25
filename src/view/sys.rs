@@ -23,8 +23,8 @@ use glium::{Display, Surface};
 use imgui::{FontGlyphRange, FrameSize, ImFontConfig, ImGui, Ui};
 use imgui_glium_renderer::Renderer;
 
-use model::Model;
-use update;
+use crate::model::Model;
+use crate::update;
 
 const FRAME_DURATION: Duration = Duration::from_millis(16);
 

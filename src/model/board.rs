@@ -17,10 +17,10 @@
 
 use std::cmp;
 
-use model::bitboard::*;
-use model::constants::*;
-use model::zobrist::{self, ZobristExt, ZobristHash};
-use model::{Color, ColorMap, FieldCoord, GameType, HexCoord, Move, MoveAnnotated, Outcome};
+use crate::model::bitboard::*;
+use crate::model::constants::*;
+use crate::model::zobrist::{self, ZobristExt, ZobristHash};
+use crate::model::{Color, ColorMap, FieldCoord, GameType, HexCoord, Move, MoveAnnotated, Outcome};
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct Board {
@@ -357,7 +357,7 @@ impl Board {
             // There are no empty fields to move to and we can't exchange
             Outcome::DrawStalemate
         } else {
-            use model::Color::*;
+            use crate::model::Color::*;
 
             let wp = self.pieces(White);
             let bp = self.pieces(Black);

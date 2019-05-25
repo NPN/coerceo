@@ -17,9 +17,9 @@
 
 #![cfg(test)]
 
-use model::bitboard::BitBoard;
-use model::constants::*;
-use model::{Color, FieldCoord, HexCoord};
+use crate::model::bitboard::BitBoard;
+use crate::model::constants::*;
+use crate::model::{Color, FieldCoord, HexCoord};
 
 use self::OptionFieldCoord::*;
 

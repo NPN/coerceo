@@ -25,8 +25,8 @@ use imgui::{ImGuiCond, ImStr, StyleVar, Ui};
 use self::board::board;
 pub use self::sys::run;
 use self::vec2::Vec2;
-use model::{Color, ColorMap, GameType, Model, Player};
-use update::Event;
+use crate::model::{Color, ColorMap, GameType, Model, Player};
+use crate::update::Event;
 
 pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
     let mut event = None;
@@ -233,7 +233,7 @@ fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Even
             };
 
             let button_size = Vec2::new(155.0, 29.0);
-            use model::Outcome::*;
+            use crate::model::Outcome::*;
             match model.outcome {
                 Win(color) => {
                     ui.text(format!("{:?} wins!", color));

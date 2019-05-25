@@ -2,6 +2,7 @@
 name = "coerceo"
 version = "1.0.0"
 authors = ["Ryan Huang"]
+edition = "2018"
 
 description = "An unofficial clone of a strategic board game."
 license = "AGPL-3.0"

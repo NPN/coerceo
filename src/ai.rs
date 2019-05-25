@@ -26,8 +26,8 @@ use std::time::{Duration, Instant};
 
 use glium::glutin::EventsLoopProxy;
 
-use model::ttable::{Score, TTable};
-use model::{Board, Move, Outcome};
+use crate::model::ttable::{Score, TTable};
+use crate::model::{Board, Move, Outcome};
 
 const AI_MOVE_DELAY: Duration = Duration::from_millis(300);
 
@@ -447,7 +447,7 @@ fn quiescence_search(
 }
 
 fn evaluate(board: &Board) -> i16 {
-    use model::Color::*;
+    use crate::model::Color::*;
 
     // If it's two hexes to exchange, then a piece is 100 and a hex is 50. If it's one hex, then we
     // halve the value of a piece so that both are 50. We could instead up the value of a hex to

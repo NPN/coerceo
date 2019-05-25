@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use model::{ColorMap, FieldCoord, GameType, Model, Move, Player};
+use crate::model::{ColorMap, FieldCoord, GameType, Model, Move, Player};
 
 use self::Event::*;
 

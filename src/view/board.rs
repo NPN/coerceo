@@ -17,11 +17,11 @@
 
 use imgui::{ImMouseButton, Ui};
 
-use model::bitboard::BitBoardExt;
-use model::{FieldCoord, GameType, Model, Move};
-use view::board_parts::*;
-use view::vec2::Vec2;
-use view::Event;
+use crate::model::bitboard::BitBoardExt;
+use crate::model::{FieldCoord, GameType, Model, Move};
+use crate::view::board_parts::*;
+use crate::view::vec2::Vec2;
+use crate::view::Event;
 
 const SQRT_3: f32 = 1.732_050_807_568_877_f32;
 

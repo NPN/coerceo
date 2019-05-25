@@ -29,7 +29,7 @@ use glium::glutin::EventsLoopProxy;
 
 use self::bitboard::BitBoard;
 pub use self::board::Board;
-use ai::AI;
+use crate::ai::AI;
 
 pub struct Model {
     pub game_type: GameType,

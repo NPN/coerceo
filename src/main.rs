@@ -29,7 +29,7 @@ mod view;
 use glium::glutin::EventsLoop;
 use imgui::Ui;
 
-use model::{ColorMap, GameType, Model, Player};
+use crate::model::{ColorMap, GameType, Model, Player};
 
 fn main() {
     let events_loop = EventsLoop::new();

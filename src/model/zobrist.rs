@@ -17,8 +17,8 @@
 
 #![cfg_attr(feature = "cargo-clippy", allow(unreadable_literal))]
 
-use model::bitboard::{BitBoard, BitBoardExt};
-use model::{Color, ColorMap};
+use crate::model::bitboard::{BitBoard, BitBoardExt};
+use crate::model::{Color, ColorMap};
 
 pub type ZobristHash = u64;
 
