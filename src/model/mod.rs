@@ -357,9 +357,9 @@ impl FieldCoord {
 
         let hex = hex as i8
             + match hex {
-                0...2 => 2,
-                3...15 => 3,
-                16...18 => 4,
+                0..=2 => 2,
+                3..=15 => 3,
+                16..=18 => 4,
                 _ => unreachable!(),
             };
         Self::new(hex % 5 - 2, hex / 5 - 2, f as u8)
@@ -374,9 +374,9 @@ impl FieldCoord {
         let hex = 5 * (self.y + 2) + self.x + 2;
         let hex = hex as u8
             - match hex {
-                2...4 => 2,
-                6...18 => 3,
-                20...22 => 4,
+                2..=4 => 2,
+                6..=18 => 3,
+                20..=22 => 4,
                 _ => unreachable!(),
             };
 
@@ -455,9 +455,9 @@ impl HexCoord {
     pub fn from_index(index: u8) -> Self {
         let hex = index as i8
             + match index {
-                0...2 => 2,
-                3...15 => 3,
-                16...18 => 4,
+                0..=2 => 2,
+                3..=15 => 3,
+                16..=18 => 4,
                 _ => unreachable!(),
             };
         Self {
@@ -469,9 +469,9 @@ impl HexCoord {
         let hex = 5 * (self.y + 2) + self.x + 2;
         hex as usize
             - match hex {
-                2...4 => 2,
-                6...18 => 3,
-                20...22 => 4,
+                2..=4 => 2,
+                6..=18 => 3,
+                20..=22 => 4,
                 _ => unreachable!(),
             }
     }

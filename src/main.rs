@@ -15,10 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-extern crate glium;
 #[macro_use]
 extern crate imgui;
-extern crate imgui_glium_renderer;
 
 mod ai;
 mod model;
