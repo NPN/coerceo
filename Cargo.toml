@@ -29,3 +29,10 @@ icon = ["assets/bundle_icon/64x64.png",
 glium = { version = "0.23", default-features = true }
 imgui = { version = "0.0.23" }
 imgui-glium-renderer = { version = "0.0.23" }
+
+[dev-dependencies]
+criterion = "0.2"
+
+[[bench]]
+name = "laurentius_perft"
+harness = false
