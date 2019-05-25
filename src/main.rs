@@ -15,19 +15,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#[macro_use]
-extern crate imgui;
-
-mod ai;
-mod model;
-mod tests;
-mod update;
-mod view;
-
 use glium::glutin::EventsLoop;
 use imgui::Ui;
 
-use crate::model::{ColorMap, GameType, Model, Player};
+use coerceo::{
+    model::{ColorMap, GameType, Model, Player},
+    update, view,
+};
 
 fn main() {
     let events_loop = EventsLoop::new();
