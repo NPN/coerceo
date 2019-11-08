@@ -35,7 +35,7 @@ impl TTable {
         }
     }
     pub fn inc_age(&mut self) {
-        self.age.wrapping_add(1);
+        self.age = self.age.wrapping_add(1);
     }
     pub fn get(&self, zobrist: ZobristHash, depth: i8) -> Option<Score> {
         let hash = (zobrist & TABLE_MASK) as usize;
