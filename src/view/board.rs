@@ -38,7 +38,7 @@ const EXTANT_HEX_ALPHA: u8 = 0xff;
 pub fn board(ui: &Ui, model: &Model, size: Vec2) -> Option<Event> {
     let mouse_click = ui.is_mouse_clicked(MouseButton::Left);
     let mouse_pos = Vec2::from(ui.io().mouse_pos);
-    let cursor_pos = Vec2::from(ui.get_cursor_screen_pos());
+    let cursor_pos = Vec2::from(ui.cursor_screen_pos());
 
     let side_len = match model.game_type {
         GameType::Laurentius => {

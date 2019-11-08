@@ -125,7 +125,7 @@ As mentioned earlier, this notation is incomplete. There is no way to notate pie
  
 ## Compiling
 
-![minimum Rust version: 1.33](https://img.shields.io/badge/minimum%20Rust%20version-1.33-brightgreen.svg)
+![minimum Rust version: 1.36](https://img.shields.io/badge/minimum%20Rust%20version-1.36-brightgreen.svg)
 
 ### Linux and macOS
 

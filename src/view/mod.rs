@@ -20,7 +20,7 @@ mod board_parts;
 mod sys;
 mod vec2;
 
-use imgui::{Condition, ImStr, StyleVar, Ui};
+use imgui::{Condition, ImStr, MenuItem, Slider, StyleVar, Ui, Window};
 
 use self::board::board;
 pub use self::sys::run;
@@ -33,26 +33,25 @@ pub fn draw(ui: &Ui, size: [f32; 2], model: &Model) -> Option<Event> {
     let mut window_states = model.window_states.borrow_mut();
 
     ui.main_menu_bar(|| {
-        ui.menu(im_str!("Game")).build(|| {
-            ui.menu_item(im_str!("New game")).enabled(false).build();
+        ui.menu(im_str!("Game"), true, || {
+            MenuItem::new(im_str!("New game")).enabled(false).build(ui);
 
-            ui.menu(im_str!("Laurentius")).build(|| {
+            ui.menu(im_str!("Laurentius"), true, || {
                 player_options(ui, &mut event, GameType::Laurentius);
             });
-            ui.menu(im_str!("Ocius")).build(|| {
+            ui.menu(im_str!("Ocius"), true, || {
                 player_options(ui, &mut event, GameType::Ocius);
             });
 
             ui.separator();
 
-            ui.menu_item(im_str!("Rules")).enabled(false).build();
+            MenuItem::new(im_str!("Rules")).enabled(false).build(ui);
             if ui.is_item_hovered() {
                 ui.tooltip_text("Any changes to the rules apply at the start of the next game.");
             }
 
-            ui.menu_item(im_str!("One tile to exchange"))
-                .selected(&mut model.exchange_one_hex.borrow_mut())
-                .build();
+            MenuItem::new(im_str!("One tile to exchange"))
+                .build_with_ref(ui, &mut model.exchange_one_hex.borrow_mut());
             if ui.is_item_hovered() {
                 ui.tooltip_text(
                     "If selected, only one tile (rather than two) is needed to exchange for a piece."
@@ -61,18 +60,14 @@ pub fn draw(ui: &Ui, size: [f32; 2], model: &Model) -> Option<Event> {
 
             ui.separator();
 
-            if ui.menu_item(im_str!("Quit")).build() {
+            if MenuItem::new(im_str!("Quit")).build(ui) {
                 insert_if_empty(&mut event, Event::Quit);
             }
         });
 
-        ui.menu(im_str!("Computer")).build(|| {
-            ui.slider_int(
-                im_str!("Search depth"),
-                &mut model.ai_search_depth.borrow_mut(),
-                1,
-                7,
-            ).build();
+        ui.menu(im_str!("Computer"), true, || {
+            Slider::new(im_str!("Search depth"), 1..=7)
+                .build(ui, &mut model.ai_search_depth.borrow_mut());
             if ui.is_item_hovered() {
                 ui.tooltip_text(
                     "How many moves ahead the computer will search.\nFewer moves is \
@@ -80,31 +75,24 @@ pub fn draw(ui: &Ui, size: [f32; 2], model: &Model) -> Option<Event> {
                 );
             }
 
-            ui.menu_item(im_str!("Show debug info"))
-                .selected(&mut window_states.ai_debug)
-                .build();
+            MenuItem::new(im_str!("Show debug info")).build_with_ref(ui, &mut window_states.ai_debug);
         });
 
-        ui.menu(im_str!("Help")).build(|| {
-            ui.menu_item(im_str!("How to Play"))
-                .selected(&mut window_states.how_to_play)
-                .build();
-            ui.menu_item(im_str!("About"))
-                .selected(&mut window_states.about)
-                .build();
+        ui.menu(im_str!("Help"), true, || {
+            MenuItem::new(im_str!("How to Play")).build_with_ref(ui, &mut window_states.how_to_play);
+            MenuItem::new(im_str!("About")).build_with_ref(ui, &mut window_states.about);
         });
     });
 
-    {
-        let _token = ui.push_style_var(StyleVar::WindowRounding(0.0));
-        draw_window(ui, size, model, &mut event);
-    }
+    let token = ui.push_style_var(StyleVar::WindowRounding(0.0));
+    draw_window(ui, size, model, &mut event);
+    token.pop(ui);
 
     if window_states.ai_debug {
-        ui.window(im_str!("AI Debug Info"))
+        Window::new(im_str!("AI Debug Info"))
             .opened(&mut window_states.ai_debug)
             .size([300.0, 600.0], Condition::FirstUseEver)
-            .build(|| {
+            .build(ui, || {
                 if let Ok(debug_info) = model.ai.debug_info.read() {
                     ui.text(debug_info.clone());
                 }
@@ -113,9 +101,9 @@ pub fn draw(ui: &Ui, size: [f32; 2], model: &Model) -> Option<Event> {
 
     if window_states.how_to_play {
         // TODO: Create an interactive, in-game tutorial to teach the rules of the game
-        ui.window(im_str!("How to Play"))
+        Window::new(im_str!("How to Play"))
             .opened(&mut window_states.how_to_play)
-            .build(|| {
+            .build(ui, || {
                 ui.text(
                     "Unfortunately, there isn't an in-game tutorial. Sorry!\nSee coerceo.com for \
                      the rules of the game.",
@@ -124,9 +112,9 @@ pub fn draw(ui: &Ui, size: [f32; 2], model: &Model) -> Option<Event> {
     }
 
     if window_states.about {
-        ui.window(im_str!("About"))
+        Window::new(im_str!("About"))
             .opened(&mut window_states.about)
-            .build(|| {
+            .build(ui, || {
                 ui.text(
                     "Coerceo v1.0.0 (https://github.com/NPN/coerceo)
 
@@ -157,25 +145,25 @@ Licensed under the SIL Open Font License v1.1",
 
 fn player_options(ui: &Ui, event: &mut Option<Event>, game_type: GameType) {
     use self::Player::*;
-    if ui.menu_item(im_str!("Human vs. Human")).build() {
+    if MenuItem::new(im_str!("Human vs. Human")).build(ui) {
         insert_if_empty(
             event,
             Event::NewGame(game_type, ColorMap::new(Human, Human)),
         );
     }
-    if ui.menu_item(im_str!("Human vs. Computer")).build() {
+    if MenuItem::new(im_str!("Human vs. Computer")).build(ui) {
         insert_if_empty(
             event,
             Event::NewGame(game_type, ColorMap::new(Human, Computer)),
         );
     }
-    if ui.menu_item(im_str!("Computer vs. Human")).build() {
+    if MenuItem::new(im_str!("Computer vs. Human")).build(ui) {
         insert_if_empty(
             event,
             Event::NewGame(game_type, ColorMap::new(Computer, Human)),
         );
     }
-    if ui.menu_item(im_str!("Computer vs. Computer")).build() {
+    if MenuItem::new(im_str!("Computer vs. Computer")).build(ui) {
         insert_if_empty(
             event,
             Event::NewGame(game_type, ColorMap::new(Computer, Computer)),
@@ -184,14 +172,14 @@ fn player_options(ui: &Ui, event: &mut Option<Event>, game_type: GameType) {
 }
 
 fn draw_window(ui: &Ui, size: [f32; 2], model: &Model, event: &mut Option<Event>) {
-    ui.window(im_str!("Coerceo"))
+    Window::new(im_str!("Coerceo"))
         .size(size, Condition::Always)
         .position([0.0, 27.0], Condition::Always)
         .title_bar(false)
         .resizable(false)
         .movable(false)
-        .no_bring_to_front_on_focus(true)
-        .build(|| {
+        .bring_to_front_on_focus(false)
+        .build(ui, || {
             ui.text("Welcome to Coerceo!");
 
             let exchange_hex_string = if model.board.hexes_to_exchange == 1 {
