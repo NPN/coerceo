@@ -20,25 +20,18 @@ use std::time::{Duration, Instant};
 
 use glium::glutin::{self, Api, GlRequest};
 use glium::{Display, Surface};
-use imgui::{FontGlyphRange, FrameSize, ImFontConfig, ImGui, Ui};
+use imgui::{Context, FontConfig, FontSource, Ui};
 use imgui_glium_renderer::Renderer;
+use imgui_winit_support::{HiDpiMode, WinitPlatform};
 
 use crate::model::Model;
 use crate::update;
 
 const FRAME_DURATION: Duration = Duration::from_millis(16);
 
-#[derive(Copy, Clone, PartialEq, Debug, Default)]
-struct MouseState {
-    pos: (f64, f64),
-    pressed: (bool, bool, bool),
-    wheel: f32,
-}
-
-pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
+pub fn run<F: FnMut(&mut Model, &Ui, [f32; 2]) -> bool>(
     title: String,
     dimensions: (u32, u32),
-    clear_color: [f32; 4],
     mut events_loop: glutin::EventsLoop,
     mut model: Model,
     mut run_ui: F,
@@ -54,76 +47,70 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
         context = context.with_gl(GlRequest::Specific(Api::OpenGlEs, (2, 0)));
     }
 
-    let display = Display::new(window, context, &events_loop).unwrap();
+    let display =
+        Display::new(window, context, &events_loop).expect("Could not initialize display");
     let gl_window = display.gl_window();
+    let window = gl_window.window();
 
-    let mut imgui = ImGui::init();
-    unsafe {
-        imgui::sys::igStyleColorsClassic(imgui.style_mut());
-    }
-    imgui.set_ini_filename(None);
+    let mut ctx = Context::create();
+    ctx.style_mut().use_classic_colors();
+    ctx.set_ini_filename(None);
 
-    let config = ImFontConfig::new()
-        .oversample_h(4)
-        .oversample_v(4)
-        .size_pixels(21.0)
-        .rasterizer_multiply(1.05);
+    let mut platform = WinitPlatform::init(&mut ctx);
+    platform.attach_window(ctx.io_mut(), &gl_window.window(), HiDpiMode::Rounded);
 
-    config.add_font(
-        &mut imgui.fonts(),
-        include_bytes!("../../assets/FiraSans-Regular.ttf"),
-        &FontGlyphRange::default(),
-    );
+    let hidpi_factor = platform.hidpi_factor();
+    ctx.fonts().add_font(&[FontSource::TtfData {
+        data: include_bytes!("../../assets/FiraSans-Regular.ttf"),
+        size_pixels: (21.0 * hidpi_factor) as f32,
+        config: Some(FontConfig {
+            oversample_h: 4,
+            oversample_v: 4,
+            rasterizer_multiply: 1.05,
+            ..FontConfig::default()
+        }),
+    }]);
+    ctx.io_mut().font_global_scale = (1.0 / hidpi_factor) as f32;
 
-    let mut renderer = Renderer::init(&mut imgui, &display).expect("Failed to initialize renderer");
+    let mut renderer = Renderer::init(&mut ctx, &display).expect("Failed to initialize renderer");
 
     let mut last_frame = Instant::now();
-    let mut mouse_state = MouseState::default();
 
-    let mut render = |model: &mut Model, imgui: &mut ImGui, last_frame: &mut Instant| {
-        let now = Instant::now();
-        let delta = now - *last_frame;
-        let delta_s = delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1_000_000_000.0;
-        *last_frame = now;
-
-        let frame_size = FrameSize {
-            logical_size: gl_window.get_inner_size().unwrap().into(),
-            hidpi_factor: gl_window.get_hidpi_factor(),
+    let mut render = |model: &mut Model,
+                      ctx: &mut Context,
+                      platform: &mut WinitPlatform,
+                      last_frame: &mut Instant| {
+        let display_size = {
+            let io = ctx.io_mut();
+            platform
+                .prepare_frame(io, &window)
+                .expect("Failed to start frame");
+            *last_frame = io.update_delta_time(*last_frame);
+            io.display_size
         };
 
-        let ui = imgui.frame(frame_size, delta_s);
-        if !run_ui(
-            model,
-            &ui,
-            (
-                frame_size.logical_size.0 as f32,
-                frame_size.logical_size.1 as f32,
-            ),
-        ) {
+        let ui = ctx.frame();
+        if !run_ui(model, &ui, display_size) {
             return false;
         }
 
         let mut target = display.draw();
-        target.clear_color(
-            clear_color[0],
-            clear_color[1],
-            clear_color[2],
-            clear_color[3],
-        );
-        renderer.render(&mut target, ui).expect("Rendering failed");
-        target.finish().unwrap();
+        target.clear_color_srgb(1.0, 1.0, 1.0, 1.0);
+        platform.prepare_render(&ui, &window);
+        renderer
+            .render(&mut target, ui.render())
+            .expect("Rendering failed");
+        target.finish().expect("Failed to swap buffers");
         true
     };
 
     // Render one frame before the event loop so the screen isn't empty
-    render(&mut model, &mut imgui, &mut last_frame);
+    render(&mut model, &mut ctx, &mut platform, &mut last_frame);
 
     events_loop.run_forever(|event| {
-        use glium::glutin::ElementState::Pressed;
         use glium::glutin::WindowEvent::*;
-        use glium::glutin::{
-            ControlFlow, Event, MouseButton, MouseScrollDelta, TouchPhase, VirtualKeyCode,
-        };
+        use glium::glutin::{ControlFlow, Event, MouseButton, TouchPhase, VirtualKeyCode};
+        platform.handle_event(ctx.io_mut(), &window, &event);
 
         if let Event::Awakened = event {
             if Instant::now() - last_frame < FRAME_DURATION {
@@ -134,13 +121,15 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
                 // If the AI is moving very quickly, then the last move of the game will be
                 // throttled and not receive a render. This appears to "freeze" the game. So, we
                 // render if the game is finished.
-                if model.is_game_over() && !render(&mut model, &mut imgui, &mut last_frame) {
+                if model.is_game_over()
+                    && !render(&mut model, &mut ctx, &mut platform, &mut last_frame)
+                {
                     return ControlFlow::Break;
                 }
             } else {
                 // Receive the AI move, then render
                 update::update(&mut model, None);
-                if !render(&mut model, &mut imgui, &mut last_frame) {
+                if !render(&mut model, &mut ctx, &mut platform, &mut last_frame) {
                     return ControlFlow::Break;
                 }
             }
@@ -160,45 +149,32 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
                     }
                 }
                 Refresh | Resized(_) | HiDpiFactorChanged(_) => {
-                    if !render(&mut model, &mut imgui, &mut last_frame) {
+                    if !render(&mut model, &mut ctx, &mut platform, &mut last_frame) {
                         return ControlFlow::Break;
                     }
                 }
-                CursorMoved { position, .. } => {
-                    mouse_state.pos = position.into();
-                    update_mouse(&mut imgui, &mut mouse_state);
-
+                CursorMoved { .. } => {
                     if Instant::now() - last_frame < FRAME_DURATION {
                         return ControlFlow::Continue;
-                    } else if !render(&mut model, &mut imgui, &mut last_frame) {
+                    } else if !render(&mut model, &mut ctx, &mut platform, &mut last_frame) {
                         return ControlFlow::Break;
                     }
                 }
                 MouseWheel {
-                    delta,
                     phase: TouchPhase::Moved,
                     ..
                 } => {
-                    mouse_state.wheel = match delta {
-                        MouseScrollDelta::LineDelta(_, y) => y,
-                        MouseScrollDelta::PixelDelta(position) => position.y as f32,
-                    };
-                    update_mouse(&mut imgui, &mut mouse_state);
-
-                    if !render(&mut model, &mut imgui, &mut last_frame) {
+                    if !render(&mut model, &mut ctx, &mut platform, &mut last_frame) {
                         return ControlFlow::Break;
                     }
                 }
-                MouseInput { state, button, .. } => {
+                MouseInput { button, .. } => {
                     if MouseButton::Left == button {
-                        mouse_state.pressed.0 = state == Pressed;
-                        update_mouse(&mut imgui, &mut mouse_state);
-
                         // Render twice to immediately show the results of the click
-                        if !render(&mut model, &mut imgui, &mut last_frame) {
+                        if !render(&mut model, &mut ctx, &mut platform, &mut last_frame) {
                             return ControlFlow::Break;
                         }
-                        if !render(&mut model, &mut imgui, &mut last_frame) {
+                        if !render(&mut model, &mut ctx, &mut platform, &mut last_frame) {
                             return ControlFlow::Break;
                         }
                     }
@@ -206,25 +182,26 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
                 Touch(glutin::Touch {
                     phase, location, ..
                 }) => {
-                    mouse_state.pos = location.into();
-                    mouse_state.pressed.0 =
-                        phase == TouchPhase::Started || phase == TouchPhase::Moved;
-                    update_mouse(&mut imgui, &mut mouse_state);
+                    let io = ctx.io_mut();
+                    let pos = platform.scale_pos_from_winit(&window, location);
+                    io.mouse_pos = [pos.x as f32, pos.y as f32];
+                    io.mouse_down[0] = phase == TouchPhase::Started || phase == TouchPhase::Moved;
 
                     match phase {
                         TouchPhase::Moved => {
                             if Instant::now() - last_frame < FRAME_DURATION {
                                 return ControlFlow::Continue;
-                            } else if !render(&mut model, &mut imgui, &mut last_frame) {
+                            } else if !render(&mut model, &mut ctx, &mut platform, &mut last_frame)
+                            {
                                 return ControlFlow::Break;
                             }
                         }
                         _ => {
                             // Render twice to immediately show the results of the touch
-                            if !render(&mut model, &mut imgui, &mut last_frame) {
+                            if !render(&mut model, &mut ctx, &mut platform, &mut last_frame) {
                                 return ControlFlow::Break;
                             }
-                            if !render(&mut model, &mut imgui, &mut last_frame) {
+                            if !render(&mut model, &mut ctx, &mut platform, &mut last_frame) {
                                 return ControlFlow::Break;
                             }
                         }
@@ -235,17 +212,4 @@ pub fn run<F: FnMut(&mut Model, &Ui, (f32, f32)) -> bool>(
         }
         ControlFlow::Continue
     });
-}
-
-fn update_mouse(imgui: &mut ImGui, mouse_state: &mut MouseState) {
-    imgui.set_mouse_pos(mouse_state.pos.0 as f32, mouse_state.pos.1 as f32);
-    imgui.set_mouse_down([
-        mouse_state.pressed.0,
-        mouse_state.pressed.1,
-        mouse_state.pressed.2,
-        false,
-        false,
-    ]);
-    imgui.set_mouse_wheel(mouse_state.wheel);
-    mouse_state.wheel = 0.0;
 }

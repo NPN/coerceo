@@ -36,14 +36,13 @@ fn main() {
     view::run(
         String::from("Coerceo"),
         (800, 800),
-        [1.0, 1.0, 1.0, 1.0],
         events_loop,
         model,
         |model, ui, size| game_loop(model, ui, size),
     );
 }
 
-fn game_loop(model: &mut Model, ui: &Ui, size: (f32, f32)) -> bool {
+fn game_loop(model: &mut Model, ui: &Ui, size: [f32; 2]) -> bool {
     let event = view::draw(ui, size, model);
     update::update(model, event)
 }

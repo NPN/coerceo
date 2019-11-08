@@ -18,8 +18,6 @@
 use std::convert::{From, Into};
 use std::ops::*;
 
-use imgui::sys::ImVec2;
-
 #[derive(Copy, Clone)]
 pub struct Vec2 {
     pub x: f32,
@@ -32,21 +30,15 @@ impl Vec2 {
     }
 }
 
-impl From<ImVec2> for Vec2 {
-    fn from(v: ImVec2) -> Self {
-        Self { x: v.x, y: v.y }
+impl From<[f32; 2]> for Vec2 {
+    fn from(v: [f32; 2]) -> Self {
+        Self { x: v[0], y: v[1] }
     }
 }
 
-impl From<(f32, f32)> for Vec2 {
-    fn from(v: (f32, f32)) -> Self {
-        Self { x: v.0, y: v.1 }
-    }
-}
-
-impl Into<ImVec2> for Vec2 {
-    fn into(self) -> ImVec2 {
-        ImVec2::new(self.x, self.y)
+impl Into<[f32; 2]> for Vec2 {
+    fn into(self) -> [f32; 2] {
+        [self.x, self.y]
     }
 }
 

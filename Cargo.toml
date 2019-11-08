@@ -26,9 +26,10 @@ icon = ["assets/bundle_icon/64x64.png",
         "assets/bundle_icon/512x512@2x.png"]
 
 [dependencies]
-glium = { version = "0.23", default-features = true }
-imgui = { version = "0.0.23" }
-imgui-glium-renderer = { version = "0.0.23" }
+glium = { version = "0.25", default-features = true }
+imgui = "0.1.0"
+imgui-glium-renderer = "0.1.0"
+imgui-winit-support = "0.1.0"
 
 [dev-dependencies]
 criterion = "0.2"

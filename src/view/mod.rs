@@ -20,7 +20,7 @@ mod board_parts;
 mod sys;
 mod vec2;
 
-use imgui::{ImGuiCond, ImStr, StyleVar, Ui};
+use imgui::{Condition, ImStr, StyleVar, Ui};
 
 use self::board::board;
 pub use self::sys::run;
@@ -28,7 +28,7 @@ use self::vec2::Vec2;
 use crate::model::{Color, ColorMap, GameType, Model, Player};
 use crate::update::Event;
 
-pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
+pub fn draw(ui: &Ui, size: [f32; 2], model: &Model) -> Option<Event> {
     let mut event = None;
     let mut window_states = model.window_states.borrow_mut();
 
@@ -95,14 +95,15 @@ pub fn draw(ui: &Ui, size: (f32, f32), model: &Model) -> Option<Event> {
         });
     });
 
-    ui.with_style_var(StyleVar::WindowRounding(0.0), || {
+    {
+        let _token = ui.push_style_var(StyleVar::WindowRounding(0.0));
         draw_window(ui, size, model, &mut event);
-    });
+    }
 
     if window_states.ai_debug {
         ui.window(im_str!("AI Debug Info"))
             .opened(&mut window_states.ai_debug)
-            .size((300.0, 600.0), ImGuiCond::FirstUseEver)
+            .size([300.0, 600.0], Condition::FirstUseEver)
             .build(|| {
                 if let Ok(debug_info) = model.ai.debug_info.read() {
                     ui.text(debug_info.clone());
@@ -182,10 +183,10 @@ fn player_options(ui: &Ui, event: &mut Option<Event>, game_type: GameType) {
     }
 }
 
-fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Event>) {
+fn draw_window(ui: &Ui, size: [f32; 2], model: &Model, event: &mut Option<Event>) {
     ui.window(im_str!("Coerceo"))
-        .size(size, ImGuiCond::Always)
-        .position((0.0, 27.0), ImGuiCond::Always)
+        .size(size, Condition::Always)
+        .position([0.0, 27.0], Condition::Always)
         .title_bar(false)
         .resizable(false)
         .movable(false)
@@ -203,7 +204,7 @@ fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Even
                 model.players.white, model.players.black, exchange_hex_string
             ));
 
-            if let Some(click) = board(ui, model, Vec2::new(size.0 - 16.0, size.1 - 232.0)) {
+            if let Some(click) = board(ui, model, Vec2::new(size[0] - 16.0, size[1] - 232.0)) {
                 insert_if_empty(event, click);
             }
 
@@ -232,7 +233,7 @@ fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Even
                 ));
             };
 
-            let button_size = Vec2::new(155.0, 29.0);
+            let button_size = [155.0, 29.0];
             use crate::model::Outcome::*;
             match model.outcome {
                 Win(color) => {
@@ -303,7 +304,7 @@ fn draw_window(ui: &Ui, size: (f32, f32), model: &Model, event: &mut Option<Even
 fn horz_button_layout(
     ui: &Ui,
     buttons: Vec<(bool, &ImStr, Event)>,
-    size: Vec2,
+    size: [f32; 2],
     event: &mut Option<Event>,
 ) {
     if !buttons.iter().any(|&(show, _, _)| show) {

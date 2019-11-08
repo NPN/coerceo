@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use imgui::{ImMouseButton, Ui};
+use imgui::{MouseButton, Ui};
 
 use crate::model::bitboard::BitBoardExt;
 use crate::model::{FieldCoord, GameType, Model, Move};
@@ -36,8 +36,8 @@ const REMOVED_HEX_ALPHA: u8 = 0x50;
 const EXTANT_HEX_ALPHA: u8 = 0xff;
 
 pub fn board(ui: &Ui, model: &Model, size: Vec2) -> Option<Event> {
-    let mouse_click = ui.imgui().is_mouse_clicked(ImMouseButton::Left);
-    let mouse_pos = Vec2::from(ui.imgui().mouse_pos());
+    let mouse_click = ui.is_mouse_clicked(MouseButton::Left);
+    let mouse_pos = Vec2::from(ui.io().mouse_pos);
     let cursor_pos = Vec2::from(ui.get_cursor_screen_pos());
 
     let side_len = match model.game_type {
@@ -127,7 +127,7 @@ pub fn board(ui: &Ui, model: &Model, size: Vec2) -> Option<Event> {
         }
     }
 
-    ui.dummy(size);
+    ui.dummy(size.into());
 
     hover_field.filter(|_| mouse_click).map(Event::Click)
 }

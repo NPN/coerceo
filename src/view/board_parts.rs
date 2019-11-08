@@ -64,7 +64,7 @@ pub fn draw_hex(ui: &Ui, alpha: u8, coord: HexCoord, origin: Vec2, size: f32) {
 pub fn draw_field(ui: &Ui, color: u32, coord: FieldCoord, origin: Vec2, size: f32) {
     let (v1, v2, v3) = field_vertexes(coord, origin, size);
     ui.get_window_draw_list()
-        .add_triangle(v1, v2, v3, color)
+        .add_triangle(v1.into(), v2.into(), v3.into(), color)
         .filled(true)
         .build();
 }
@@ -72,7 +72,7 @@ pub fn draw_field(ui: &Ui, color: u32, coord: FieldCoord, origin: Vec2, size: f3
 pub fn draw_field_dot(ui: &Ui, color: u32, coord: FieldCoord, origin: Vec2, size: f32) {
     let center = field_center(coord, origin, size);
     ui.get_window_draw_list()
-        .add_circle(center, size / (4.0 * SQRT_3), color)
+        .add_circle(center.into(), size / (4.0 * SQRT_3), color)
         .filled(true)
         .num_segments(15)
         .build();
@@ -83,12 +83,14 @@ pub fn draw_piece(ui: &Ui, coord: FieldCoord, origin: Vec2, size: f32) {
     let center = field_center(coord, origin, size);
 
     const SCALE: f32 = 0.75;
-    let v1 = center + (v1 - center) * SCALE;
-    let v2 = center + (v2 - center) * SCALE;
-    let v3 = center + (v3 - center) * SCALE;
+    let v1 = (center + (v1 - center) * SCALE).into();
+    let v2 = (center + (v2 - center) * SCALE).into();
+    let v3 = (center + (v3 - center) * SCALE).into();
+    let center = center.into();
 
     // Linear equation derived by human testing and regression
-    let outline_size = 0.032 * size - 0.535;
+    // TODO: Does this have to be adjusted by DPI factor, or is doubling the old value enough?
+    let outline_size = 2.0 * (0.032 * size - 0.535);
 
     let colors = PIECE_COLORS.get_ref(coord.color());
     let draw_list = ui.get_window_draw_list();
