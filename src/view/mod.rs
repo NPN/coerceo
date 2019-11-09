@@ -192,7 +192,8 @@ fn draw_window(ui: &Ui, size: [f32; 2], model: &Model, event: &mut Option<Event>
                 model.players.white, model.players.black, exchange_hex_string
             ));
 
-            if let Some(click) = board(ui, model, Vec2::new(size[0] - 16.0, size[1] - 232.0)) {
+            let board_size = Vec2::new((size[0] - 16.0).max(100.0), (size[1] - 232.0).max(100.0));
+            if let Some(click) = board(ui, model, board_size) {
                 insert_if_empty(event, click);
             }
 
