@@ -24,6 +24,7 @@ mod zobrist;
 use std::cell::RefCell;
 use std::fmt;
 use std::mem;
+use std::ops::RangeInclusive;
 
 use glium::glutin::EventsLoopProxy;
 
@@ -319,6 +320,8 @@ pub struct MoveAnnotated {
     pub removed_hexes: Vec<HexCoord>,
 }
 
+const COORD_RANGE: RangeInclusive<i8> = -2..=2;
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct FieldCoord {
     x: i8,
@@ -426,7 +429,10 @@ impl FieldCoord {
         }
     }
     fn is_valid_coord(x: i8, y: i8, f: u8) -> bool {
-        (x + y).abs() <= 2 && x.abs() <= 2 && y.abs() <= 2 && f < 6
+        f < 6
+            && COORD_RANGE.contains(&x)
+            && COORD_RANGE.contains(&y)
+            && COORD_RANGE.contains(&(x + y))
     }
 }
 
@@ -476,6 +482,6 @@ impl HexCoord {
             }
     }
     fn is_valid_coord(x: i8, y: i8) -> bool {
-        x.abs() <= 2 && y.abs() <= 2 && (x + y).abs() <= 2
+        COORD_RANGE.contains(&x) && COORD_RANGE.contains(&y) && COORD_RANGE.contains(&(x + y))
     }
 }
