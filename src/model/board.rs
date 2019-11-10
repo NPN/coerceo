@@ -124,15 +124,13 @@ impl Board {
             Move::Exchange(bb, color) => {
                 self.remove_piece(bb, color);
 
-                {
-                    let vitals = self.vitals.get_mut(self.turn);
-                    self.zobrist.set_hex_count(
-                        vitals.hexes,
-                        vitals.hexes - self.hexes_to_exchange,
-                        color,
-                    );
-                    vitals.hexes -= self.hexes_to_exchange;
-                }
+                let vitals = self.vitals.get_mut(self.turn);
+                self.zobrist.set_hex_count(
+                    vitals.hexes,
+                    vitals.hexes - self.hexes_to_exchange,
+                    color,
+                );
+                vitals.hexes -= self.hexes_to_exchange;
 
                 // Players don't collect hexes removed due to an exchange
                 let (_, fields_to_check) = self.check_hexes(bb.to_index());
